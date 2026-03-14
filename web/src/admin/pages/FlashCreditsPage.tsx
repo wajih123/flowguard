@@ -251,7 +251,9 @@ const AdminCreditsPage: React.FC = () => {
         description="Ce crédit sera marqué comme irrécouvrable. Cette action est définitive."
         confirmLabel="Passer en perte"
         danger
-        onConfirm={() => writeOffId && writeOff.mutate(writeOffId)}
+        onConfirm={() => {
+          if (writeOffId) writeOff.mutate(writeOffId);
+        }}
         onClose={() => setWriteOffId(null)}
         isLoading={writeOff.isPending}
       />

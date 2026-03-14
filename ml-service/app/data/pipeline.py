@@ -574,7 +574,7 @@ class DataQualityPipeline:
         if outliers_ratio > 0.10:
             base_score -= 0.10
         if history_days < 30:
-            base_score -= 0.40
+            base_score = 0.0  # Hard cutoff — < 30 days is always INSUFFICIENT
         elif history_days < 60:
             base_score -= 0.20
         elif history_days < 90:

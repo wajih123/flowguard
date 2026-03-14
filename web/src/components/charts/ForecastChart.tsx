@@ -121,7 +121,7 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({
     const isFuture = isAfter(parseISO(p.date), today);
     const causeLabel = data.criticalPoints.find(
       (c) => format(parseISO(c.date), "d MMM", { locale: fr }) === dateLabel,
-    )?.type;
+    )?.reason;
 
     return {
       date: dateLabel,

@@ -48,6 +48,7 @@ export interface AdminUser {
   firstName: string;
   lastName: string;
   emailMasked: string;
+  companyName?: string;
   userType: string;
   kycStatus: string;
   role: string;

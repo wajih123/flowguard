@@ -6,12 +6,14 @@ export type AlertSeverityLevel = "HIGH" | "MEDIUM" | "LOW" | "INFO";
 
 interface AlertBannerProps {
   severity?: AlertSeverityLevel;
-  title: string;
+  title?: string;
   message: string;
   /** CTA button label — if provided, shows a gradient activation button */
   ctaLabel?: string;
   onCta?: () => void;
   onDismiss?: () => void;
+  /** Alias for onDismiss */
+  onClose?: () => void;
   /** Secondary dismiss label (default: "Plus tard") */
   dismissLabel?: string;
   className?: string;
@@ -54,9 +56,11 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({
   ctaLabel,
   onCta,
   onDismiss,
+  onClose,
   dismissLabel = "Plus tard",
   className = "",
 }) => {
+  const handleDismiss = onDismiss ?? onClose;
   const cfg = severityConfig[severity];
   return (
     <div
@@ -77,20 +81,22 @@ export const AlertBanner: React.FC<AlertBannerProps> = ({
             {cfg.icon}
           </span>
           <div className="flex-1 min-w-0">
-            <p
-              className="text-white font-semibold text-sm"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              {title}
-            </p>
+            {title && (
+              <p
+                className="text-white font-semibold text-sm"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                {title}
+              </p>
+            )}
             <p className="text-text-secondary text-sm mt-1 leading-relaxed">
               {message}
             </p>
           </div>
         </div>
-        {onDismiss && (
+        {handleDismiss && (
           <button
-            onClick={onDismiss}
+            onClick={handleDismiss}
             className="text-text-muted hover:text-white transition-colors flex-shrink-0 p-1 rounded-lg hover:bg-white/10"
             aria-label="Fermer"
           >

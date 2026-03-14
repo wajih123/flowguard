@@ -113,7 +113,7 @@ const AdminUsersPage: React.FC = () => {
                           </p>
                         )}
                       </td>
-                      <td className="text-text-secondary">{u.email}</td>
+                      <td className="text-text-secondary">{u.emailMasked}</td>
                       <td>
                         <Badge variant="muted">
                           {USER_TYPE_LABELS[u.userType] ?? u.userType}

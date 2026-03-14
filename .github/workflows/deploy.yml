@@ -1,9 +1,9 @@
 name: Deploy to Production
 
+# Disabled — deployment is handled by ci-cd.yml (runs after CI passes)
+# To trigger manually: Actions → Deploy to Production → Run workflow
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   deploy:

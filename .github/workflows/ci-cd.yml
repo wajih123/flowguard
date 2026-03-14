@@ -49,7 +49,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd mobile
-          npm ci
+          npm install --legacy-peer-deps
       - name: Type check
         run: |
           cd mobile
@@ -65,31 +65,17 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 157.180.43.233 >> ~/.ssh/known_hosts
-
-      - name: Write .env.prod to server
-        run: |
-          ssh -i ~/.ssh/id_ed25519 root@157.180.43.233 "mkdir -p /opt/flowguard/infra"
-          cat <<EOF | ssh -i ~/.ssh/id_ed25519 root@157.180.43.233 "cat > /opt/flowguard/infra/.env.prod"
-          POSTGRES_DB=flowguard
-          POSTGRES_USER=flowguard
-          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-          BRIDGE_CLIENT_ID=${{ secrets.BRIDGE_CLIENT_ID }}
-          BRIDGE_CLIENT_SECRET=${{ secrets.BRIDGE_CLIENT_SECRET }}
-          BRIDGE_REDIRECT_URL=${{ secrets.BRIDGE_REDIRECT_URL }}
-          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
-          SERVER_IP=157.180.43.233
-          DOMAIN=flowguard.fr
-          EOF
-
       - name: Deploy via SSH
-        run: |
-          ssh -i ~/.ssh/id_ed25519 root@157.180.43.233 "bash /opt/flowguard/infra/deploy.sh"
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          password: ${{ secrets.SERVER_PASS }}
+          port: 22
+          command_timeout: 25m
+          script: |
+            set -euo pipefail
+            cd /opt/flowguard
+            git fetch --all
+            git reset --hard origin/main
+            bash infra/deploy.sh

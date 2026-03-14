@@ -409,7 +409,7 @@ async def test_concurrent_predictions():
     for i, result in enumerate(results):
         assert result is not None, f"Result {i} is None"
         assert len(result.daily_balance) == 30, f"Result {i} missing daily_balance"
-        assert not any(np.isnan(d.balance for d in result.daily_balance)), (
+        assert not any(np.isnan(d.balance) for d in result.daily_balance), (
             f"NaN in result {i}"
         )
 
