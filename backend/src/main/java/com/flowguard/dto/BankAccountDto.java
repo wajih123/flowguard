@@ -15,7 +15,7 @@ public record BankAccountDto(
         String accountName,
         String ibanMasked,
         BigDecimal balance,
-        String currency,r
+        String currency,
         String accountType,
         String syncStatus,
         String lastSyncAt) {

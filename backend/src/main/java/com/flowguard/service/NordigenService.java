@@ -285,7 +285,7 @@ public class NordigenService {
         if (l.matches(".*(salaire|paie|virement employeur|traitement).*")) return TransactionCategory.SALAIRE;
         if (l.matches(".*(carrefour|leclerc|lidl|auchan|intermarché|monoprix|franprix|super u|casino|picard).*")) return TransactionCategory.ALIMENTATION;
         if (l.matches(".*(sncf|ratp|navigo|blablacar|total|esso|bp|essence|parking|autoroute|uber|free now).*")) return TransactionCategory.TRANSPORT;
-        if (l.matches(".*(netflix|spotify|amazon prime|disney\+|canal\+|deezer|youtube premium|apple).*")) return TransactionCategory.ABONNEMENT;
+        if (l.matches(".*(netflix|spotify|amazon prime|disney\\+|canal\\+|deezer|youtube premium|apple).*")) return TransactionCategory.ABONNEMENT;
         if (l.matches(".*(edf|engie|électricité|gaz|direct energie|total énergie).*")) return TransactionCategory.ENERGIE;
         if (l.matches(".*(sfr|orange|free|bouygues|numericable).*")) return TransactionCategory.TELECOM;
         if (l.matches(".*(axa|mma|maaf|groupama|allianz|assurance|mutuelle).*")) return TransactionCategory.ASSURANCE;
