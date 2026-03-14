@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "FlowGuard",
+    "slug": "flowguard",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "flowguard",
+    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0B1437"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.flowguard.app",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "FlowGuard utilise Face ID pour sécuriser vos transactions"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0B1437"
+      },
+      "package": "com.flowguard.app"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@notifee/react-native"
+    ]
+  }
+}

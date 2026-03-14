@@ -1,0 +1,50 @@
+{
+  "folders": [
+    {
+      "name": "mobile",
+      "path": "./mobile",
+    },
+    {
+      "name": "backend",
+      "path": "./backend",
+    },
+    {
+      "name": "ml-service",
+      "path": "./ml-service",
+    },
+    {
+      "path": "web",
+    },
+  ],
+  "settings": {
+    "java.jdt.ls.java.home": "/path/to/java21",
+    "java.configuration.runtimes": [
+      { "name": "JavaSE-21", "path": "/path/to/java21", "default": true },
+    ],
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "[java]": { "editor.defaultFormatter": "redhat.java" },
+    "[python]": { "editor.defaultFormatter": "ms-python.python" },
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "typescript.tsdk": "mobile/node_modules/typescript/lib",
+    "eslint.workingDirectories": ["./mobile"],
+    "python.defaultInterpreterPath": "./ml-service/.venv/bin/python",
+  },
+  "extensions": {
+    "recommendations": [
+      "msjsdiag.vscode-react-native",
+      "vscjava.vscode-java-pack",
+      "redhat.vscode-quarkus",
+      "redhat.java",
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "ms-azuretools.vscode-docker",
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "eamodio.gitlens",
+      "SonarSource.sonarlint-vscode",
+      "cweijan.vscode-database-client2",
+      "rangav.vscode-thunder-client",
+    ],
+  },
+}

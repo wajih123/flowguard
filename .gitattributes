@@ -1,0 +1,5 @@
+# Shell scripts: always LF (for Linux servers)
+*.sh  text eol=lf
+
+# Everything else: auto CRLF on Windows, LF on Unix
+*     text=auto

@@ -1,0 +1,29 @@
+package com.flowguard.repository;
+
+import com.flowguard.domain.TransactionEntity;
+import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
+import jakarta.enterprise.context.ApplicationScoped;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+@ApplicationScoped
+public class TransactionRepository implements PanacheRepositoryBase<TransactionEntity, UUID> {
+
+    public List<TransactionEntity> findByAccountId(UUID accountId) {
+        return list("account.id = ?1 ORDER BY date DESC", accountId);
+    }
+
+    public List<TransactionEntity> findByAccountIdAndDateBetween(UUID accountId, LocalDate from, LocalDate to) {
+        return list("account.id = ?1 AND date >= ?2 AND date <= ?3 ORDER BY date DESC", accountId, from, to);
+    }
+
+    public List<TransactionEntity> findByAccountIdAndCategory(UUID accountId, TransactionEntity.TransactionCategory category) {
+        return list("account.id = ?1 AND category = ?2 ORDER BY date DESC", accountId, category);
+    }
+
+    public List<TransactionEntity> findRecurringByAccountId(UUID accountId) {
+        return list("account.id = ?1 AND isRecurring = true ORDER BY date DESC", accountId);
+    }
+}

@@ -1,0 +1,35 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug React Native Android",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "android",
+      "cwd": "${workspaceFolder}/mobile"
+    },
+    {
+      "name": "Debug React Native iOS",
+      "type": "reactnative",
+      "request": "launch",
+      "platform": "ios",
+      "cwd": "${workspaceFolder}/mobile"
+    },
+    {
+      "name": "Debug Quarkus (attach)",
+      "type": "java",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "cwd": "${workspaceFolder}/backend"
+    },
+    {
+      "name": "Debug ML Service",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": ["main:app", "--reload", "--port", "8001"],
+      "cwd": "${workspaceFolder}/ml-service"
+    }
+  ]
+}

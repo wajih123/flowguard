@@ -1,0 +1,32 @@
+# ── Secrets & environment files ───────────────────────────────────────────────
+infra/.env.prod
+.env.local
+.env.*.local
+*.pem
+
+# ── Build outputs ─────────────────────────────────────────────────────────────
+backend/target/
+web/dist/
+web/node_modules/
+mobile/node_modules/
+mobile/.expo/
+mobile/android/app/build/
+mobile/ios/build/
+ml-service/__pycache__/
+ml-service/**/__pycache__/
+ml-service/*.pyc
+ml-service/**/*.pyc
+ml-service/.pytest_cache/
+
+# ── Editors ───────────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Setup helper scripts (temp) ───────────────────────────────────────────────
+setup_bridge_full.py
+patch_service.py
+patch_prediction_resource.py

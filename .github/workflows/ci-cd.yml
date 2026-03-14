@@ -1,0 +1,95 @@
+name: CI/CD FlowGuard
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          java-version: "21"
+          distribution: "temurin"
+      - name: Build backend
+        run: mvn -f backend/pom.xml clean package -DskipTests
+
+  build-ml-service:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          cd ml-service
+          pip install -r requirements.txt
+      - name: Run tests
+        run: |
+          cd ml-service
+          pytest
+
+  build-mobile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+      - name: Install dependencies
+        run: |
+          cd mobile
+          npm ci
+      - name: Type check
+        run: |
+          cd mobile
+          npx tsc --noEmit
+      - name: Lint
+        run: |
+          cd mobile
+          npm run lint
+
+  deploy:
+    needs: [build-backend, build-ml-service, build-mobile]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 157.180.43.233 >> ~/.ssh/known_hosts
+
+      - name: Write .env.prod to server
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@157.180.43.233 "mkdir -p /opt/flowguard/infra"
+          cat <<EOF | ssh -i ~/.ssh/id_ed25519 root@157.180.43.233 "cat > /opt/flowguard/infra/.env.prod"
+          POSTGRES_DB=flowguard
+          POSTGRES_USER=flowguard
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+          BRIDGE_CLIENT_ID=${{ secrets.BRIDGE_CLIENT_ID }}
+          BRIDGE_CLIENT_SECRET=${{ secrets.BRIDGE_CLIENT_SECRET }}
+          BRIDGE_REDIRECT_URL=${{ secrets.BRIDGE_REDIRECT_URL }}
+          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }}
+          SERVER_IP=157.180.43.233
+          DOMAIN=flowguard.fr
+          EOF
+
+      - name: Deploy via SSH
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@157.180.43.233 "bash /opt/flowguard/infra/deploy.sh"
