@@ -7,7 +7,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/YOUR_ORG/flowguard.git}"
+REPO_URL="${REPO_URL:?'Set REPO_URL before running: export REPO_URL=https://github.com/YOUR_USER/flowguard.git'}"
 DEPLOY_DIR="/opt/flowguard"
 SERVER_IP="157.180.43.233"
 
