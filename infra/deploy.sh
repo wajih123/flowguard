@@ -22,7 +22,7 @@ if [ $# -ge 1 ]; then
     set -euo pipefail
     cd /opt/flowguard
     git fetch --all
-    git reset --hard origin/main
+    git reset --hard origin/master
     bash infra/deploy.sh
 REMOTE
   echo "✓ Remote deploy complete"
@@ -40,7 +40,7 @@ cd "$DEPLOY_DIR"
 # Pull latest code
 echo "[1/4] Pulling code..."
 git fetch --all
-git reset --hard origin/main
+git reset --hard origin/master
 
 # Build images (sequential to avoid OOM on 4GB server)
 echo "[2/4] Building backend image..."
