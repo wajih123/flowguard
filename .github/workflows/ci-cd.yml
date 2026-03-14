@@ -3,10 +3,10 @@ name: CI/CD FlowGuard
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
     branches:
-      - master
+      - main
 
 jobs:
   build-backend:
@@ -62,7 +62,7 @@ jobs:
   deploy:
     needs: [build-backend, build-ml-service, build-mobile]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
       - uses: actions/checkout@v3
