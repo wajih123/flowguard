@@ -1,76 +1,93 @@
 package com.flowguard.websocket;
 
 import com.flowguard.dto.AlertDto;
-import io.quarkus.websockets.next.*;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.websocket.OnClose;
+import jakarta.websocket.OnError;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.OnOpen;
+import jakarta.websocket.Session;
+import jakarta.websocket.server.PathParam;
+import jakarta.websocket.server.ServerEndpoint;
 import org.jboss.logging.Logger;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-@WebSocket(path = "/ws/alerts/{accountId}")
+@ServerEndpoint("/ws/alerts/{accountId}")
 @ApplicationScoped
 public class AlertWebSocket {
     private static final Logger LOG = Logger.getLogger(AlertWebSocket.class);
-    private final Map<String, Set<WebSocketConnection>> sessions = new ConcurrentHashMap<>();
+    private final Map<String, Set<Session>> sessions = new ConcurrentHashMap<>();
 
     @OnOpen
-    public void onOpen(WebSocketConnection connection, String accountId) {
-        sessions.computeIfAbsent(accountId, k -> new HashSet<>()).add(connection);
-        int unreadCount = 0; // TODO: fetch from DB
-        connection.sendTextAndAwait("{" +
-            "\"type\":\"CONNECTED\"," +
-            "\"accountId\":\"" + accountId + "\"," +
-            "\"unreadCount\":" + unreadCount + "}");
+    public void onOpen(Session session, @PathParam("accountId") String accountId) {
+        sessions.computeIfAbsent(accountId, k -> ConcurrentHashMap.newKeySet()).add(session);
+        int unreadCount = 0;
+        try {
+            session.getBasicRemote().sendText("{" +
+                "\"type\":\"CONNECTED\"," +
+                "\"accountId\":\"" + accountId + "\"," +
+                "\"unreadCount\":" + unreadCount + "}");
+        } catch (IOException e) {
+            LOG.warnf("Failed to send CONNECTED message: %s", e.getMessage());
+        }
         LOG.infof("WebSocket opened for account %s", accountId);
     }
 
     @OnClose
-    public void onClose(WebSocketConnection connection, String accountId) {
-        Set<WebSocketConnection> set = sessions.get(accountId);
+    public void onClose(Session session, @PathParam("accountId") String accountId) {
+        Set<Session> set = sessions.get(accountId);
         if (set != null) {
-            set.remove(connection);
+            set.remove(session);
             if (set.isEmpty()) sessions.remove(accountId);
         }
         LOG.infof("WebSocket closed for account %s", accountId);
     }
 
     @OnError
-    public void onError(WebSocketConnection connection, Throwable error) {
+    public void onError(Session session, @PathParam("accountId") String accountId, Throwable error) {
         LOG.warn("WebSocket error: " + error.getMessage());
     }
 
-    @OnTextMessage
-    public void onText(WebSocketConnection connection, String message, String accountId) {
+    @OnMessage
+    public void onText(String message, @PathParam("accountId") String accountId, Session session) {
         if ("ping".equals(message)) {
-            connection.sendTextAndAwait("pong");
+            try {
+                session.getBasicRemote().sendText("pong");
+            } catch (IOException e) {
+                LOG.warnf("Failed to send pong: %s", e.getMessage());
+            }
         }
     }
 
     public void broadcastAlert(String accountId, AlertDto alert) {
-        Set<WebSocketConnection> set = sessions.get(accountId);
+        Set<Session> set = sessions.get(accountId);
         if (set == null) return;
         String payload = buildAlertPayload(alert);
-        for (WebSocketConnection conn : set) {
+        for (Session s : new HashSet<>(set)) {
             try {
-                conn.sendTextAndAwait(payload);
+                s.getBasicRemote().sendText(payload);
             } catch (Exception e) {
-                set.remove(conn);
+                set.remove(s);
             }
         }
     }
 
     public void broadcastUnreadCount(String accountId, int count) {
-        Set<WebSocketConnection> set = sessions.get(accountId);
+        Set<Session> set = sessions.get(accountId);
         if (set == null) return;
         String payload = "{" +
             "\"type\":\"UNREAD_COUNT\"," +
             "\"count\":" + count + "}";
-        for (WebSocketConnection conn : set) {
+        for (Session s : new HashSet<>(set)) {
             try {
-                conn.sendTextAndAwait(payload);
+                s.getBasicRemote().sendText(payload);
             } catch (Exception e) {
-                set.remove(conn);
+                set.remove(s);
             }
         }
     }
