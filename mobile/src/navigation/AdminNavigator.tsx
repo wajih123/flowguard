@@ -14,7 +14,10 @@ export const AdminNavigator: React.FC = () => (
       cardStyle: { backgroundColor: colors.background },
     }}
   >
-    <Stack.Screen name={Routes.AdminOverview} component={AdminOverviewScreen} />
-    <Stack.Screen name={Routes.AdminWeb} component={AdminWebScreen} />
+    <Stack.Screen
+      name={Routes.AdminOverview}
+      component={AdminOverviewScreen as React.ComponentType<any>}
+    />
+    <Stack.Screen name={Routes.AdminWeb} component={AdminWebScreen as React.ComponentType<any>} />
   </Stack.Navigator>
 )

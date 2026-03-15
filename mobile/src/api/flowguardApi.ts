@@ -41,7 +41,7 @@ export const login = async (email: string, password: string): Promise<AuthRespon
     timeoutInterval: 30000,
   })
   if (res.status !== 200) throw new FlowGuardError('UNAUTHORIZED', 'Identifiants incorrects')
-  return JSON.parse(res.bodyString) as AuthResponse
+  return JSON.parse(res.bodyString!) as AuthResponse
 }
 
 export const register = async (data: RegisterDto): Promise<AuthResponse> => {
@@ -54,7 +54,7 @@ export const register = async (data: RegisterDto): Promise<AuthResponse> => {
   })
   if (res.status !== 201 && res.status !== 200)
     throw new FlowGuardError('VALIDATION', "Erreur d'inscription")
-  return JSON.parse(res.bodyString) as AuthResponse
+  return JSON.parse(res.bodyString!) as AuthResponse
 }
 
 export const registerBusiness = async (data: RegisterBusinessDto): Promise<AuthResponse> => {
@@ -67,7 +67,7 @@ export const registerBusiness = async (data: RegisterBusinessDto): Promise<AuthR
   })
   if (res.status !== 201 && res.status !== 200)
     throw new FlowGuardError('VALIDATION', "Erreur d'inscription entreprise")
-  return JSON.parse(res.bodyString) as AuthResponse
+  return JSON.parse(res.bodyString!) as AuthResponse
 }
 
 export const refreshToken = async (
@@ -81,7 +81,7 @@ export const refreshToken = async (
     timeoutInterval: 30000,
   })
   if (res.status !== 200) throw new FlowGuardError('UNAUTHORIZED', 'Session expirÃ©e')
-  return JSON.parse(res.bodyString) as { accessToken: string; refreshToken: string }
+  return JSON.parse(res.bodyString!) as { accessToken: string; refreshToken: string }
 }
 
 export const logoutApi = async (refreshTokenValue: string): Promise<void> => {
@@ -202,7 +202,8 @@ export const getSpendingAnalysis = async (
 
 export const runScenario = async (req: ScenarioRequest): Promise<ScenarioResult> => {
   const { data } = await api.post<ScenarioResult>(
-    `/api/treasury/${encodeURIComponent(req.accountId)}/scenario`,
+    `/api/treasury/${encodeURIComponent(req.accountId!)}/scenario`,
+
     req,
   )
   return data
@@ -254,7 +255,7 @@ export const getReserveEligibility = async (accountId: string): Promise<Eligibil
     timeoutInterval: 30000,
   })
   if (res.status !== 200) throw new FlowGuardError('SERVER', 'Erreur Ã©ligibilitÃ©')
-  return JSON.parse(res.bodyString) as EligibilityResponse
+  return JSON.parse(res.bodyString!) as EligibilityResponse
 }
 
 export const activateReserve = async (
@@ -270,7 +271,7 @@ export const activateReserve = async (
   })
   if (res.status !== 200 && res.status !== 201)
     throw new FlowGuardError('SERVER', "Erreur d'activation de la RÃ©serve")
-  return JSON.parse(res.bodyString) as CreditResponse
+  return JSON.parse(res.bodyString!) as CreditResponse
 }
 
 // Legacy Flash Credit (mapped to reserve)

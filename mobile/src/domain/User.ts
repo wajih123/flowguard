@@ -28,6 +28,7 @@ export interface RegisterDto {
   email: string
   password: string
   userType?: UserType
+  companyName?: string
 }
 
 export interface RegisterBusinessDto {

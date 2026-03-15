@@ -11,7 +11,7 @@ export const useFlashCredit = () => {
       if (!ok) {
         throw new FlowGuardError('BIOMETRIC_FAILED', 'Authentification biométrique requise')
       }
-      return flowguardApi.requestFlashCredit(req)
+      return flowguardApi.requestFlashCredit(req.accountId, req.amount)
     },
   })
 

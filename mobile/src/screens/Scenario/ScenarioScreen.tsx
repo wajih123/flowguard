@@ -32,7 +32,7 @@ export const ScenarioScreen: React.FC = () => {
   const [delayDays, setDelayDays] = useState(30)
   const [description, setDescription] = useState('')
 
-  const { mutate: runScenario, data: result, isPending } = useScenario()
+  const { runScenario, result, isLoading: isPending } = useScenario()
 
   const handleSimulate = useCallback(() => {
     Keyboard.dismiss()
@@ -56,9 +56,7 @@ export const ScenarioScreen: React.FC = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>Simulateur What-If</Text>
-        <Text style={styles.subtitle}>
-          Simulez l'impact d'un événement sur votre trésorerie
-        </Text>
+        <Text style={styles.subtitle}>Simulez l'impact d'un événement sur votre trésorerie</Text>
 
         {/* Scenario Type Picker */}
         <Text style={styles.sectionTitle}>Type de scénario</Text>
@@ -107,10 +105,7 @@ export const ScenarioScreen: React.FC = () => {
             <Text
               key={opt.days}
               onPress={() => setDelayDays(opt.days)}
-              style={[
-                styles.delayPreset,
-                delayDays === opt.days && styles.delayPresetActive,
-              ]}
+              style={[styles.delayPreset, delayDays === opt.days && styles.delayPresetActive]}
             >
               {opt.label}
             </Text>
@@ -170,7 +165,12 @@ export const ScenarioScreen: React.FC = () => {
                     },
                   ]}
                 >
-                  Risque {result.riskLevel === 'HIGH' ? 'élevé' : result.riskLevel === 'MEDIUM' ? 'modéré' : 'faible'}
+                  Risque{' '}
+                  {result.riskLevel === 'HIGH'
+                    ? 'élevé'
+                    : result.riskLevel === 'MEDIUM'
+                      ? 'modéré'
+                      : 'faible'}
                 </Text>
               </View>
             )}

@@ -21,11 +21,20 @@ export const AuthNavigator: React.FC = () => {
         animationEnabled: true,
       }}
     >
-      <Stack.Screen name={Routes.Onboarding} component={OnboardingScreen} />
-      <Stack.Screen name={Routes.Login} component={LoginScreen} />
-      <Stack.Screen name={Routes.Register} component={RegisterScreen} />
-      <Stack.Screen name={Routes.RegisterBusiness} component={RegisterBusinessScreen} />
-      <Stack.Screen name={Routes.ForgotPassword} component={ForgotPasswordScreen} />
+      <Stack.Screen
+        name={Routes.Onboarding}
+        component={OnboardingScreen as React.ComponentType<any>}
+      />
+      <Stack.Screen name={Routes.Login} component={LoginScreen as React.ComponentType<any>} />
+      <Stack.Screen name={Routes.Register} component={RegisterScreen as React.ComponentType<any>} />
+      <Stack.Screen
+        name={Routes.RegisterBusiness}
+        component={RegisterBusinessScreen as React.ComponentType<any>}
+      />
+      <Stack.Screen
+        name={Routes.ForgotPassword}
+        component={ForgotPasswordScreen as React.ComponentType<any>}
+      />
       <Stack.Screen name={Routes.Kyc} component={KycScreen} />
     </Stack.Navigator>
   )

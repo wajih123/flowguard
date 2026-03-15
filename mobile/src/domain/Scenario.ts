@@ -27,6 +27,8 @@ export interface ScenarioResult {
   worstDeficit: number
   daysUntilImpact: number
   recommendedAction: string
+  recommendation?: string
+  riskLevel?: 'HIGH' | 'MEDIUM' | 'LOW'
   // Array-form aliases used by ImpactChart
   baselineForecast: number[]
   impactedForecast: number[]

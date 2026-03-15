@@ -119,7 +119,8 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() =>
-              navigation.navigate(Routes.TransactionDetail as never, { transaction: item } as never)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (navigation as any).navigate(Routes.TransactionDetail, { transaction: item })
             }
             style={styles.txRow}
           >

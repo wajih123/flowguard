@@ -1,5 +1,12 @@
 ﻿import React from 'react'
-import { TouchableOpacity, Text, ActivityIndicator, StyleSheet, type ViewStyle } from 'react-native'
+import {
+  TouchableOpacity,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  type ViewStyle,
+  type StyleProp,
+} from 'react-native'
 import { colors, spacing, typography } from '../theme'
 
 interface FlowGuardButtonProps {
@@ -12,7 +19,7 @@ interface FlowGuardButtonProps {
   loading?: boolean
   disabled?: boolean
   icon?: string
-  style?: ViewStyle
+  style?: StyleProp<ViewStyle>
   fullWidth?: boolean
 }
 
@@ -127,4 +134,3 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
 })
-

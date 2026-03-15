@@ -28,7 +28,10 @@ const DashboardStackNavigator: React.FC = () => {
       <DashboardStack.Screen name={Routes.Spending} component={SpendingScreen} />
       <DashboardStack.Screen name={Routes.Scenario} component={ScenarioScreen} />
       <DashboardStack.Screen name={Routes.FlashCredit} component={FlashCreditScreen} />
-      <DashboardStack.Screen name={Routes.BankConnect} component={BankConnectScreen} />
+      <DashboardStack.Screen
+        name={Routes.BankConnect}
+        component={BankConnectScreen as React.ComponentType<any>}
+      />
     </DashboardStack.Navigator>
   )
 }
@@ -48,9 +51,7 @@ const TabIcon: React.FC<{ label: string; focused: boolean }> = ({ label, focused
   }
 
   return (
-    <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>
-      {iconMap[label] ?? '•'}
-    </Text>
+    <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{iconMap[label] ?? '•'}</Text>
   )
 }
 

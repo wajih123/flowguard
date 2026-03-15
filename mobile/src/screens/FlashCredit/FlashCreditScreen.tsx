@@ -11,6 +11,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated'
 import { useFlashCredit } from '../../hooks/useFlashCredit'
+import { useAccountStore } from '../../store/accountStore'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
 import { FlowGuardCard } from '../../components/FlowGuardCard'
 import { FlowGuardLoader } from '../../components/FlowGuardLoader'
@@ -34,6 +35,7 @@ export const FlashCreditScreen: React.FC = () => {
   const [purpose, setPurpose] = useState('SALARY')
   const [showSuccess, setShowSuccess] = useState(false)
 
+  const account = useAccountStore((s) => s.account)
   const { requestCredit, isLoading: isPending } = useFlashCredit()
 
   const successScale = useSharedValue(0)
@@ -56,7 +58,7 @@ export const FlashCreditScreen: React.FC = () => {
   const handleRequest = useCallback(() => {
     Keyboard.dismiss()
     requestCredit(
-      { amount, purpose },
+      { amount, purpose, accountId: account?.id ?? '' },
       {
         onSuccess: () => {
           runOnJS(playSuccessAnimation)()
