@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Processes one Bridge account (upsert + transactions) inside its own
@@ -30,11 +31,13 @@ public class BankAccountSyncService {
     /**
      * Upserts one Bridge account and imports its last 6 months of transactions.
      * Runs in a brand-new transaction regardless of the caller's context.
+     * Accepts {@code userId} (not a managed entity) so it can be safely called
+     * from a context with no surrounding transaction.
      *
      * @return {@code true} if the account was processed successfully
      */
     @Transactional(Transactional.TxType.REQUIRES_NEW)
-    public boolean syncAccount(UserEntity user, String userToken, BridgeService.BridgeAccount ba) {
+    public boolean syncAccount(UUID userId, String userToken, BridgeService.BridgeAccount ba) {
         String extId = String.valueOf(ba.id());
 
         // ── 1. Upsert account ────────────────────────────────────────
@@ -43,6 +46,8 @@ public class BankAccountSyncService {
                 .firstResult();
 
         if (account == null) {
+            UserEntity user = UserEntity.findById(userId);
+            if (user == null) return false;
             account = new AccountEntity();
             account.setUser(user);
             account.setExternalAccountId(extId);

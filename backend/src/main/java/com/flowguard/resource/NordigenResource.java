@@ -111,22 +111,19 @@ public class NordigenResource {
      */
     @POST
     @Path("/connect/callback")
-    @Transactional
     public Response handleCallback(CallbackRequest req) {
         UUID userId = UUID.fromString(jwt.getSubject());
-        UserEntity user = UserEntity.findById(userId);
-        if (user == null) return Response.status(Response.Status.NOT_FOUND).build();
-
-        String bridgeUuid = user.getBridgeUserUuid();
-        if (bridgeUuid == null || bridgeUuid.isBlank()) {
+        String bridgeUuid = loadBridgeUuid(userId);
+        if (bridgeUuid == null)
+            return Response.status(Response.Status.NOT_FOUND).build();
+        if (bridgeUuid.isBlank())
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "Aucun compte Bridge associé à cet utilisateur"))
                     .build();
-        }
 
         try {
             String userToken = bridgeService.getUserToken(bridgeUuid);
-            int synced = syncUserAccounts(user, userToken);
+            int synced = syncUserAccounts(userId, userToken);
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("accounts_synced", synced);
@@ -147,22 +144,19 @@ public class NordigenResource {
     /** Manual re-sync of accounts and transactions. */
     @POST
     @Path("/sync")
-    @Transactional
     public Response sync() {
         UUID userId = UUID.fromString(jwt.getSubject());
-        UserEntity user = UserEntity.findById(userId);
-        if (user == null) return Response.status(Response.Status.NOT_FOUND).build();
-
-        String bridgeUuid = user.getBridgeUserUuid();
-        if (bridgeUuid == null || bridgeUuid.isBlank()) {
+        String bridgeUuid = loadBridgeUuid(userId);
+        if (bridgeUuid == null)
+            return Response.status(Response.Status.NOT_FOUND).build();
+        if (bridgeUuid.isBlank())
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity(Map.of("error", "Aucun compte Bridge associé. Connectez d'abord une banque."))
                     .build();
-        }
 
         try {
             String userToken = bridgeService.getUserToken(bridgeUuid);
-            int synced = syncUserAccounts(user, userToken);
+            int synced = syncUserAccounts(userId, userToken);
 
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("accounts_synced", synced);
@@ -198,19 +192,30 @@ public class NordigenResource {
     // ══════════════════════════════════════════════════════════════
 
     /**
+     * Reads the user's Bridge UUID in a short dedicated transaction.
+     * Returns {@code null} if the user doesn't exist,
+     * an empty string if no Bridge account is linked yet.
+     */
+    @Transactional
+    String loadBridgeUuid(UUID userId) {
+        UserEntity user = UserEntity.findById(userId);
+        if (user == null) return null;
+        return user.getBridgeUserUuid() != null ? user.getBridgeUserUuid() : "";
+    }
+
+    /**
      * Fetches all accounts from Bridge and delegates each one to
      * {@link BankAccountSyncService#syncAccount} which runs in its own
-     * {@code REQUIRES_NEW} transaction.  A failure on one account is logged
-     * but does not abort the others.
+     * {@code REQUIRES_NEW} transaction — no outer transaction is held here.
      *
      * @return number of accounts successfully synced
      */
-    private int syncUserAccounts(UserEntity user, String userToken) {
+    private int syncUserAccounts(UUID userId, String userToken) {
         List<BridgeService.BridgeAccount> bridgeAccounts = bridgeService.listAccounts(userToken);
         int synced = 0;
         for (BridgeService.BridgeAccount ba : bridgeAccounts) {
             try {
-                bankAccountSyncService.syncAccount(user, userToken, ba);
+                bankAccountSyncService.syncAccount(userId, userToken, ba);
                 synced++;
             } catch (Exception e) {
                 // One account failing must not block the rest

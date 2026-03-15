@@ -68,12 +68,16 @@ public class BridgeService {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
+    /** Per-request timeout: connect + read must finish within this duration. */
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(45);
+
     // ── Request builders ─────────────────────────────────────────
 
     /** Builds an app-level request (no user token). */
     private HttpRequest.Builder appRequest(String path) {
         return HttpRequest.newBuilder()
                 .uri(URI.create(apiUrl + path))
+                .timeout(REQUEST_TIMEOUT)
                 .header("client-id", clientId)
                 .header("client-secret", clientSecret)
                 .header("Bridge-Version", bridgeVersion)
