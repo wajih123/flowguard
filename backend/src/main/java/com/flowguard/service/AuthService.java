@@ -8,14 +8,11 @@ import com.flowguard.dto.UserDto;
 import com.flowguard.repository.UserRepository;
 import com.flowguard.security.RateLimiter;
 import io.quarkus.elytron.security.common.BcryptUtil;
-import io.smallrye.jwt.auth.principal.JWTParser;
-import io.smallrye.jwt.build.Jwt;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 
-import java.time.Duration;
-import java.util.Set;
+import java.util.UUID;
 
 @ApplicationScoped
 public class AuthService {
@@ -27,7 +24,7 @@ public class AuthService {
     RateLimiter rateLimiter;
 
     @Inject
-    JWTParser jwtParser;
+    RefreshTokenService refreshTokenService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -49,7 +46,9 @@ public class AuthService {
 
         userRepository.persist(user);
 
-        return buildAuthResponse(user);
+        String accessToken = refreshTokenService.buildAccessToken(user);
+        String refreshToken = refreshTokenService.issueRefreshToken(user, null, "registration");
+        return buildAuthResponse(user, accessToken, refreshToken);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -67,26 +66,29 @@ public class AuthService {
         }
 
         rateLimiter.reset(request.email());
-        return buildAuthResponse(user);
+        String accessToken = refreshTokenService.buildAccessToken(user);
+        String refreshToken = refreshTokenService.issueRefreshToken(user, null, "login");
+        return buildAuthResponse(user, accessToken, refreshToken);
     }
 
-    public AuthResponse refresh(String token) {
-        try {
-            var parsed = jwtParser.parse(token);
-            String userId = parsed.getSubject();
-            UserEntity user = userRepository.findById(java.util.UUID.fromString(userId));
-            if (user == null || user.isDisabled()) {
-                throw new SecurityException("Token invalide");
+    @Transactional
+    public AuthResponse refresh(String rawRefreshToken) {
+        RefreshTokenService.TokenPair pair = refreshTokenService.rotate(rawRefreshToken, null);
+        return buildAuthResponse(pair.user(), pair.accessToken(), pair.refreshToken());
+    }
+
+    @Transactional
+    public void logout(String rawRefreshToken) {
+        if (rawRefreshToken != null && !rawRefreshToken.isBlank()) {
+            try {
+                byte[] hash = java.security.MessageDigest.getInstance("SHA-256")
+                        .digest(rawRefreshToken.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                String tokenHash = java.util.Base64.getEncoder().encodeToString(hash);
+                refreshTokenService.revokeByHash(tokenHash);
+            } catch (Exception e) {
+                // Best-effort revocation; token will expire naturally
             }
-            return buildAuthResponse(user);
-        } catch (Exception e) {
-            throw new SecurityException("Token invalide");
         }
-    }
-
-    public void logout(String refreshToken) {
-        // Stateless JWT: nothing to invalidate server-side (refresh tokens are short-lived)
-        // In production, add to a blocklist in Redis.
     }
 
     public UserDto getUser(String userId) {
@@ -108,29 +110,7 @@ public class AuthService {
         };
     }
 
-    private AuthResponse buildAuthResponse(UserEntity user) {
-        String group = roleToGroup(user.getRole());
-
-        String accessToken = Jwt.issuer("https://flowguard.fr")
-                .subject(user.getId().toString())
-                .upn(user.getEmail())
-                .groups(Set.of(group))
-                .claim("email", user.getEmail())
-                .claim("firstName", user.getFirstName())
-                .claim("lastName", user.getLastName())
-                .claim("role", user.getRole())
-                .claim("companyName", user.getCompanyName() != null ? user.getCompanyName() : "")
-                .claim("userType", user.getUserType() != null ? user.getUserType().name() : "")
-                .expiresIn(Duration.ofHours(24))
-                .sign();
-
-        String refreshToken = Jwt.issuer("https://flowguard.fr")
-                .subject(user.getId().toString())
-                .upn(user.getEmail())
-                .groups(Set.of("refresh"))
-                .expiresIn(Duration.ofDays(30))
-                .sign();
-
+    private AuthResponse buildAuthResponse(UserEntity user, String accessToken, String refreshToken) {
         AuthResponse.UserResponse userResponse = new AuthResponse.UserResponse(
                 user.getId(),
                 user.getFirstName(),
@@ -141,7 +121,6 @@ public class AuthService {
                 user.getKycStatus(),
                 user.getRole()
         );
-
         return new AuthResponse(accessToken, refreshToken, userResponse);
     }
 

@@ -51,6 +51,25 @@
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-jdbc-h2</artifactId><scope>test</scope></dependency>
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-test-security</artifactId><scope>test</scope></dependency>
     <dependency><groupId>io.quarkus</groupId><artifactId>quarkus-test-security-jwt</artifactId><scope>test</scope></dependency>
+    <dependency><groupId>org.assertj</groupId><artifactId>assertj-core</artifactId><version>3.25.3</version><scope>test</scope></dependency>
+    <dependency><groupId>org.mockito</groupId><artifactId>mockito-core</artifactId><scope>test</scope></dependency>
+    <!-- Firebase Admin SDK for push notifications -->
+    <dependency>
+      <groupId>com.google.firebase</groupId>
+      <artifactId>firebase-admin</artifactId>
+      <version>9.3.0</version>
+      <exclusions>
+        <!-- Exclude grpc deps that conflict with Quarkus netty -->
+        <exclusion><groupId>io.grpc</groupId><artifactId>grpc-netty-shaded</artifactId></exclusion>
+      </exclusions>
+    </dependency>
+    <!-- iText 7 for PDF generation -->
+    <dependency>
+      <groupId>com.itextpdf</groupId>
+      <artifactId>itext7-core</artifactId>
+      <version>8.0.4</version>
+      <type>pom</type>
+    </dependency>
   </dependencies>
 
   <build>

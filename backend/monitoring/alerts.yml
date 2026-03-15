@@ -1,0 +1,106 @@
+groups:
+  - name: flowguard-critical
+    rules:
+      # ── Service availability ──────────────────────────────────────────────
+      - alert: BackendDown
+        expr: up{job="flowguard-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "FlowGuard backend is down"
+          description: "Backend has been unreachable for more than 1 minute."
+
+      - alert: MLServiceDown
+        expr: up{job="flowguard-ml-service"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ML service is down"
+          description: "Predictions and forecasts will use cached values."
+
+      # ── Database ──────────────────────────────────────────────────────────
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is unreachable"
+
+      - alert: PostgresTooManyConnections
+        expr: pg_stat_activity_count > 180
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL connection count too high ({{ $value }})"
+
+      - alert: PostgresDiskFull
+        expr: pg_database_size_bytes{datname="flowguard"} > 8e9
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "PostgreSQL database size exceeds 8GB ({{ $value | humanize1024 }})"
+
+      # ── Redis ─────────────────────────────────────────────────────────────
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis is unreachable — rate limiting and caching degraded"
+
+      # ── JVM / Backend performance ─────────────────────────────────────────
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_server_requests_seconds_count{status=~"5.."}[5m]))
+          / sum(rate(http_server_requests_seconds_count[5m])) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High 5xx error rate: {{ $value | humanizePercentage }}"
+
+      - alert: SlowAPIResponses
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_server_requests_seconds_bucket[5m])) by (le)
+          ) > 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "95th percentile API latency > 3s ({{ $value }}s)"
+
+      - alert: JvmMemoryHigh
+        expr: |
+          jvm_memory_used_bytes{area="heap"}
+          / jvm_memory_max_bytes{area="heap"} > 0.90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM heap usage > 90%"
+
+      # ── Host ──────────────────────────────────────────────────────────────
+      - alert: HostDiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"}
+          / node_filesystem_size_bytes{mountpoint="/"}) < 0.10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host disk space < 10% free"
+
+      - alert: HostCpuHigh
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Host CPU usage > 90% for 10 minutes"

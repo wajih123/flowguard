@@ -261,6 +261,27 @@ def get_baseline_mae() -> Optional[float]:
     return mv["mae_7d"] if mv else None
 
 
+def get_recent_mae(days: int = 7, min_samples: int = 50) -> Optional[float]:
+    """
+    Compute mean absolute error from recent prediction_actuals.
+    Returns None if there aren't enough samples to make a reliable estimate.
+    """
+    with get_session() as session:
+        result = session.execute(
+            text("""
+                SELECT COUNT(*) as cnt, AVG(absolute_error) as avg_mae
+                FROM prediction_actuals
+                WHERE prediction_date >= NOW() - (:days || ' days')::interval
+                  AND actual_balance IS NOT NULL
+            """),
+            {"days": days},
+        )
+        row = result.fetchone()
+        if row and row[0] >= min_samples:
+            return float(row[1]) if row[1] is not None else None
+        return None
+
+
 # ── Quality log ────────────────────────────────────────────────────────────────
 
 def append_quality_log(

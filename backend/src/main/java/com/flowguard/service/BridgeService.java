@@ -6,6 +6,7 @@ import com.flowguard.cache.RedisCacheService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -39,6 +40,8 @@ import java.util.*;
  */
 @ApplicationScoped
 public class BridgeService {
+
+    private static final Logger LOG = Logger.getLogger(BridgeService.class);
 
     @ConfigProperty(name = "bridge.api-url", defaultValue = "https://api.bridgeapi.io")
     String apiUrl;
@@ -367,6 +370,27 @@ public class BridgeService {
         if (l.matches(".*(urssaf|impôts|dgfip|tva|rsi|cipav|cotisation).*"))     return "CHARGES_FISCALES";
         if (l.matches(".*(honoraires|prestation|facture|règlement client).*"))   return "CLIENT_PAYMENT";
         return "AUTRE";
+    }
+
+    // ── Exception ─────────────────────────────────────────────────
+
+    /**
+     * Triggered by webhook: syncs all transactions for the given Bridge item.
+     * Delegates to AccountService for persistence.
+     */
+    public void syncTransactionsForItem(String bridgeItemId) {
+        LOG.infof("Webhook-triggered sync for Bridge item=%s", bridgeItemId);
+        // Item-level sync is driven by AccountService which owns the user tokens
+        // Emit a Redis event that AccountService's scheduled job will honour
+        redisCache.set("bridge:sync_requested:" + bridgeItemId, "1", 300);
+    }
+
+    /**
+     * Triggered by webhook: syncs account balances for the given Bridge item.
+     */
+    public void syncAccountBalances(String bridgeItemId) {
+        LOG.infof("Webhook-triggered balance sync for Bridge item=%s", bridgeItemId);
+        redisCache.set("bridge:balance_sync_requested:" + bridgeItemId, "1", 300);
     }
 
     // ── Exception ─────────────────────────────────────────────────

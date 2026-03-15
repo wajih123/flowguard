@@ -1,0 +1,149 @@
+version: "3.9"
+
+# ============================================================
+# FlowGuard — Monitoring Stack
+# Prometheus + Grafana + Alertmanager + Loki + Promtail
+# ============================================================
+# Usage:
+#   docker compose -f docker-compose.monitoring.yml up -d
+#
+# Grafana: http://localhost:3000  (admin/flowguard_grafana)
+# Prometheus: http://localhost:9090
+# Alertmanager: http://localhost:9093
+# ============================================================
+
+networks:
+  monitoring:
+    driver: bridge
+  flowguard_default:
+    external: true # connects to the main docker-compose network
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+
+services:
+  # ── Prometheus ──────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: flowguard-prometheus
+    restart: unless-stopped
+    networks: [monitoring, flowguard_default]
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+      - --web.enable-lifecycle
+      - --web.enable-admin-api
+
+  # ── Grafana ─────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: flowguard-grafana
+    restart: unless-stopped
+    networks: [monitoring]
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-flowguard_grafana}
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+  # ── Alertmanager ────────────────────────────────────────────────────────────
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: flowguard-alertmanager
+    restart: unless-stopped
+    networks: [monitoring]
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+      - --web.external-url=${ALERTMANAGER_URL:-http://localhost:9093}
+
+  # ── Loki (log aggregation) ──────────────────────────────────────────────────
+  loki:
+    image: grafana/loki:2.9.6
+    container_name: flowguard-loki
+    restart: unless-stopped
+    networks: [monitoring]
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+      - ./monitoring/loki.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+
+  # ── Promtail (log shipper for backend) ─────────────────────────────────────
+  promtail:
+    image: grafana/promtail:2.9.6
+    container_name: flowguard-promtail
+    restart: unless-stopped
+    networks: [monitoring, flowguard_default]
+    volumes:
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - ./monitoring/promtail.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  # ── Postgres Exporter ───────────────────────────────────────────────────────
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: flowguard-postgres-exporter
+    restart: unless-stopped
+    networks: [monitoring, flowguard_default]
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-flowguard}:${DB_PASSWORD:-flowguard}@postgres:5432/${DB_NAME:-flowguard}?sslmode=disable"
+    ports:
+      - "9187:9187"
+
+  # ── Redis Exporter ──────────────────────────────────────────────────────────
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.58.0
+    container_name: flowguard-redis-exporter
+    restart: unless-stopped
+    networks: [monitoring, flowguard_default]
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+    ports:
+      - "9121:9121"
+
+  # ── Node Exporter (host metrics) ────────────────────────────────────────────
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: flowguard-node-exporter
+    restart: unless-stopped
+    networks: [monitoring]
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - --path.procfs=/host/proc
+      - --path.rootfs=/rootfs
+      - --path.sysfs=/host/sys
+      - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)

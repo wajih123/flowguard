@@ -1,5 +1,6 @@
 package com.flowguard.domain;
 
+import com.flowguard.security.EncryptedStringConverter;
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
 import jakarta.persistence.*;
 import lombok.*;
@@ -58,6 +59,19 @@ public class AccountEntity extends PanacheEntityBase {
 
     @Column
     private String externalAccountId;
+
+    /** Bridge OAuth access token — stored AES-256-GCM encrypted at rest. */
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "bridge_access_token", length = 1024)
+    private String bridgeAccessToken;
+
+    /** Bridge OAuth refresh token — stored AES-256-GCM encrypted at rest. */
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "bridge_refresh_token", length = 1024)
+    private String bridgeRefreshToken;
+
+    @Column(name = "bridge_consent_expires_at")
+    private Instant bridgeConsentExpiresAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
