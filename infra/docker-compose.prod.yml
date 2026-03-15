@@ -143,7 +143,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- http://127.0.0.1/health-check 2>&1 | grep -q ok || exit 1",
+          "wget -qO- https://127.0.0.1/health-check --no-check-certificate 2>&1 | grep -q ok || exit 1",
         ]
       interval: 30s
       timeout: 5s
