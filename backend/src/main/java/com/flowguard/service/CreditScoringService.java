@@ -34,7 +34,7 @@ import java.util.UUID;
 @ApplicationScoped
 public class CreditScoringService {
 
-    static final int MIN_SCORE = 40;
+    public static final int MIN_SCORE = 40;
 
     @Inject
     AccountRepository accountRepository;
