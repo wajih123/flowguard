@@ -63,26 +63,3 @@ public class AccountService {
         account.setStatus(AccountEntity.AccountStatus.CLOSED);
     }
 }
-
-    public AccountDto getAccountById(UUID accountId, UUID userId) {
-        AccountEntity account = accountRepository.findById(accountId);
-        if (account == null) {
-            throw new IllegalArgumentException("Compte introuvable");
-        }
-        if (!account.getUser().getId().equals(userId)) {
-            throw new SecurityException("Accès non autorisé à ce compte");
-        }
-        return AccountDto.from(account);
-    }
-
-    public AccountEntity getEntityAndVerifyOwnership(UUID accountId, UUID userId) {
-        AccountEntity account = accountRepository.findById(accountId);
-        if (account == null) {
-            throw new IllegalArgumentException("Compte introuvable");
-        }
-        if (!account.getUser().getId().equals(userId)) {
-            throw new SecurityException("Accès non autorisé à ce compte");
-        }
-        return account;
-    }
-}
