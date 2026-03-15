@@ -73,7 +73,7 @@ $COMPOSE build --pull web || { echo "✗ Web build failed — aborting, running 
 
 # All builds succeeded → safe to restart
 echo "[3/4] Restarting services..."
-$COMPOSE up -d --remove-orphans
+$COMPOSE up -d --remove-orphans --force-recreate
 
 # Remove dangling images ONLY after successful restart (never prune before)
 docker image prune -f
