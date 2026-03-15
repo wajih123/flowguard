@@ -57,6 +57,10 @@ class ModelUsed(str, Enum):
     PROPHET_RULES = "PROPHET_RULES"
     RULES_ONLY    = "RULES_ONLY"
     INSUFFICIENT  = "INSUFFICIENT"
+    # Race winner — model selected by 30-day rolling MAE comparison
+    RACE_LSTM     = "RACE_LSTM"
+    RACE_PROPHET  = "RACE_PROPHET"
+    RACE_RULES    = "RACE_RULES"
 
 
 class AlertSeverity(str, Enum):
@@ -256,6 +260,10 @@ class EnsemblePrediction:
 
     # Sanity
     sanity_override: bool = False
+
+    # Model race — winner selected by 30-day rolling MAE
+    model_race_winner: Optional[str] = None   # "lstm" | "prophet" | "rules" | None
+    model_race_scores: dict = field(default_factory=dict)  # {model: {mae_30d, n_eval_points}}
 
     @property
     def metadata(self) -> "EnsemblePrediction":

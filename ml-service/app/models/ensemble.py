@@ -34,6 +34,7 @@ from app.domain import (
 )
 from app.models.baseline_model import ProphetStyleDecomposer, RuleBasedPredictor
 from app.models.lstm_model import TreasuryLSTM
+from app.models.model_race import ModelRaceEvaluator, RaceResult
 
 log = structlog.get_logger()
 
@@ -136,6 +137,7 @@ class EnsemblePredictor:
         self._rules = RuleBasedPredictor()
         self._pipeline = DataQualityPipeline()
         self._sanity = SanityChecker()
+        self._race = ModelRaceEvaluator()   # online model selection
         self._load_lstm()
 
     def _load_lstm(self) -> None:
@@ -210,6 +212,12 @@ class EnsemblePredictor:
         """
         import time
         t0 = time.monotonic()
+
+        # ── Model race: resolve past predictions against incoming actuals ───────────
+        actual_map: dict[date, float] = {tx.date: tx.balance for tx in transactions}
+        self._race.evaluate(account_id, actual_map)
+        # Default — overwritten after models have run
+        race = RaceResult(winner="blend", confidence=0.0, reason="not_yet_evaluated")
 
         # Step 1 — Data quality gate
         pipeline_result = self._pipeline.run(transactions, horizon_days=horizon)
@@ -309,6 +317,42 @@ class EnsemblePredictor:
                 lstm_uncertainty = None
                 weights = self.compute_weights(history_days, quality, False)
 
+        # ── Model race: pick winner, override weights if reliable ────────────────
+        available_for_race: list[str] = ["rules"]
+        if prophet_pred is not None:
+            available_for_race.append("prophet")
+        if lstm_uncertainty is not None:
+            available_for_race.append("lstm")
+
+        race = self._race.get_winner(account_id, available_for_race)
+
+        if race.winner != "blend":
+            if race.winner == "lstm" and lstm_uncertainty is not None:
+                weights = EnsembleWeights(lstm=1.0, prophet=0.0, rules=0.0)
+            elif race.winner == "prophet" and prophet_pred is not None:
+                weights = EnsembleWeights(lstm=0.0, prophet=1.0, rules=0.0)
+            elif race.winner == "rules":
+                weights = EnsembleWeights(lstm=0.0, prophet=0.0, rules=1.0)
+
+        # Record each model's individual predictions (first 30 days) for next evaluation
+        _last_tx = max(t.date for t in transactions) if transactions else date.today()
+        _n_rec = min(30, horizon)
+        if rules_pred is not None:
+            self._race.record(account_id, "rules", {
+                _last_tx + timedelta(days=i + 1): float(rules_pred[i])
+                for i in range(_n_rec)
+            })
+        if prophet_pred is not None:
+            self._race.record(account_id, "prophet", {
+                _last_tx + timedelta(days=i + 1): float(prophet_pred[i])
+                for i in range(_n_rec)
+            })
+        if lstm_uncertainty is not None:
+            self._race.record(account_id, "lstm", {
+                _last_tx + timedelta(days=i + 1): float(lstm_uncertainty.mean_prediction[i])
+                for i in range(_n_rec)
+            })
+
         # Step 4 — Weighted average (mean predictions)
         ensemble_mean = np.zeros(horizon, dtype=np.float64)
         if rules_pred is not None:
@@ -356,8 +400,14 @@ class EnsemblePredictor:
             weights = EnsembleWeights(lstm=0.0, prophet=0.0, rules=1.0)
 
         # Step 6 — Build output
-        # Determine model_used label
-        if weights.lstm >= 0.5:
+        # Determine model_used label (race winner takes priority over blend labels)
+        if race.winner == "lstm" and weights.lstm >= 0.9:
+            model_used = ModelUsed.RACE_LSTM
+        elif race.winner == "prophet" and weights.prophet >= 0.9:
+            model_used = ModelUsed.RACE_PROPHET
+        elif race.winner == "rules" and weights.rules >= 0.9:
+            model_used = ModelUsed.RACE_RULES
+        elif weights.lstm >= 0.5:
             model_used = ModelUsed.LSTM_ENSEMBLE
         elif weights.prophet >= 0.3:
             model_used = ModelUsed.PROPHET_RULES
@@ -491,6 +541,14 @@ class EnsemblePredictor:
             anomalies_detected=anomalies,
             recurring_detected=pipeline_result.recurring_patterns,
             sanity_override=sanity_override,
+            model_race_winner=race.winner if race.winner != "blend" else None,
+            model_race_scores={
+                k: {
+                    "mae_30d": round(v.mae_30d, 1) if v.mae_30d != float("inf") else None,
+                    "n_eval_points": v.n_eval_points,
+                }
+                for k, v in race.scores.items()
+            },
         )
 
     async def predict_async(

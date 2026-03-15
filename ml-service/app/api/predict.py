@@ -110,6 +110,8 @@ class PredictionResponse(BaseModel):
     sanity_override: bool
     data_quality_label: str
     data_quality_score: float
+    model_race_winner: Optional[str] = None        # "lstm" | "prophet" | "rules" | None
+    model_race_scores: dict[str, Any] = {}         # {model: {mae_30d, n_eval_points}}
 
 
 class ScenarioRequest(BaseModel):
@@ -231,6 +233,8 @@ def _prediction_to_response(pred: EnsemblePrediction) -> PredictionResponse:
         sanity_override=pred.sanity_override,
         data_quality_label=pred.data_quality.label.value if pred.data_quality else "UNKNOWN",
         data_quality_score=round(pred.data_quality.score, 3) if pred.data_quality else 0.0,
+        model_race_winner=pred.model_race_winner,
+        model_race_scores=pred.model_race_scores,
     )
 
 
