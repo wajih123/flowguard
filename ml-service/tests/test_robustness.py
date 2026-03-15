@@ -152,12 +152,15 @@ def _mock_ensemble_no_lstm() -> EnsemblePredictor:
     from app.models.ensemble import SanityChecker
     from app.models.model_race import ModelRaceEvaluator
 
+    from app.models.timesfm_predictor import TimesFMPredictor
+
     predictor._lstm = None
     predictor._prophet = ProphetStyleDecomposer()
     predictor._rules = RuleBasedPredictor()
     predictor._pipeline = DataQualityPipeline()
     predictor._sanity = SanityChecker()
     predictor._race = ModelRaceEvaluator()
+    predictor._timesfm = TimesFMPredictor()  # not loaded — is_loaded=False
     return predictor
 
 
