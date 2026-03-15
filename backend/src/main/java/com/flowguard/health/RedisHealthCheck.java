@@ -34,11 +34,18 @@ public class RedisHealthCheck implements HealthCheck {
                     .up()
                     .build();
         } catch (Exception e) {
-            LOG.warnf("Redis health check failed: %s", e.getMessage());
+            // ConcurrentModificationException during CDI bean init is a transient
+            // startup race — demote to DEBUG, real connection errors stay at WARN.
+            String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            if (msg.contains("ConcurrentModification") || msg.contains("synthetic bean")) {
+                LOG.debugf("Redis health check transient init: %s", msg);
+            } else {
+                LOG.warnf("Redis health check failed: %s", msg);
+            }
             return HealthCheckResponse.builder()
                     .name("redis")
                     .down()
-                    .withData("reason", e.getMessage())
+                    .withData("reason", msg)
                     .build();
         }
     }

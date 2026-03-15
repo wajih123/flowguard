@@ -82,7 +82,8 @@ public class DashboardResource {
                 }
             }
             if (forecast != null) {
-                forecastHealthScore = forecast.healthScore() * 100;
+                // healthScore from ML service is already 0-100
+                forecastHealthScore = forecast.healthScore();
             }
         } catch (Exception e) {
             LOG.debugf("Forecast unavailable for user %s: %s", userId, e.getMessage());
