@@ -72,6 +72,15 @@ echo "[2/4] Building web image..."
 $COMPOSE build --pull web || { echo "✗ Web build failed — aborting, running containers untouched"; exit 1; }
 
 # All builds succeeded → safe to restart
+# Force-remove any stuck containers that share our service names to avoid
+# "container name already in use" errors from previous broken deploys.
+echo "[3/4] Removing any stuck containers..."
+for name in flowguard-backend flowguard-ml flowguard-web flowguard-db flowguard-redis flowguard-certbot flowguard-nginx; do
+  if docker inspect "$name" &>/dev/null; then
+    docker rm -f "$name" 2>/dev/null || true
+  fi
+done
+
 echo "[3/4] Restarting services..."
 $COMPOSE up -d --remove-orphans --force-recreate
 
