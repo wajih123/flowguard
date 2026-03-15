@@ -1,9 +1,9 @@
 package com.flowguard.resource;
 
 import com.flowguard.domain.AccountEntity;
-import com.flowguard.domain.TransactionEntity;
 import com.flowguard.domain.UserEntity;
 import com.flowguard.dto.BankAccountDto;
+import com.flowguard.service.BankAccountSyncService;
 import com.flowguard.service.BridgeService;
 import com.flowguard.service.BridgeService.BridgeApiException;
 import io.smallrye.common.annotation.RunOnVirtualThread;
@@ -15,9 +15,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +41,9 @@ public class NordigenResource {
 
     @Inject
     BridgeService bridgeService;
+
+    @Inject
+    BankAccountSyncService bankAccountSyncService;
 
     @Inject
     JsonWebToken jwt;
@@ -197,91 +198,25 @@ public class NordigenResource {
     // ══════════════════════════════════════════════════════════════
 
     /**
-     * Fetches all accounts from Bridge, upserts them in the local DB,
-     * and imports the last 6 months of transactions for each account.
+     * Fetches all accounts from Bridge and delegates each one to
+     * {@link BankAccountSyncService#syncAccount} which runs in its own
+     * {@code REQUIRES_NEW} transaction.  A failure on one account is logged
+     * but does not abort the others.
      *
-     * @return number of accounts synced
+     * @return number of accounts successfully synced
      */
     private int syncUserAccounts(UserEntity user, String userToken) {
         List<BridgeService.BridgeAccount> bridgeAccounts = bridgeService.listAccounts(userToken);
         int synced = 0;
-
         for (BridgeService.BridgeAccount ba : bridgeAccounts) {
-            String extId = String.valueOf(ba.id());
-
-            // Upsert account
-            AccountEntity account = AccountEntity
-                    .<AccountEntity>find("externalAccountId", extId)
-                    .firstResult();
-
-            if (account == null) {
-                account = new AccountEntity();
-                account.setUser(user);
-                account.setExternalAccountId(extId);
-                // IBAN may be blank for some account types (e.g. savings)
-                String iban = ba.iban() != null && !ba.iban().isBlank()
-                        ? ba.iban() : "BRIDGE-" + extId;
-                account.setIban(iban);
-                account.setBic("BRIDGEAPI");
-            }
-
-            account.setAccountName(ba.name());
-            account.setBankName(ba.providerName() != null ? ba.providerName() : "");
-            account.setBalance(ba.balance() != null ? ba.balance() : BigDecimal.ZERO);
-            account.setCurrency(ba.currencyCode() != null ? ba.currencyCode() : "EUR");
-            account.setAccountType(ba.accountType());
-            account.setSyncStatus(AccountEntity.SyncStatus.OK);
-            account.setLastSyncAt(Instant.now());
-
-            if (account.getId() == null) {
-                account.persist();
-            }
-
-            // Import transactions (last 6 months)
             try {
-                List<BridgeService.BridgeTransaction> txs =
-                        bridgeService.listTransactions(userToken, ba.id(), LocalDate.now().minusMonths(6));
-
-                for (BridgeService.BridgeTransaction btx : txs) {
-                    if (btx.deleted()) continue;
-                    upsertTransaction(account, btx);
-                }
-            } catch (Exception ignored) {
-                // Partial failure on transactions should not block account sync
-                account.setSyncStatus(AccountEntity.SyncStatus.ERROR);
+                bankAccountSyncService.syncAccount(user, userToken, ba);
+                synced++;
+            } catch (Exception e) {
+                // One account failing must not block the rest
             }
-
-            synced++;
         }
         return synced;
-    }
-
-    private void upsertTransaction(AccountEntity account, BridgeService.BridgeTransaction btx) {
-        String extId = String.valueOf(btx.id());
-        boolean exists = TransactionEntity.count("externalTransactionId", extId) > 0;
-        if (exists) return;
-
-        TransactionEntity tx = new TransactionEntity();
-        tx.setAccount(account);
-        tx.setAmount(btx.amount());
-        tx.setType(btx.amount().signum() < 0
-                ? TransactionEntity.TransactionType.DEBIT
-                : TransactionEntity.TransactionType.CREDIT);
-        String desc = btx.description() != null ? btx.description() : "";
-        tx.setLabel(desc.isBlank() ? "(sans libellé)" : desc);
-        tx.setCategory(parseCategory(bridgeService.categorize(desc)));
-        tx.setDate(btx.date() != null ? btx.date() : LocalDate.now());
-        tx.setExternalTransactionId(extId);
-        tx.setRecurring(false);
-        tx.persist();
-    }
-
-    private static TransactionEntity.TransactionCategory parseCategory(String cat) {
-        try {
-            return TransactionEntity.TransactionCategory.valueOf(cat);
-        } catch (IllegalArgumentException e) {
-            return TransactionEntity.TransactionCategory.AUTRE;
-        }
     }
 
     // ── Request/response records ──────────────────────────────────

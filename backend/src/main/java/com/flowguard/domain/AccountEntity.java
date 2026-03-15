@@ -26,7 +26,7 @@ public class AccountEntity extends PanacheEntityBase {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String iban;
 
     @Column(nullable = false)
@@ -57,7 +57,7 @@ public class AccountEntity extends PanacheEntityBase {
     @Column
     private Instant lastSyncAt;
 
-    @Column
+    @Column(unique = true)
     private String externalAccountId;
 
     /** Bridge OAuth access token — stored AES-256-GCM encrypted at rest. */
