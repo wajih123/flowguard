@@ -57,6 +57,10 @@ services:
       BRIDGE_CLIENT_SECRET: ${BRIDGE_CLIENT_SECRET}
       BRIDGE_REDIRECT_URL: ${BRIDGE_REDIRECT_URL}
       ML_SERVICE_URL: http://ml-service:8000
+      JWT_PRIVATE_KEY_LOCATION: file:/app/keys/privateKey.pem
+      JWT_PUBLIC_KEY_LOCATION: file:/app/keys/publicKey.pem
+    volumes:
+      - jwt_keys:/app/keys:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -158,5 +162,11 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  jwt_keys:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/flowguard/keys
   certs:
   certbot_www:

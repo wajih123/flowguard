@@ -42,6 +42,21 @@ echo "[1/4] Pulling code..."
 git fetch --all
 git reset --hard origin/main
 
+# Generate JWT signing keys (RSA 2048) on first deploy — never stored in git
+KEYS_DIR="$DEPLOY_DIR/keys"
+mkdir -p "$KEYS_DIR"
+if [ ! -f "$KEYS_DIR/privateKey.pem" ]; then
+  echo "[1/4] Generating JWT RSA-2048 key pair..."
+  openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 \
+    -out "$KEYS_DIR/privateKey.pem" 2>/dev/null
+  openssl rsa -in "$KEYS_DIR/privateKey.pem" -pubout \
+    -out "$KEYS_DIR/publicKey.pem" 2>/dev/null
+  chmod 600 "$KEYS_DIR/privateKey.pem"
+  echo "  JWT keys created at $KEYS_DIR"
+else
+  echo "[1/4] JWT keys already present — skipping generation"
+fi
+
 # Build images (sequential to avoid OOM on 4GB server)
 echo "[2/4] Building backend image..."
 $COMPOSE build backend
