@@ -150,6 +150,10 @@ export const getAccounts = async (): Promise<BankAccount[]> => {
   return data
 }
 
+export const disconnectAccount = async (accountId: string): Promise<void> => {
+  await api.delete(`/api/accounts/${accountId}`)
+}
+
 // Legacy alias used in accountStore
 export const getCurrentAccount = async (): Promise<BankAccount> => {
   const accounts = await getAccounts()

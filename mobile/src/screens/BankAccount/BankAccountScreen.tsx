@@ -1,5 +1,13 @@
 import React, { useCallback, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native'
+import {
+  View,
+  Text,
+  ScrollView,
+  TouchableOpacity,
+  StyleSheet,
+  RefreshControl,
+  Alert,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { StackScreenProps } from '@react-navigation/stack'
@@ -65,6 +73,32 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] })
     },
   })
+
+  const { mutate: disconnectMutate } = useMutation({
+    mutationFn: (accountId: string) => flowguardApi.disconnectAccount(accountId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+    },
+  })
+
+  const confirmDisconnect = useCallback(
+    (account: BankAccount) => {
+      Alert.alert(
+        'Déconnecter la banque',
+        `Voulez-vous vraiment déconnecter "${account.bankName ?? 'cette banque'}" ?\n\nVos transactions passées resteront conservées.`,
+        [
+          { text: 'Annuler', style: 'cancel' },
+          {
+            text: 'Déconnecter',
+            style: 'destructive',
+            onPress: () => disconnectMutate(account.id),
+          },
+        ],
+      )
+    },
+    [disconnectMutate],
+  )
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
@@ -200,6 +234,12 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
                     <Text style={styles.reconnectBtnText}>Reconnecter</Text>
                   </TouchableOpacity>
                 )}
+                <TouchableOpacity
+                  style={styles.disconnectBtn}
+                  onPress={() => confirmDisconnect(account)}
+                >
+                  <Text style={styles.disconnectBtnText}>Déconnecter</Text>
+                </TouchableOpacity>
               </View>
             </FlowGuardCard>
           ))
@@ -271,5 +311,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   reconnectBtnText: { color: colors.warning, ...typography.body, fontWeight: '700' },
+  disconnectBtn: {
+    backgroundColor: colors.danger + '18',
+    borderRadius: 8,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    alignItems: 'center',
+  },
+  disconnectBtnText: { color: colors.danger, ...typography.caption, fontWeight: '700' },
   addBtn: { marginTop: spacing.md },
 })

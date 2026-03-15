@@ -5,4 +5,6 @@ export const accountsApi = {
   list: () => apiClient.get<Account[]>("/api/accounts").then((r) => r.data),
   get: (accountId: string) =>
     apiClient.get<Account>(`/api/accounts/${accountId}`).then((r) => r.data),
+  disconnect: (accountId: string) =>
+    apiClient.delete(`/api/accounts/${accountId}`),
 };

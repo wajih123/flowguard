@@ -16,6 +16,12 @@ public class AccountRepository implements PanacheRepositoryBase<AccountEntity, U
         return list("user.id = ?1 ORDER BY createdAt DESC", userId);
     }
 
+    /** Returns only ACTIVE accounts — excludes accounts the user has disconnected. */
+    public List<AccountEntity> findActiveByUserId(UUID userId) {
+        return list("user.id = ?1 AND status = ?2 ORDER BY createdAt DESC",
+                userId, AccountEntity.AccountStatus.ACTIVE);
+    }
+
     public Optional<AccountEntity> findByIban(String iban) {
         return find("iban", iban).firstResultOptional();
     }

@@ -41,4 +41,18 @@ public class AccountResource {
         AccountDto account = accountService.getAccountById(accountId, userId);
         return Response.ok(account).build();
     }
+
+    /**
+     * Soft-disconnects a bank account.
+     * The account is never deleted from the database.
+     * Only the authenticated owner can call this.
+     */
+    @DELETE
+    @Path("/{accountId}")
+    @RunOnVirtualThread
+    public Response disconnectAccount(@PathParam("accountId") UUID accountId) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        accountService.disconnect(accountId, userId);
+        return Response.noContent().build();
+    }
 }
