@@ -153,7 +153,7 @@ public class PushNotificationService {
             LOG.debugf("Push sent to token=%s messageId=%s", fcmToken.substring(0, 10) + "...", messageId);
 
         } catch (FirebaseMessagingException e) {
-            if (e.getMessagingErrorCode() == MessagingErrorCode.REGISTRATION_TOKEN_NOT_REGISTERED
+            if (e.getMessagingErrorCode() == MessagingErrorCode.UNREGISTERED
                     || e.getMessagingErrorCode() == MessagingErrorCode.INVALID_ARGUMENT) {
                 LOG.warnf("Invalid FCM token detected, removing: %s", e.getMessage());
                 removeInvalidToken(fcmToken);

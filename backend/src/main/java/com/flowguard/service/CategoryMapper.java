@@ -19,97 +19,101 @@ public class CategoryMapper {
 
     /**
      * Complete mapping: Bridge category_id → FlowGuard TransactionCategory.
+     *
+     * <p>Maps to existing TransactionCategory values:
+     * ALIMENTATION, TRANSPORT, SALAIRE, LOYER, CHARGES_FISCALES, AUTRE,
+     * ABONNEMENT, VIREMENT, ASSURANCE, FOURNISSEUR, CLIENT_PAYMENT
      */
     private static final Map<Integer, TransactionCategory> BRIDGE_TO_FLOWGUARD = Map.ofEntries(
         // ── Food & Groceries ──────────────────────────────────────────────────
-        Map.entry(1,  TransactionCategory.FOOD),         // Alimentation & Dépicerie
-        Map.entry(2,  TransactionCategory.FOOD),         // Restaurants & Cafés
-        Map.entry(3,  TransactionCategory.FOOD),         // Bars & Boissons
-        Map.entry(4,  TransactionCategory.FOOD),         // Livraison repas
+        Map.entry(1,  TransactionCategory.ALIMENTATION),
+        Map.entry(2,  TransactionCategory.ALIMENTATION),
+        Map.entry(3,  TransactionCategory.ALIMENTATION),
+        Map.entry(4,  TransactionCategory.ALIMENTATION),
 
         // ── Transport ────────────────────────────────────────────────────────
-        Map.entry(5,  TransactionCategory.TRANSPORT),    // Carburant
-        Map.entry(6,  TransactionCategory.TRANSPORT),    // Transports en commun
-        Map.entry(7,  TransactionCategory.TRANSPORT),    // Taxis & VTC
-        Map.entry(8,  TransactionCategory.TRANSPORT),    // Parking & Péages
+        Map.entry(5,  TransactionCategory.TRANSPORT),
+        Map.entry(6,  TransactionCategory.TRANSPORT),
+        Map.entry(7,  TransactionCategory.TRANSPORT),
+        Map.entry(8,  TransactionCategory.TRANSPORT),
 
         // ── Income ───────────────────────────────────────────────────────────
-        Map.entry(9,  TransactionCategory.INCOME),       // Revenus salaires
-        Map.entry(10, TransactionCategory.INCOME),       // Revenus autres / freelance
-        Map.entry(11, TransactionCategory.INCOME),       // Dividendes
-        Map.entry(12, TransactionCategory.INCOME),       // Indemnités & Allocations
-        Map.entry(13, TransactionCategory.INCOME),       // Remboursements reçus
+        Map.entry(9,  TransactionCategory.SALAIRE),
+        Map.entry(10, TransactionCategory.CLIENT_PAYMENT),
+        Map.entry(11, TransactionCategory.CLIENT_PAYMENT),
+        Map.entry(12, TransactionCategory.SALAIRE),
+        Map.entry(13, TransactionCategory.VIREMENT),
 
         // ── Housing ──────────────────────────────────────────────────────────
-        Map.entry(14, TransactionCategory.HOUSING),      // Loyer
-        Map.entry(15, TransactionCategory.HOUSING),      // Charges & Copropriété
-        Map.entry(16, TransactionCategory.HOUSING),      // Travaux & Réparations
-        Map.entry(17, TransactionCategory.HOUSING),      // Électricité & Gaz
-        Map.entry(18, TransactionCategory.HOUSING),      // Eau
-        Map.entry(19, TransactionCategory.HOUSING),      // Assurance habitation
+        Map.entry(14, TransactionCategory.LOYER),
+        Map.entry(15, TransactionCategory.LOYER),
+        Map.entry(16, TransactionCategory.LOYER),
+        Map.entry(17, TransactionCategory.ENERGIE),
+        Map.entry(18, TransactionCategory.ENERGIE),
+        Map.entry(19, TransactionCategory.ASSURANCE),
 
         // ── Taxes & Social Charges ───────────────────────────────────────────
-        Map.entry(20, TransactionCategory.TAXES),        // Cotisations sociales (URSSAF)
-        Map.entry(21, TransactionCategory.TAXES),        // TVA
-        Map.entry(22, TransactionCategory.TAXES),        // CFE / CVAE
-        Map.entry(23, TransactionCategory.TAXES),        // IS / IR
-        Map.entry(24, TransactionCategory.TAXES),        // Taxe foncière / d'habitation
-        Map.entry(25, TransactionCategory.TAXES),        // Impôts divers
+        Map.entry(20, TransactionCategory.CHARGES_FISCALES),
+        Map.entry(21, TransactionCategory.CHARGES_FISCALES),
+        Map.entry(22, TransactionCategory.CHARGES_FISCALES),
+        Map.entry(23, TransactionCategory.CHARGES_FISCALES),
+        Map.entry(24, TransactionCategory.CHARGES_FISCALES),
+        Map.entry(25, TransactionCategory.CHARGES_FISCALES),
 
         // ── Healthcare ───────────────────────────────────────────────────────
-        Map.entry(26, TransactionCategory.HEALTH),       // Médecin généraliste
-        Map.entry(27, TransactionCategory.HEALTH),       // Pharmacie
-        Map.entry(28, TransactionCategory.HEALTH),       // Hospitalisation
-        Map.entry(29, TransactionCategory.HEALTH),       // Optique & Dentaire
-        Map.entry(30, TransactionCategory.HEALTH),       // Mutuelle / Assurance santé
+        Map.entry(26, TransactionCategory.AUTRE),
+        Map.entry(27, TransactionCategory.AUTRE),
+        Map.entry(28, TransactionCategory.AUTRE),
+        Map.entry(29, TransactionCategory.AUTRE),
+        Map.entry(30, TransactionCategory.ASSURANCE),
 
         // ── Shopping ─────────────────────────────────────────────────────────
-        Map.entry(31, TransactionCategory.SHOPPING),     // Vêtements
-        Map.entry(32, TransactionCategory.SHOPPING),     // Électronique
-        Map.entry(33, TransactionCategory.SHOPPING),     // Maison & Jardin
-        Map.entry(34, TransactionCategory.SHOPPING),     // Amazon & Marketplace
-        Map.entry(35, TransactionCategory.SHOPPING),     // Jeux & Jouets
-        Map.entry(36, TransactionCategory.SHOPPING),     // Sport & Loisirs
-        Map.entry(37, TransactionCategory.SHOPPING),     // Produits de beauté
-        Map.entry(38, TransactionCategory.SHOPPING),     // Librairie & Papeterie
+        Map.entry(31, TransactionCategory.AUTRE),
+        Map.entry(32, TransactionCategory.AUTRE),
+        Map.entry(33, TransactionCategory.AUTRE),
+        Map.entry(34, TransactionCategory.AUTRE),
+        Map.entry(35, TransactionCategory.AUTRE),
+        Map.entry(36, TransactionCategory.AUTRE),
+        Map.entry(37, TransactionCategory.AUTRE),
+        Map.entry(38, TransactionCategory.AUTRE),
 
         // ── Subscriptions ────────────────────────────────────────────────────
-        Map.entry(39, TransactionCategory.SUBSCRIPTION), // Streaming vidéo (Netflix, Canal+)
-        Map.entry(40, TransactionCategory.SUBSCRIPTION), // Streaming musique
-        Map.entry(41, TransactionCategory.SUBSCRIPTION), // Logiciels & SaaS
-        Map.entry(42, TransactionCategory.SUBSCRIPTION), // Téléphone & Internet
-        Map.entry(43, TransactionCategory.SUBSCRIPTION), // Presse en ligne
-        Map.entry(44, TransactionCategory.SUBSCRIPTION), // Abonnements divers
-        Map.entry(45, TransactionCategory.SUBSCRIPTION), // Gym & Sport en ligne
+        Map.entry(39, TransactionCategory.ABONNEMENT),
+        Map.entry(40, TransactionCategory.ABONNEMENT),
+        Map.entry(41, TransactionCategory.ABONNEMENT),
+        Map.entry(42, TransactionCategory.TELECOM),
+        Map.entry(43, TransactionCategory.ABONNEMENT),
+        Map.entry(44, TransactionCategory.ABONNEMENT),
+        Map.entry(45, TransactionCategory.ABONNEMENT),
 
         // ── Transfers & Finance ───────────────────────────────────────────────
-        Map.entry(60, TransactionCategory.TRANSFER),     // Virements
-        Map.entry(61, TransactionCategory.TRANSFER),     // Prélèvements SEPA
-        Map.entry(62, TransactionCategory.TRANSFER),     // Épargne
-        Map.entry(63, TransactionCategory.TRANSFER),     // Investissements
-        Map.entry(64, TransactionCategory.TRANSFER),     // Remboursement crédit immobilier
-        Map.entry(65, TransactionCategory.TRANSFER),     // Remboursement prêt conso
-        Map.entry(66, TransactionCategory.TRANSFER),     // Retrait DAB
-        Map.entry(67, TransactionCategory.TRANSFER),     // Frais bancaires
+        Map.entry(60, TransactionCategory.VIREMENT),
+        Map.entry(61, TransactionCategory.VIREMENT),
+        Map.entry(62, TransactionCategory.VIREMENT),
+        Map.entry(63, TransactionCategory.VIREMENT),
+        Map.entry(64, TransactionCategory.VIREMENT),
+        Map.entry(65, TransactionCategory.VIREMENT),
+        Map.entry(66, TransactionCategory.VIREMENT),
+        Map.entry(67, TransactionCategory.VIREMENT),
 
         // ── Insurance ────────────────────────────────────────────────────────
-        Map.entry(46, TransactionCategory.INSURANCE),    // Assurance auto
-        Map.entry(47, TransactionCategory.INSURANCE),    // Assurance vie
-        Map.entry(48, TransactionCategory.INSURANCE),    // Assurance emprunteur
-        Map.entry(49, TransactionCategory.INSURANCE),    // Prévoyance
+        Map.entry(46, TransactionCategory.ASSURANCE),
+        Map.entry(47, TransactionCategory.ASSURANCE),
+        Map.entry(48, TransactionCategory.ASSURANCE),
+        Map.entry(49, TransactionCategory.ASSURANCE),
 
         // ── Professional / B2B ───────────────────────────────────────────────
-        Map.entry(70, TransactionCategory.SUPPLIER),     // Fournisseurs & Achats pro
-        Map.entry(71, TransactionCategory.SUPPLIER),     // Matériel professionnel
-        Map.entry(72, TransactionCategory.SALARY_OUT),   // Salaires versés
-        Map.entry(73, TransactionCategory.SALARY_OUT),   // Charges patronales
-        Map.entry(74, TransactionCategory.OTHER),        // Frais de déplacement pro
-        Map.entry(75, TransactionCategory.OTHER),        // Frais de représentation
-        Map.entry(76, TransactionCategory.OTHER),        // Sous-traitance & Freelances
-        Map.entry(77, TransactionCategory.OTHER),        // Loyer professionnel
-        Map.entry(78, TransactionCategory.OTHER),        // Expert-comptable / Juridique
-        Map.entry(79, TransactionCategory.MARKETING),    // Publicité & Marketing
-        Map.entry(80, TransactionCategory.MARKETING)     // Abonnements outils pro
+        Map.entry(70, TransactionCategory.FOURNISSEUR),
+        Map.entry(71, TransactionCategory.FOURNISSEUR),
+        Map.entry(72, TransactionCategory.SALAIRE),          // salaires versés
+        Map.entry(73, TransactionCategory.CHARGES_FISCALES), // charges patronales
+        Map.entry(74, TransactionCategory.AUTRE),
+        Map.entry(75, TransactionCategory.AUTRE),
+        Map.entry(76, TransactionCategory.FOURNISSEUR),
+        Map.entry(77, TransactionCategory.LOYER),
+        Map.entry(78, TransactionCategory.AUTRE),
+        Map.entry(79, TransactionCategory.AUTRE),            // publicité
+        Map.entry(80, TransactionCategory.ABONNEMENT)        // outils pro
     );
 
     /**
@@ -119,8 +123,8 @@ public class CategoryMapper {
      * @return the matching FlowGuard category, or {@link TransactionCategory#OTHER} if unknown
      */
     public TransactionCategory map(Integer bridgeCategoryId) {
-        if (bridgeCategoryId == null) return TransactionCategory.OTHER;
-        return BRIDGE_TO_FLOWGUARD.getOrDefault(bridgeCategoryId, TransactionCategory.OTHER);
+        if (bridgeCategoryId == null) return TransactionCategory.AUTRE;
+        return BRIDGE_TO_FLOWGUARD.getOrDefault(bridgeCategoryId, TransactionCategory.AUTRE);
     }
 
     /**

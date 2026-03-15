@@ -1,9 +1,6 @@
 package com.flowguard.health;
 
-import io.smallrye.health.api.HealthType;
-import io.smallrye.health.registry.HealthRegistry;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.health.HealthCheck;
 import org.eclipse.microprofile.health.HealthCheckResponse;

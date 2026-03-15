@@ -27,17 +27,11 @@ public class RedisHealthCheck implements HealthCheck {
     @Override
     public HealthCheckResponse call() {
         try {
-            String pong = redis.execute(String.class, "PING");
-            if ("PONG".equalsIgnoreCase(pong)) {
-                return HealthCheckResponse.builder()
-                        .name("redis")
-                        .up()
-                        .build();
-            }
+            // A simple GET on a non-existent key is a safe no-op that verifies connectivity
+            redis.value(String.class).get("__health_check__");
             return HealthCheckResponse.builder()
                     .name("redis")
-                    .down()
-                    .withData("response", pong)
+                    .up()
                     .build();
         } catch (Exception e) {
             LOG.warnf("Redis health check failed: %s", e.getMessage());

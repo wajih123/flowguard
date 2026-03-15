@@ -51,7 +51,7 @@ public class AlertEntity extends PanacheEntityBase {
     private Instant createdAt = Instant.now();
 
     public enum AlertType {
-        CASH_SHORTAGE, UNUSUAL_SPEND, PAYMENT_DUE, POSITIVE_TREND
+        CASH_SHORTAGE, UNUSUAL_SPEND, PAYMENT_DUE, POSITIVE_TREND, BANK_SYNC_ERROR
     }
 
     public enum Severity {

@@ -7,8 +7,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.jboss.logging.Logger;
 
-import java.time.Duration;
-
 /**
  * Redis-backed distributed rate limiter using a sliding-window counter.
  *
@@ -97,7 +95,7 @@ public class RedisRateLimiter {
         if (count >= BLOCK_THRESHOLD) {
             String blockKey = "rl:blocked:" + ip;
             try {
-                redis.value(String.class).setex(blockKey, Duration.ofHours(24), "blocked");
+                redis.value(String.class).setex(blockKey, 86400L, "blocked");
                 LOG.warnf("IP %s auto-blocked after %d failures in 1 hour", ip, count);
             } catch (Exception e) {
                 LOG.warnf("Could not block IP %s in Redis: %s", ip, e.getMessage());
@@ -124,12 +122,12 @@ public class RedisRateLimiter {
             String raw = cmds.get(key);
             long count;
             if (raw == null) {
-                cmds.setex(key, Duration.ofSeconds(windowSeconds), "1");
+                cmds.setex(key, windowSeconds, "1");
                 count = 1;
             } else {
                 // INCR equivalent via getset — works with quarkus redis client
                 count = Long.parseLong(raw) + 1;
-                cmds.setex(key, Duration.ofSeconds(windowSeconds), String.valueOf(count));
+                cmds.setex(key, windowSeconds, String.valueOf(count));
             }
             return count;
         } catch (Exception e) {
