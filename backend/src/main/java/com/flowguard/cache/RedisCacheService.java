@@ -4,7 +4,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import io.quarkus.redis.client.RedisClient;
-import io.quarkus.redis.client.RedisClientName;
 import io.vertx.redis.client.Response;
 import java.util.List;
 
@@ -12,7 +11,6 @@ import java.util.List;
 public class RedisCacheService {
 
     @Inject
-    @RedisClientName("default")
     RedisClient redisClient;
 
     @ConfigProperty(name = "redis.ttl.default", defaultValue = "3600")
