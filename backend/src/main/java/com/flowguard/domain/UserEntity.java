@@ -89,7 +89,8 @@ public class UserEntity extends PanacheEntityBase {
     }
 
     public enum UserType {
-        INDIVIDUAL, FREELANCE, TPE, PME, SME
+        INDIVIDUAL, FREELANCE, TPE, PME, SME,
+        B2C_SALARIE, B2C_FAMILLE, B2C_RETRAITE, B2C_ETUDIANT, B2C_CADRE
     }
 
     public enum KycStatus {

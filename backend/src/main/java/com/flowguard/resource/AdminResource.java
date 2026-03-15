@@ -491,7 +491,7 @@ public class AdminResource {
                 rs.getString("first_name"),
                 rs.getString("last_name"),
                 AdminUserDto.maskEmail(rs.getString("email")),
-                UserEntity.UserType.valueOf(rs.getString("user_type")),
+                rs.getString("user_type"),
                 UserEntity.KycStatus.valueOf(rs.getString("kyc_status")),
                 rs.getString("role"),
                 rs.getBoolean("disabled"),
