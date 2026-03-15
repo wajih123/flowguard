@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, Dimensions, StyleSheet } from 'react-native'
 import { FlowGuardCard } from '../../../components/FlowGuardCard'
 import type { DailyBalance, CriticalPoint } from '../../../domain/TreasuryForecast'
-import { colors, typography, spacing } from '../../../theme'
+import { colors, spacing } from '../../../theme'
 import { format, parseISO } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -16,10 +16,7 @@ const CHART_WIDTH = SCREEN_WIDTH - spacing.md * 4
 const CHART_HEIGHT = 200
 const PADDING = 20
 
-export const ForecastChart: React.FC<ForecastChartProps> = ({
-  predictions,
-  criticalPoints,
-}) => {
+export const ForecastChart: React.FC<ForecastChartProps> = ({ predictions, criticalPoints }) => {
   if (predictions.length === 0) {
     return null
   }
@@ -103,21 +100,13 @@ export const ForecastChart: React.FC<ForecastChartProps> = ({
           }
 
           return (
-            <Text
-              key={i}
-              style={[
-                styles.xLabel,
-                { left: x - 15, top: CHART_HEIGHT },
-              ]}
-            >
+            <Text key={i} style={[styles.xLabel, { left: x - 15, top: CHART_HEIGHT }]}>
               {label}
             </Text>
           )
         })}
 
-        <Text style={[styles.yLabel, { top: PADDING - 8, left: 0 }]}>
-          {formatAmount(maxVal)}
-        </Text>
+        <Text style={[styles.yLabel, { top: PADDING - 8, left: 0 }]}>{formatAmount(maxVal)}</Text>
         <Text style={[styles.yLabel, { top: CHART_HEIGHT - PADDING - 8, left: 0 }]}>
           {formatAmount(minVal)}
         </Text>

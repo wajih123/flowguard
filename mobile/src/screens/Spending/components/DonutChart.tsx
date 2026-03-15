@@ -10,8 +10,6 @@ interface DonutChartProps {
 
 const SIZE = 200
 const STROKE_WIDTH = 28
-const RADIUS = (SIZE - STROKE_WIDTH) / 2
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS
 
 const CATEGORY_COLORS: string[] = [
   colors.primary,
@@ -39,7 +37,6 @@ export const DonutChart: React.FC<DonutChartProps> = ({ categories, totalAmount 
         {/* We build a manual donut via layered Views with border arcs */}
         {categories.map((cat, index) => {
           const percent = cat.percentage / 100
-          const offset = CIRCUMFERENCE * (1 - percent)
           const rotation = cumulativePercent * 360 - 90
           cumulativePercent += percent
           const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length]

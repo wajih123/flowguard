@@ -28,10 +28,7 @@ export const MiniTreasuryChart: React.FC<MiniTreasuryChartProps> = ({ prediction
     return { x, y }
   })
 
-  const zeroY =
-    minVal >= 0
-      ? CHART_HEIGHT
-      : CHART_HEIGHT - ((0 - minVal) / range) * CHART_HEIGHT
+  const zeroY = minVal >= 0 ? CHART_HEIGHT : CHART_HEIGHT - ((0 - minVal) / range) * CHART_HEIGHT
 
   const hasNegative = minVal < 0
 
@@ -40,17 +37,9 @@ export const MiniTreasuryChart: React.FC<MiniTreasuryChartProps> = ({ prediction
       <Text style={styles.label}>PRÉVISION 30 JOURS</Text>
       <View style={styles.chartContainer}>
         <View style={[styles.chart, { width: CHART_WIDTH, height: CHART_HEIGHT }]}>
-          {hasNegative && (
-            <View
-              style={[
-                styles.zeroLine,
-                { top: zeroY, width: CHART_WIDTH },
-              ]}
-            />
-          )}
+          {hasNegative && <View style={[styles.zeroLine, { top: zeroY, width: CHART_WIDTH }]} />}
           {points.map((point, index) => {
             if (index === 0) return null
-            const prev = points[index - 1]
             const isNeg = balances[index] < 0
             return (
               <View

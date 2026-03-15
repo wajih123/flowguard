@@ -16,8 +16,8 @@ export const AdminNavigator: React.FC = () => (
   >
     <Stack.Screen
       name={Routes.AdminOverview}
-      component={AdminOverviewScreen as React.ComponentType<any>}
+      component={AdminOverviewScreen as React.ComponentType<object>}
     />
-    <Stack.Screen name={Routes.AdminWeb} component={AdminWebScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.AdminWeb} component={AdminWebScreen as React.ComponentType<object>} />
   </Stack.Navigator>
 )

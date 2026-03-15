@@ -5,10 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { StackScreenProps } from '@react-navigation/stack'
 import { FlowGuardCard } from '../../components/FlowGuardCard'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
 import { ErrorScreen } from '../../components/ErrorScreen'
 import { SkeletonCard } from '../../components/SkeletonCard'
-import { useAccountStore } from '../../store/accountStore'
 import { useBankStore } from '../../store/bankStore'
 import { Routes } from '../../navigation/routes'
 import { colors, typography, spacing } from '../../theme'
@@ -45,7 +43,6 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
   const isSyncing = useBankStore((s) => s.isSyncing)
   const lastSyncAt = useBankStore((s) => s.lastSyncAt)
   const setLastSync = useBankStore((s) => s.setLastSync)
-  const accountFromStore = useAccountStore((s) => s.account)
 
   const {
     data: accounts,

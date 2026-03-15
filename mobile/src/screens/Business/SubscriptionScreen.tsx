@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { StackScreenProps } from '@react-navigation/stack'
 import { FlowGuardCard } from '../../components/FlowGuardCard'
 import { FlowGuardButton } from '../../components/FlowGuardButton'

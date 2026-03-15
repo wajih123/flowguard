@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, Animated, StyleSheet } from 'react-native'
-import Svg, { Circle, Path } from 'react-native-svg'
+import Svg, { Path } from 'react-native-svg'
 import { colors } from '../theme'
 
 interface HealthScoreGaugeProps {

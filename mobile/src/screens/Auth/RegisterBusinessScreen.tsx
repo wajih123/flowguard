@@ -9,7 +9,6 @@ import { FlowGuardInput } from '../../components/FlowGuardInput'
 import { FlowGuardCard } from '../../components/FlowGuardCard'
 import { Routes } from '../../navigation/routes'
 import { colors, typography, spacing } from '../../theme'
-import type { Plan } from '../../domain/User'
 
 const step1Schema = z
   .object({

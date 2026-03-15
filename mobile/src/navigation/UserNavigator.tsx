@@ -40,17 +40,17 @@ const DashboardStack: React.FC = () => (
     <Stack.Screen name={Routes.Dashboard} component={DashboardScreen} />
     <Stack.Screen
       name={Routes.Transactions}
-      component={TransactionsScreen as React.ComponentType<any>}
+      component={TransactionsScreen as React.ComponentType<object>}
     />
     <Stack.Screen
       name={Routes.TransactionDetail}
-      component={TransactionDetailScreen as React.ComponentType<any>}
+      component={TransactionDetailScreen as React.ComponentType<object>}
       options={{ presentation: 'modal' }}
     />
-    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
     <Stack.Screen
       name={Routes.BankConnect}
-      component={BankConnectScreen as React.ComponentType<any>}
+      component={BankConnectScreen as React.ComponentType<object>}
     />
   </Stack.Navigator>
 )
@@ -60,10 +60,10 @@ const AlertsStack: React.FC = () => (
     <Stack.Screen name={Routes.Alerts} component={AlertsScreen} />
     <Stack.Screen
       name={Routes.AlertDetail}
-      component={AlertDetailScreen as React.ComponentType<any>}
+      component={AlertDetailScreen as React.ComponentType<object>}
       options={{ presentation: 'modal' }}
     />
-    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
 )
 
@@ -71,20 +71,20 @@ const BankStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen
       name={Routes.BankAccount}
-      component={BankAccountScreen as React.ComponentType<any>}
+      component={BankAccountScreen as React.ComponentType<object>}
     />
     <Stack.Screen
       name={Routes.BankConnect}
-      component={BankConnectScreen as React.ComponentType<any>}
+      component={BankConnectScreen as React.ComponentType<object>}
     />
   </Stack.Navigator>
 )
 
 const ProfileStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name={Routes.Profile} component={ProfileScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Profile} component={ProfileScreen as React.ComponentType<object>} />
     <Stack.Screen name={Routes.Kyc} component={KycScreen} />
-    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
 )
 

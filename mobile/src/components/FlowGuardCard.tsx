@@ -1,5 +1,5 @@
 import React from 'react'
-import { TouchableOpacity, View, StyleSheet, type ViewStyle, type StyleProp } from 'react-native'
+import { TouchableOpacity, View, type ViewStyle, type StyleProp } from 'react-native'
 import { colors, spacing } from '../theme'
 
 type CardVariant = 'default' | 'alert' | 'success' | 'info' | 'warning'
@@ -56,16 +56,5 @@ export const FlowGuardCard: React.FC<FlowGuardCardProps> = ({
 
   return <View style={[cardStyle, style]}>{children}</View>
 }
-
-// Keep legacy default export styles for backwards compatibility
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    borderRadius: 16,
-    padding: spacing.md,
-  },
-})
 
 export default FlowGuardCard

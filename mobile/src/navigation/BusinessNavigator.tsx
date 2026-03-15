@@ -40,21 +40,21 @@ const BusinessDashboardStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen
       name={Routes.BusinessDashboard}
-      component={BusinessDashboardScreen as React.ComponentType<any>}
+      component={BusinessDashboardScreen as React.ComponentType<object>}
     />
     <Stack.Screen
       name={Routes.Transactions}
-      component={TransactionsScreen as React.ComponentType<any>}
+      component={TransactionsScreen as React.ComponentType<object>}
     />
     <Stack.Screen
       name={Routes.TransactionDetail}
-      component={TransactionDetailScreen as React.ComponentType<any>}
+      component={TransactionDetailScreen as React.ComponentType<object>}
       options={{ presentation: 'modal' }}
     />
-    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
     <Stack.Screen
       name={Routes.BankConnect}
-      component={BankConnectScreen as React.ComponentType<any>}
+      component={BankConnectScreen as React.ComponentType<object>}
     />
   </Stack.Navigator>
 )
@@ -64,22 +64,22 @@ const AlertsStack: React.FC = () => (
     <Stack.Screen name={Routes.Alerts} component={AlertsScreen} />
     <Stack.Screen
       name={Routes.AlertDetail}
-      component={AlertDetailScreen as React.ComponentType<any>}
+      component={AlertDetailScreen as React.ComponentType<object>}
       options={{ presentation: 'modal' }}
     />
-    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
 )
 
 const ProfileStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name={Routes.Profile} component={ProfileScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Profile} component={ProfileScreen as React.ComponentType<object>} />
     <Stack.Screen name={Routes.Kyc} component={KycScreen} />
     <Stack.Screen
       name={Routes.Subscription}
-      component={SubscriptionScreen as React.ComponentType<any>}
+      component={SubscriptionScreen as React.ComponentType<object>}
     />
-    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<any>} />
+    <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
 )
 
@@ -121,7 +121,7 @@ export const BusinessNavigator: React.FC = () => {
       />
       <Tab.Screen
         name="ScenariosTab"
-        component={ScenariosScreen as React.ComponentType<any>}
+        component={ScenariosScreen as React.ComponentType<object>}
         options={{
           tabBarLabel: 'Scénarios',
           tabBarIcon: ({ focused }) => <TabIcon emoji="📊" focused={focused} />,

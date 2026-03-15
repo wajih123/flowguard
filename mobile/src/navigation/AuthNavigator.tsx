@@ -23,17 +23,17 @@ export const AuthNavigator: React.FC = () => {
     >
       <Stack.Screen
         name={Routes.Onboarding}
-        component={OnboardingScreen as React.ComponentType<any>}
+        component={OnboardingScreen as React.ComponentType<object>}
       />
-      <Stack.Screen name={Routes.Login} component={LoginScreen as React.ComponentType<any>} />
-      <Stack.Screen name={Routes.Register} component={RegisterScreen as React.ComponentType<any>} />
+      <Stack.Screen name={Routes.Login} component={LoginScreen as React.ComponentType<object>} />
+      <Stack.Screen name={Routes.Register} component={RegisterScreen as React.ComponentType<object>} />
       <Stack.Screen
         name={Routes.RegisterBusiness}
-        component={RegisterBusinessScreen as React.ComponentType<any>}
+        component={RegisterBusinessScreen as React.ComponentType<object>}
       />
       <Stack.Screen
         name={Routes.ForgotPassword}
-        component={ForgotPasswordScreen as React.ComponentType<any>}
+        component={ForgotPasswordScreen as React.ComponentType<object>}
       />
       <Stack.Screen name={Routes.Kyc} component={KycScreen} />
     </Stack.Navigator>

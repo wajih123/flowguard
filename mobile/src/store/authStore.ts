@@ -23,7 +23,7 @@ interface AuthState {
   clearError: () => void
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set, _get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
@@ -65,7 +65,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ error: 'Aucune session sauvegardée', isLoading: false })
         return
       }
-      const { accessToken, refreshToken } = JSON.parse(creds.password) as {
+      const { refreshToken } = JSON.parse(creds.password) as {
         accessToken: string
         refreshToken: string
       }

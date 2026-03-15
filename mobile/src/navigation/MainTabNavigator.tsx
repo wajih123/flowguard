@@ -30,7 +30,7 @@ const DashboardStackNavigator: React.FC = () => {
       <DashboardStack.Screen name={Routes.FlashCredit} component={FlashCreditScreen} />
       <DashboardStack.Screen
         name={Routes.BankConnect}
-        component={BankConnectScreen as React.ComponentType<any>}
+        component={BankConnectScreen as React.ComponentType<object>}
       />
     </DashboardStack.Navigator>
   )
