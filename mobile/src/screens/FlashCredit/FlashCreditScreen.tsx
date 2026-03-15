@@ -34,7 +34,7 @@ export const FlashCreditScreen: React.FC = () => {
   const [purpose, setPurpose] = useState('SALARY')
   const [showSuccess, setShowSuccess] = useState(false)
 
-  const { mutate: requestCredit, isPending } = useFlashCredit()
+  const { requestCredit, isLoading: isPending } = useFlashCredit()
 
   const successScale = useSharedValue(0)
   const successOpacity = useSharedValue(0)
@@ -87,9 +87,7 @@ export const FlashCreditScreen: React.FC = () => {
           </Animated.View>
           <Text style={styles.successTitle}>Crédit flash accordé !</Text>
           <Text style={styles.successAmount}>{formattedAmount}</Text>
-          <Text style={styles.successSubtitle}>
-            Les fonds seront disponibles sous 2 minutes
-          </Text>
+          <Text style={styles.successSubtitle}>Les fonds seront disponibles sous 2 minutes</Text>
           <View style={styles.successButtonWrapper}>
             <FlowGuardButton
               title="Retour au tableau de bord"
@@ -127,10 +125,18 @@ export const FlashCreditScreen: React.FC = () => {
           />
           <View style={styles.rangeRow}>
             <Text style={styles.rangeText}>
-              {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(MIN_AMOUNT)}
+              {new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 0,
+              }).format(MIN_AMOUNT)}
             </Text>
             <Text style={styles.rangeText}>
-              {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', minimumFractionDigits: 0 }).format(MAX_AMOUNT)}
+              {new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 0,
+              }).format(MAX_AMOUNT)}
             </Text>
           </View>
         </FlowGuardCard>

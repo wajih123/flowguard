@@ -1,12 +1,12 @@
 import React from 'react'
-import { TouchableOpacity, View, StyleSheet, type ViewStyle } from 'react-native'
+import { TouchableOpacity, View, StyleSheet, type ViewStyle, type StyleProp } from 'react-native'
 import { colors, spacing } from '../theme'
 
 type CardVariant = 'default' | 'alert' | 'success' | 'info' | 'warning'
 
 interface FlowGuardCardProps {
   children: React.ReactNode
-  style?: ViewStyle
+  style?: StyleProp<ViewStyle>
   onPress?: () => void
   variant?: CardVariant
   elevated?: boolean

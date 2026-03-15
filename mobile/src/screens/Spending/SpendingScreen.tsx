@@ -7,6 +7,7 @@ import { InsightCard } from './components/InsightCard'
 import { FlowGuardLoader } from '../../components/FlowGuardLoader'
 import { ErrorScreen } from '../../components/ErrorScreen'
 import { EmptyState } from '../../components/EmptyState'
+import { useAccountStore } from '../../store/accountStore'
 import { colors, typography, spacing } from '../../theme'
 
 type Period = '7j' | '30j' | '90j'
@@ -19,18 +20,30 @@ const PERIOD_OPTIONS: { key: Period; label: string }[] = [
 
 export const SpendingScreen: React.FC = () => {
   const [period, setPeriod] = useState<Period>('30j')
-  const { data, isLoading, isError, refetch } = useSpending(period)
+  const account = useAccountStore((s) => s.account)
+  const { spending: data, isLoading, isError, refetch } = useSpending(account?.id, period)
 
   if (isLoading) return <FlowGuardLoader />
   if (isError) return <ErrorScreen message="Impossible d'analyser les dépenses" onRetry={refetch} />
-  if (!data) return <EmptyState icon="chart-donut" title="Aucune dépense" subtitle="Pas de transactions sur la période" />
+  if (!data)
+    return (
+      <EmptyState
+        icon="chart-donut"
+        title="Aucune dépense"
+        subtitle="Pas de transactions sur la période"
+      />
+    )
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={false} onRefresh={() => refetch()} tintColor={colors.primary} />
+          <RefreshControl
+            refreshing={false}
+            onRefresh={() => refetch()}
+            tintColor={colors.primary}
+          />
         }
       >
         <Text style={styles.title}>Analyse des dépenses</Text>
@@ -60,7 +73,9 @@ export const SpendingScreen: React.FC = () => {
             {data.aiInsights.map((insight, index) => (
               <InsightCard
                 key={index}
-                icon={insight.type === 'positive' ? '📈' : insight.type === 'negative' ? '📉' : '💡'}
+                icon={
+                  insight.type === 'positive' ? '📈' : insight.type === 'negative' ? '📉' : '💡'
+                }
                 text={insight.text}
                 type={insight.type}
               />

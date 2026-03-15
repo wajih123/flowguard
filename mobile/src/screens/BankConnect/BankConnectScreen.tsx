@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { WebView, type WebViewNavigation } from 'react-native-webview'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { StackScreenProps } from '@react-navigation/stack'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
 import { ErrorScreen } from '../../components/ErrorScreen'
 import { useAccountStore } from '../../store/accountStore'
@@ -11,7 +11,7 @@ import { colors, typography, spacing } from '../../theme'
 
 const REDIRECT_URI = 'flowguard://bank-connect/callback'
 
-type Props = NativeStackScreenProps<Record<string, undefined>, string>
+type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const BankConnectScreen: React.FC<Props> = ({ navigation }) => {
   const [step, setStep] = useState<'select' | 'webview' | 'success' | 'error'>('select')
@@ -76,10 +76,7 @@ export const BankConnectScreen: React.FC<Props> = ({ navigation }) => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.webviewHeader}>
-          <Text
-            onPress={() => setStep('select')}
-            style={styles.cancelText}
-          >
+          <Text onPress={() => setStep('select')} style={styles.cancelText}>
             Annuler
           </Text>
           <Text style={styles.webviewTitle}>Connexion bancaire</Text>

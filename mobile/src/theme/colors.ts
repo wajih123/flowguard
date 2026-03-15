@@ -16,4 +16,5 @@ export const colors = {
   severityMedium: '#F59E0B',
   severityHigh: '#F97316',
   severityCritical: '#EF4444',
+  border: 'rgba(255,255,255,0.12)',
 } as const

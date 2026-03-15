@@ -1,4 +1,4 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 import { setupInterceptors } from './interceptors'
 import { fetch } from 'react-native-ssl-pinning'
 import { FlowGuardError } from './errors'
@@ -31,7 +31,7 @@ setupInterceptors(api)
 
 const sslHeaders = { 'Content-Type': 'application/json', 'X-App-Version': '1.0.0' }
 
-// ── Auth (SSL pinning) ──────────────────────────────────────────
+// â”€â”€ Auth (SSL pinning) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const login = async (email: string, password: string): Promise<AuthResponse> => {
   const res = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
@@ -80,7 +80,7 @@ export const refreshToken = async (
     sslPinning: { certs: ['flowguard'] },
     timeoutInterval: 30000,
   })
-  if (res.status !== 200) throw new FlowGuardError('UNAUTHORIZED', 'Session expirée')
+  if (res.status !== 200) throw new FlowGuardError('UNAUTHORIZED', 'Session expirÃ©e')
   return JSON.parse(res.bodyString) as { accessToken: string; refreshToken: string }
 }
 
@@ -93,7 +93,7 @@ export const getKycUrl = async (): Promise<{ url: string }> => {
   return data
 }
 
-// ── User ──────────────────────────────────────────────────────────
+// â”€â”€ User â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getCurrentUser = async (): Promise<User> => {
   const { data } = await api.get<User>('/api/users/me')
   return data
@@ -113,7 +113,7 @@ export const deleteAccount = async (): Promise<void> => {
   await api.delete('/api/users/me')
 }
 
-// ── Banking ───────────────────────────────────────────────────────
+// â”€â”€ Banking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getInstitutions = async (): Promise<Institution[]> => {
   const { data } = await api.get<Institution[]>('/api/banking/institutions')
   return data
@@ -157,7 +157,7 @@ export const getCurrentAccount = async (): Promise<BankAccount> => {
   return accounts[0] as BankAccount
 }
 
-// ── Transactions ─────────────────────────────────────────────────
+// â”€â”€ Transactions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getTransactions = async (
   accountId: string,
   params: {
@@ -175,7 +175,7 @@ export const getTransactions = async (
   return data
 }
 
-// ── Treasury/Forecast ───────────────────────────────────────────
+// â”€â”€ Treasury/Forecast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getTreasuryForecast = async (
   accountId: string,
   horizon: number,
@@ -215,7 +215,7 @@ export const syncTransactions = async (accountId: string): Promise<{ synced: num
   return data
 }
 
-// ── Alerts ───────────────────────────────────────────────────────
+// â”€â”€ Alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getAlerts = async (
   accountId: string,
   params: { page?: number; unreadOnly?: boolean; severity?: string } = {},
@@ -245,7 +245,7 @@ export const getUnreadCount = async (accountId: string): Promise<{ count: number
   return data
 }
 
-// ── Reserve / Credit (SSL pinning) ───────────────────────────────
+// â”€â”€ Reserve / Credit (SSL pinning) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getReserveEligibility = async (accountId: string): Promise<EligibilityResponse> => {
   const res = await fetch(`${BASE_URL}/api/credit/eligibility/${encodeURIComponent(accountId)}`, {
     method: 'GET',
@@ -253,7 +253,7 @@ export const getReserveEligibility = async (accountId: string): Promise<Eligibil
     sslPinning: { certs: ['flowguard'] },
     timeoutInterval: 30000,
   })
-  if (res.status !== 200) throw new FlowGuardError('SERVER', 'Erreur éligibilité')
+  if (res.status !== 200) throw new FlowGuardError('SERVER', 'Erreur Ã©ligibilitÃ©')
   return JSON.parse(res.bodyString) as EligibilityResponse
 }
 
@@ -269,14 +269,14 @@ export const activateReserve = async (
     timeoutInterval: 30000,
   })
   if (res.status !== 200 && res.status !== 201)
-    throw new FlowGuardError('SERVER', "Erreur d'activation de la Réserve")
+    throw new FlowGuardError('SERVER', "Erreur d'activation de la RÃ©serve")
   return JSON.parse(res.bodyString) as CreditResponse
 }
 
 // Legacy Flash Credit (mapped to reserve)
 export const requestFlashCredit = activateReserve
 
-// ── Config (public) ───────────────────────────────────────────────
+// â”€â”€ Config (public) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getFeatureFlags = async (): Promise<Record<string, boolean>> => {
   const { data } = await api.get<Record<string, boolean>>('/api/config/flags')
   return data
@@ -287,210 +287,14 @@ export const getSystemConfig = async (): Promise<SystemConfig> => {
   return data
 }
 
-// ── Admin ─────────────────────────────────────────────────────────
+// â”€â”€ Admin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getAdminKpis = async (): Promise<Record<string, number | string>> => {
   const { data } = await api.get<Record<string, number | string>>('/api/admin/kpis')
   return data
 }
 
-// ── Error class ────────────────────────────────────────────────────
+// â”€â”€ Error class â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export { FlowGuardError } from './errors'
 export type { ErrorCode as FlowGuardErrorCode } from './errors'
-
-export default api
-
-const api = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:8080',
-  timeout: 30000,
-  headers: {
-    'Content-Type': 'application/json',
-    'X-App-Version': '1.0.0',
-  },
-})
-
-setupInterceptors(api)
-
-// ── Auth (SSL pinning) ──────────────────────────────────────────
-export const login = async (email: string, password: string): Promise<AuthResponse> => {
-  const res = await fetch(`${api.defaults.baseURL}/api/auth/login`, {
-    method: 'POST',
-    headers: api.defaults.headers,
-    body: JSON.stringify({ email, password }),
-    sslPinning: { certs: ['flowguard'] },
-    timeoutInterval: 30000,
-  })
-  if (res.status !== 200) throw new FlowGuardError('UNAUTHORIZED', 'Erreur de connexion')
-  return JSON.parse(res.bodyString)
-}
-
-export const register = async (
-  email: string,
-  password: string,
-  userType: UserType,
-): Promise<User> => {
-  const res = await fetch(`${api.defaults.baseURL}/api/auth/register`, {
-    method: 'POST',
-    headers: api.defaults.headers,
-    body: JSON.stringify({ email, password, userType }),
-    sslPinning: { certs: ['flowguard'] },
-    timeoutInterval: 30000,
-  })
-  if (res.status !== 201) throw new FlowGuardError('VALIDATION', 'Erreur d’inscription')
-  return JSON.parse(res.bodyString)
-}
-
-export const refreshToken = async (
-  refreshTokenValue: string,
-): Promise<{ token: string; refreshToken: string }> => {
-  const res = await fetch(`${api.defaults.baseURL}/api/auth/refresh`, {
-    method: 'POST',
-    headers: api.defaults.headers,
-    body: JSON.stringify({ refreshToken: refreshTokenValue }),
-    sslPinning: { certs: ['flowguard'] },
-    timeoutInterval: 30000,
-  })
-  if (res.status !== 200) throw new FlowGuardError('UNAUTHORIZED', 'Erreur de refresh')
-  return JSON.parse(res.bodyString)
-}
-
-export const logout = async (): Promise<void> => {
-  await api.post('/api/auth/logout')
-}
-
-export const getKycUrl = async (): Promise<{ url: string }> => {
-  const { data } = await api.get<{ url: string }>('/api/auth/kyc-url')
-  return data
-}
-
-// ── Treasury ─────────────────────────────────────────────────────
-export const getTreasuryForecast = async (
-  accountId: string,
-  horizon: number,
-): Promise<TreasuryForecast> => {
-  const { data } = await api.get<TreasuryForecast>(
-    `/api/treasury/${encodeURIComponent(accountId)}/forecast`,
-    { params: { horizon } },
-  )
-  return data
-}
-
-export const getSpendingAnalysis = async (
-  accountId: string,
-  period: string,
-): Promise<SpendingAnalysis> => {
-  const { data } = await api.get<SpendingAnalysis>(
-    `/api/treasury/${encodeURIComponent(accountId)}/spending`,
-    { params: { period } },
-  )
-  return data
-}
-
-export const runScenario = async (req: ScenarioRequest): Promise<ScenarioResult> => {
-  const { data } = await api.post<ScenarioResult>(
-    `/api/treasury/${encodeURIComponent(req.accountId)}/scenario`,
-    req,
-  )
-  return data
-}
-
-export const syncTransactions = async (accountId: string): Promise<{ synced: number }> => {
-  const { data } = await api.post<{ synced: number }>(
-    `/api/treasury/${encodeURIComponent(accountId)}/sync`,
-  )
-  return data
-}
-
-// ── Alerts ───────────────────────────────────────────────────────
-export const getAlerts = async (accountId: string, unreadOnly?: boolean): Promise<Alert[]> => {
-  const { data } = await api.get<Alert[]>(`/api/alerts/${encodeURIComponent(accountId)}`, {
-    params: { unreadOnly: unreadOnly ?? false },
-  })
-  return data
-}
-
-export const markAlertRead = async (alertId: string): Promise<void> => {
-  await api.post(`/api/alerts/${encodeURIComponent(alertId)}/read`)
-}
-
-export const getUnreadCount = async (accountId: string): Promise<{ count: number }> => {
-  const { data } = await api.get<{ count: number }>(
-    `/api/alerts/${encodeURIComponent(accountId)}/count`,
-  )
-  return data
-}
-
-// ── Banking (Open Banking) ───────────────────────────────────────
-export const getInstitutions = async (): Promise<
-  { id: string; name: string; logoUrl: string }[]
-> => {
-  const { data } = await api.get('/api/banking/institutions')
-  return data
-}
-
-export const connectBank = async (
-  institutionId: string,
-  redirectUri: string,
-): Promise<{ requisitionId: string; connectionUrl: string }> => {
-  const { data } = await api.post('/api/banking/connect', { institutionId, redirectUri })
-  return data
-}
-
-export const getBankStatus = async (
-  requisitionId: string,
-): Promise<{ status: string; linkedAccountIds?: string[] }> => {
-  const { data } = await api.get(`/api/banking/status/${encodeURIComponent(requisitionId)}`)
-  return data
-}
-
-export const syncBank = async (accountId: string): Promise<{ synced: number; skipped: number }> => {
-  const { data } = await api.post('/api/banking/sync', { accountId })
-  return data
-}
-
-// ── Account ──────────────────────────────────────────────────────
-export const getCurrentUser = async (): Promise<User> => {
-  const { data } = await api.get<User>('/api/users/me')
-  return data
-}
-
-export const updateProfile = async (user: Partial<User>): Promise<User> => {
-  const { data } = await api.put<User>('/api/users/me', user)
-  return data
-}
-
-// ── Flash Credit (SSL pinning) ───────────────────────────────────
-export const requestFlashCredit = async (req: FlashCreditRequest): Promise<FlashCreditResponse> => {
-  const res = await fetch(
-    `${api.defaults.baseURL}/api/flash-credit/${encodeURIComponent(req.accountId)}`,
-    {
-      method: 'POST',
-      headers: api.defaults.headers,
-      body: JSON.stringify({ amount: req.amount, purpose: req.purpose }),
-      sslPinning: { certs: ['flowguard'] },
-      timeoutInterval: 30000,
-    },
-  )
-  if (res.status !== 200) throw new FlowGuardError('SERVER', 'Erreur crédit')
-  return JSON.parse(res.bodyString)
-}
-
-// ── Error class ─────────────────────────────────────────────────-
-export type FlowGuardErrorCode =
-  | 'UNAUTHORIZED'
-  | 'NETWORK'
-  | 'SERVER'
-  | 'NOT_FOUND'
-  | 'VALIDATION'
-  | 'UNKNOWN'
-
-export class FlowGuardError extends Error {
-  constructor(
-    public code: FlowGuardErrorCode,
-    message: string,
-    public fields?: Record<string, string>,
-  ) {
-    super(message)
-  }
-}
 
 export default api

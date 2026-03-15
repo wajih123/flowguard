@@ -7,6 +7,7 @@ import { FlowGuardLoader } from '../../components/FlowGuardLoader'
 import { ErrorScreen } from '../../components/ErrorScreen'
 import { EmptyState } from '../../components/EmptyState'
 import type { Alert } from '../../domain/Alert'
+import { useAccountStore } from '../../store/accountStore'
 import { colors, typography, spacing } from '../../theme'
 
 type TabKey = 'all' | 'unread' | 'critical'
@@ -19,7 +20,8 @@ const TABS: { key: TabKey; label: string }[] = [
 
 export const AlertsScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabKey>('all')
-  const { data: alerts, isLoading, isError, refetch } = useAlerts()
+  const account = useAccountStore((s) => s.account)
+  const { alerts, isLoading, isError, refetch } = useAlerts(account?.id)
   const { mutate: markRead } = useMarkAlertAsRead()
 
   const filteredAlerts = useCallback((): Alert[] => {
@@ -59,14 +61,10 @@ export const AlertsScreen: React.FC = () => {
               onPress={() => setActiveTab(tab.key)}
               style={[styles.tab, isActive && styles.tabActive]}
             >
-              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-                {tab.label}
-              </Text>
+              <Text style={[styles.tabText, isActive && styles.tabTextActive]}>{tab.label}</Text>
               {tab.key === 'unread' && alerts && (
                 <View style={styles.badge}>
-                  <Text style={styles.badgeText}>
-                    {alerts.filter((a) => !a.isRead).length}
-                  </Text>
+                  <Text style={styles.badgeText}>{alerts.filter((a) => !a.isRead).length}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -83,7 +81,7 @@ export const AlertsScreen: React.FC = () => {
               ? 'Toutes les alertes ont été lues'
               : activeTab === 'critical'
                 ? 'Aucune alerte critique en cours'
-                : 'Pas d\'alertes pour le moment'
+                : "Pas d'alertes pour le moment"
           }
         />
       ) : (

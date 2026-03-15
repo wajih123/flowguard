@@ -15,5 +15,6 @@ export const useSpending = (accountId: string | undefined, period: string = '1m'
     spending: query.data,
     isLoading: query.isLoading,
     isError: query.isError,
+    refetch: query.refetch,
   }
 }

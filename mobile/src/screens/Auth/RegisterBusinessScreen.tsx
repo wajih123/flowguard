@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { z } from 'zod'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { StackScreenProps } from '@react-navigation/stack'
 import { useAuthStore } from '../../store/authStore'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
 import { FlowGuardInput } from '../../components/FlowGuardInput'
@@ -70,7 +70,7 @@ const PLAN_OPTIONS: { key: 'PRO' | 'SCALE'; price: string; features: string[] }[
   },
 ]
 
-type Props = NativeStackScreenProps<Record<string, undefined>, string>
+type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const RegisterBusinessScreen: React.FC<Props> = ({ navigation }) => {
   const [step, setStep] = useState<1 | 2 | 3>(1)

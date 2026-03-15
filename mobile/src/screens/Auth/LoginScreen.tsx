@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { z } from 'zod'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { StackScreenProps } from '@react-navigation/stack'
 import { useAuthStore } from '../../store/authStore'
 import { useBiometric } from '../../hooks/useBiometric'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
@@ -16,7 +16,7 @@ const loginSchema = z.object({
   password: z.string().min(8, 'Minimum 8 caractères'),
 })
 
-type Props = NativeStackScreenProps<Record<string, undefined>, string>
+type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('')
@@ -108,12 +108,11 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         )}
 
         <TouchableOpacity
-          onPress={() => navigation.navigate(Routes.REGISTER as never)}
+          onPress={() => navigation.navigate(Routes.Register as never)}
           style={styles.registerLink}
         >
           <Text style={styles.registerText}>
-            Pas encore de compte ?{' '}
-            <Text style={styles.registerTextBold}>Créer un compte</Text>
+            Pas encore de compte ? <Text style={styles.registerTextBold}>Créer un compte</Text>
           </Text>
         </TouchableOpacity>
       </ScrollView>

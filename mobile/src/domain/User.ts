@@ -1,4 +1,4 @@
-export type UserType = 'INDIVIDUAL' | 'FREELANCE' | 'SME'
+export type UserType = 'INDIVIDUAL' | 'FREELANCE' | 'SME' | 'TPE' | 'PME'
 
 export type Role = 'ROLE_USER' | 'ROLE_BUSINESS' | 'ROLE_ADMIN' | 'ROLE_SUPER_ADMIN'
 export type KycStatus = 'PENDING' | 'VERIFIED' | 'REJECTED'

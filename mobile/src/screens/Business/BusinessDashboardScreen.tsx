@@ -134,7 +134,7 @@ export const BusinessDashboardScreen: React.FC<Props> = ({ navigation }) => {
 
         {/* Forecast summary */}
         {forecastLoading ? (
-          <SkeletonCard />
+          <SkeletonCard height={80} />
         ) : forecast ? (
           <FlowGuardCard style={styles.forecastCard}>
             <Text style={styles.forecastTitle}>Prévision {horizon} jours</Text>

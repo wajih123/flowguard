@@ -16,7 +16,7 @@ import Animated, {
   interpolate,
   Extrapolation,
 } from 'react-native-reanimated'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { StackScreenProps } from '@react-navigation/stack'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
 import { Routes } from '../../navigation/routes'
 import { colors, typography, spacing } from '../../theme'
@@ -50,11 +50,11 @@ const PAGES: OnboardingPage[] = [
     icon: '⚡',
     title: 'Crédit Flash instantané',
     subtitle:
-      'Besoin de trésorerie urgente ? Obtenez un micro-crédit en 2 minutes, directement depuis l\'app.',
+      "Besoin de trésorerie urgente ? Obtenez un micro-crédit en 2 minutes, directement depuis l'app.",
   },
 ]
 
-type Props = NativeStackScreenProps<Record<string, undefined>, string>
+type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -77,12 +77,12 @@ export const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
     if (currentIndex < PAGES.length - 1) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true })
     } else {
-      navigation.navigate(Routes.LOGIN as never)
+      navigation.navigate(Routes.Login as never)
     }
   }, [currentIndex, navigation])
 
   const handleSkip = useCallback(() => {
-    navigation.navigate(Routes.LOGIN as never)
+    navigation.navigate(Routes.Login as never)
   }, [navigation])
 
   const renderPage: ListRenderItem<OnboardingPage> = useCallback(

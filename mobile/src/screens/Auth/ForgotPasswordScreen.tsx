@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { z } from 'zod'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { StackScreenProps } from '@react-navigation/stack'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
 import { FlowGuardInput } from '../../components/FlowGuardInput'
 import { FlowGuardCard } from '../../components/FlowGuardCard'
@@ -14,7 +14,7 @@ const schema = z.object({
   email: z.string().email('Email invalide'),
 })
 
-type Props = NativeStackScreenProps<Record<string, undefined>, string>
+type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('')

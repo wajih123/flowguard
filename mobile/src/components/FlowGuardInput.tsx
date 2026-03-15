@@ -10,6 +10,8 @@ interface FlowGuardInputProps {
   secureTextEntry?: boolean
   keyboardType?: KeyboardTypeOptions
   placeholder?: string
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
+  autoCorrect?: boolean
 }
 
 export const FlowGuardInput: React.FC<FlowGuardInputProps> = ({
@@ -20,6 +22,8 @@ export const FlowGuardInput: React.FC<FlowGuardInputProps> = ({
   secureTextEntry,
   keyboardType,
   placeholder,
+  autoCapitalize,
+  autoCorrect,
 }) => {
   const [focused, setFocused] = React.useState(false)
 
@@ -40,7 +44,8 @@ export const FlowGuardInput: React.FC<FlowGuardInputProps> = ({
         placeholderTextColor={colors.textMuted}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        autoCapitalize="none"
+        autoCapitalize={autoCapitalize ?? 'none'}
+        autoCorrect={autoCorrect ?? false}
       />
       {error && <Text style={styles.error}>{error}</Text>}
     </View>

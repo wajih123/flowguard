@@ -3,18 +3,24 @@ import { View, Text, StyleSheet } from 'react-native'
 import { colors, typography, spacing } from '../theme'
 
 interface EmptyStateProps {
-  message: string
+  message?: string
+  title?: string
+  subtitle?: string
   icon?: string
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
   message,
+  title,
+  subtitle,
   icon = '📭',
 }) => {
+  const heading = title ?? message ?? ''
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>{icon}</Text>
-      <Text style={styles.message}>{message}</Text>
+      {heading ? <Text style={styles.message}>{heading}</Text> : null}
+      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
   )
 }
@@ -35,5 +41,12 @@ const styles = StyleSheet.create({
     fontSize: typography.body.fontSize,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  subtitle: {
+    color: colors.textMuted,
+    fontSize: typography.body.fontSize - 2,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 20,
   },
 })

@@ -67,9 +67,7 @@ export const createRequisition = async (
   return data
 }
 
-export const getRequisitionStatus = async (
-  requisitionId: string,
-): Promise<NordigenRequisition> => {
+export const getRequisitionStatus = async (requisitionId: string): Promise<NordigenRequisition> => {
   await ensureAuthenticated()
   const { data } = await nordigenClient.get<NordigenRequisition>(
     `/requisitions/${encodeURIComponent(requisitionId)}/`,
@@ -112,4 +110,15 @@ export const getAccountTransactions = async (
     { params: { date_from: dateFrom } },
   )
   return data
+}
+
+// ── Namespace object for screens that import nordigenApi as a single object ──
+export const nordigenApi = {
+  authenticate,
+  getInstitutions,
+  createRequisition: (redirectUri: string) =>
+    createRequisition('demo_institution', redirectUri, 'demo_user'),
+  getRequisitionStatus,
+  getAccountBalances,
+  getAccountTransactions,
 }

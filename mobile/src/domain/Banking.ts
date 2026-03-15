@@ -1,3 +1,5 @@
+export type { BankAccount } from './Account'
+
 export interface Institution {
   id: string
   name: string

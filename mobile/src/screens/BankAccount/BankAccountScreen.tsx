@@ -83,7 +83,7 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
         </View>
         <View style={styles.skeletons}>
           {[0, 1, 2].map((i) => (
-            <SkeletonCard key={i} />
+            <SkeletonCard key={i} height={80} />
           ))}
         </View>
       </SafeAreaView>

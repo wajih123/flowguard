@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react'
 import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { z } from 'zod'
-import type { NativeStackScreenProps } from '@react-navigation/native-stack'
+import type { StackScreenProps } from '@react-navigation/stack'
 import { useAuthStore } from '../../store/authStore'
 import { FlowGuardButton } from '../../components/FlowGuardButton'
 import { FlowGuardInput } from '../../components/FlowGuardInput'
@@ -22,7 +22,7 @@ const registerSchema = z
       .regex(/[0-9]/, 'Au moins un chiffre')
       .regex(/[^A-Za-z0-9]/, 'Au moins un caractère spécial'),
     confirmPassword: z.string(),
-    companyName: z.string().min(1, 'Nom de l\'entreprise requis'),
+    companyName: z.string().min(1, "Nom de l'entreprise requis"),
     userType: z.enum(['FREELANCE', 'TPE', 'PME']),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -38,7 +38,7 @@ const USER_TYPES: { key: UserType; label: string; description: string }[] = [
   { key: 'PME', label: 'PME', description: '10 à 250 salariés' },
 ]
 
-type Props = NativeStackScreenProps<Record<string, undefined>, string>
+type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [firstName, setFirstName] = useState('')
@@ -98,9 +98,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.title}>Créer un compte</Text>
-        <Text style={styles.subtitle}>
-          Rejoignez FlowGuard pour piloter votre trésorerie
-        </Text>
+        <Text style={styles.subtitle}>Rejoignez FlowGuard pour piloter votre trésorerie</Text>
 
         {authError && (
           <View style={styles.errorBanner}>
@@ -190,12 +188,11 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         )}
 
         <TouchableOpacity
-          onPress={() => navigation.navigate(Routes.LOGIN as never)}
+          onPress={() => navigation.navigate(Routes.Login as never)}
           style={styles.loginLink}
         >
           <Text style={styles.loginText}>
-            Déjà un compte ?{' '}
-            <Text style={styles.loginTextBold}>Se connecter</Text>
+            Déjà un compte ? <Text style={styles.loginTextBold}>Se connecter</Text>
           </Text>
         </TouchableOpacity>
 
