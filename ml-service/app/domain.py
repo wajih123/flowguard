@@ -61,6 +61,7 @@ class ModelUsed(str, Enum):
     RACE_LSTM     = "RACE_LSTM"
     RACE_PROPHET  = "RACE_PROPHET"
     RACE_RULES    = "RACE_RULES"
+    RACE_TIMESFM  = "RACE_TIMESFM"
 
 
 class AlertSeverity(str, Enum):
@@ -183,9 +184,10 @@ class EnsembleWeights:
     lstm:    float
     prophet: float
     rules:   float
+    timesfm: float = 0.0
 
     def __post_init__(self) -> None:
-        total = self.lstm + self.prophet + self.rules
+        total = self.lstm + self.prophet + self.rules + self.timesfm
         assert abs(total - 1.0) < 1e-5, f"Weights must sum to 1.0, got {total:.4f}"
 
 

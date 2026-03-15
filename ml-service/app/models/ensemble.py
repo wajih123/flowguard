@@ -35,6 +35,7 @@ from app.domain import (
 from app.models.baseline_model import ProphetStyleDecomposer, RuleBasedPredictor
 from app.models.lstm_model import TreasuryLSTM
 from app.models.model_race import ModelRaceEvaluator, RaceResult
+from app.models.timesfm_predictor import TimesFMPredictor
 
 log = structlog.get_logger()
 
@@ -139,6 +140,8 @@ class EnsemblePredictor:
         self._sanity = SanityChecker()
         self._race = ModelRaceEvaluator()   # online model selection
         self._load_lstm()
+        self._timesfm = TimesFMPredictor()
+        self._timesfm.load()
 
     def _load_lstm(self) -> None:
         import os
@@ -317,12 +320,51 @@ class EnsemblePredictor:
                 lstm_uncertainty = None
                 weights = self.compute_weights(history_days, quality, False)
 
-        # ── Model race: pick winner, override weights if reliable ────────────────
+        # TimesFM (zero-shot, always available — needs ≥14 days)
+        timesfm_pred: Optional[np.ndarray] = None
+        timesfm_p25: Optional[np.ndarray] = None
+        timesfm_p75: Optional[np.ndarray] = None
+        if self._timesfm.is_loaded and len(transactions) >= 14:
+            try:
+                day_balance: dict[date, float] = {}
+                for tx in sorted(transactions, key=lambda t: t.date):
+                    day_balance[tx.date] = tx.balance
+                tf_dates_sorted = sorted(day_balance)
+                tf_balances_list = [day_balance[d] for d in tf_dates_sorted]
+                tf_dates_str = [str(d) for d in tf_dates_sorted]
+                if len(tf_balances_list) >= 14:
+                    tf_result = self._timesfm.predict(
+                        account_id=account_id,
+                        daily_balances_history=tf_balances_list,
+                        dates_history=tf_dates_str,
+                        horizon_days=min(horizon, 90),
+                    )
+                    n = min(horizon, len(tf_result.daily_balances))
+                    timesfm_pred = np.array(
+                        [d["balance"] for d in tf_result.daily_balances[:n]], dtype=np.float64
+                    )
+                    timesfm_p25 = np.array(
+                        [d["p25"] for d in tf_result.daily_balances[:n]], dtype=np.float64
+                    )
+                    timesfm_p75 = np.array(
+                        [d["p75"] for d in tf_result.daily_balances[:n]], dtype=np.float64
+                    )
+                    if n < horizon:
+                        timesfm_pred = np.concatenate([timesfm_pred, np.full(horizon - n, timesfm_pred[-1])])
+                        timesfm_p25 = np.concatenate([timesfm_p25, np.full(horizon - n, timesfm_p25[-1])])
+                        timesfm_p75 = np.concatenate([timesfm_p75, np.full(horizon - n, timesfm_p75[-1])])
+            except Exception as e:
+                log.warning("timesfm_prediction_failed", error=str(e))
+                timesfm_pred = None
+
+        # ── Model race: pick winner, override weights if reliable ──────────────────────────────
         available_for_race: list[str] = ["rules"]
         if prophet_pred is not None:
             available_for_race.append("prophet")
         if lstm_uncertainty is not None:
             available_for_race.append("lstm")
+        if timesfm_pred is not None:
+            available_for_race.append("timesfm")
 
         race = self._race.get_winner(account_id, available_for_race)
 
@@ -333,6 +375,8 @@ class EnsemblePredictor:
                 weights = EnsembleWeights(lstm=0.0, prophet=1.0, rules=0.0)
             elif race.winner == "rules":
                 weights = EnsembleWeights(lstm=0.0, prophet=0.0, rules=1.0)
+            elif race.winner == "timesfm" and timesfm_pred is not None:
+                weights = EnsembleWeights(lstm=0.0, prophet=0.0, rules=0.0, timesfm=1.0)
 
         # Record each model's individual predictions (first 30 days) for next evaluation
         _last_tx = max(t.date for t in transactions) if transactions else date.today()
@@ -352,6 +396,11 @@ class EnsemblePredictor:
                 _last_tx + timedelta(days=i + 1): float(lstm_uncertainty.mean_prediction[i])
                 for i in range(_n_rec)
             })
+        if timesfm_pred is not None:
+            self._race.record(account_id, "timesfm", {
+                _last_tx + timedelta(days=i + 1): float(timesfm_pred[i])
+                for i in range(_n_rec)
+            })
 
         # Step 4 — Weighted average (mean predictions)
         ensemble_mean = np.zeros(horizon, dtype=np.float64)
@@ -361,11 +410,17 @@ class EnsemblePredictor:
             ensemble_mean += weights.prophet * prophet_pred
         if lstm_uncertainty is not None:
             ensemble_mean += weights.lstm * lstm_uncertainty.mean_prediction[:horizon]
+        if timesfm_pred is not None:
+            ensemble_mean += weights.timesfm * timesfm_pred
 
         # p25 for alerts (conservative)
         if lstm_uncertainty is not None:
             p25 = lstm_uncertainty.p25_prediction[:horizon]
             p75 = lstm_uncertainty.p75_prediction[:horizon]
+            band_width = float(np.mean(p75 - p25))
+        elif timesfm_p25 is not None and weights.timesfm >= 0.9:
+            p25 = timesfm_p25[:horizon]
+            p75 = timesfm_p75[:horizon]
             band_width = float(np.mean(p75 - p25))
         else:
             margin = user_features.avg_monthly_income * user_features.income_volatility
@@ -407,6 +462,8 @@ class EnsemblePredictor:
             model_used = ModelUsed.RACE_PROPHET
         elif race.winner == "rules" and weights.rules >= 0.9:
             model_used = ModelUsed.RACE_RULES
+        elif race.winner == "timesfm" and weights.timesfm >= 0.9:
+            model_used = ModelUsed.RACE_TIMESFM
         elif weights.lstm >= 0.5:
             model_used = ModelUsed.LSTM_ENSEMBLE
         elif weights.prophet >= 0.3:
