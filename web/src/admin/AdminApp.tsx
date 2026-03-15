@@ -10,6 +10,7 @@ const UserDetailPage = lazy(() => import("./pages/UserDetailPage"));
 const FlashCreditsPage = lazy(() => import("./pages/FlashCreditsPage"));
 const AlertsPage = lazy(() => import("./pages/AlertsPage"));
 const KpisPage = lazy(() => import("./pages/KpisPage"));
+const MLStatsPage = lazy(() => import("./pages/MLStatsPage"));
 const AdminFlagsPage = lazy(() => import("./pages/AdminFlagsPage"));
 const AdminConfigPage = lazy(() => import("./pages/AdminConfigPage"));
 const AdminManagePage = lazy(() => import("./pages/AdminManagePage"));
@@ -48,6 +49,7 @@ const AdminApp: React.FC = () => {
                 <Route path="credits" element={<FlashCreditsPage />} />
                 <Route path="alerts" element={<AlertsPage />} />
                 <Route path="kpis" element={<KpisPage />} />
+                <Route path="ml" element={<MLStatsPage />} />
                 {/* Super-admin routes — visible but locked for ROLE_ADMIN */}
                 <Route path="flags" element={<AdminFlagsPage />} />
                 <Route path="config" element={<AdminConfigPage />} />

@@ -6,6 +6,7 @@ import {
   CreditCard,
   Bell,
   BarChart3,
+  Brain,
   LogOut,
   ShieldCheck,
   Flag,
@@ -41,6 +42,11 @@ const adminNav = [
   },
   { label: "Alertes", to: "/admin/alerts", icon: <Bell size={18} /> },
   { label: "KPIs", to: "/admin/kpis", icon: <BarChart3 size={18} /> },
+  {
+    label: "Intelligence Artificielle",
+    to: "/admin/ml",
+    icon: <Brain size={18} />,
+  },
 ];
 
 const superAdminNav = [

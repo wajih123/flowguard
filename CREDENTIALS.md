@@ -128,6 +128,43 @@
 
 ---
 
+## Application Accounts
+
+### Super Admin (back-office full access)
+
+| Field    | Value                              |
+| -------- | ---------------------------------- |
+| URL      | `https://157-180-43-233.sslip.io/admin` |
+| Email    | `superadmin@flowguard.io`          |
+| Password | `Admin@FlowGuard2026!`             |
+| Role     | `ROLE_SUPER_ADMIN`                 |
+
+### Admin (back-office standard access)
+
+| Field    | Value                              |
+| -------- | ---------------------------------- |
+| URL      | `https://157-180-43-233.sslip.io/admin` |
+| Email    | `admin@dev.fr`                     |
+| Password | `Test1234!`                        |
+| Role     | `ROLE_ADMIN`                       |
+
+### Admin pages
+
+| Page                  | Route              | Access            |
+| --------------------- | ------------------ | ----------------- |
+| Dashboard             | `/admin/dashboard` | Admin + SuperAdmin |
+| Utilisateurs          | `/admin/users`     | Admin + SuperAdmin |
+| Flash Crédits         | `/admin/credits`   | Admin + SuperAdmin |
+| Alertes               | `/admin/alerts`    | Admin + SuperAdmin |
+| KPIs                  | `/admin/kpis`      | Admin + SuperAdmin |
+| Intelligence Artificielle | `/admin/ml`    | Admin + SuperAdmin |
+| Feature Flags         | `/admin/flags`     | SuperAdmin only   |
+| Configuration         | `/admin/config`    | SuperAdmin only   |
+| Admins                | `/admin/admins`    | SuperAdmin only   |
+| Audit                 | `/admin/audit`     | SuperAdmin only   |
+
+---
+
 ## Third-Party API Keys
 
 ### Bridge API (Banking Aggregation)
