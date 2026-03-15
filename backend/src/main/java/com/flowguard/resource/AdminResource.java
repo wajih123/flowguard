@@ -28,7 +28,7 @@ import java.util.UUID;
  * Admin back-office REST resource.
  * Requires {@code ROLE_ADMIN} or {@code ROLE_SUPER_ADMIN}.
  */
-@Path("/api/admin")
+@Path("/admin")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed({Roles.ADMIN, Roles.SUPER_ADMIN})

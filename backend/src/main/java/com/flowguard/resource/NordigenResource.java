@@ -34,7 +34,7 @@ import java.util.UUID;
  *   <li>{@code GET  /api/banking/accounts}         — list connected accounts
  * </ul>
  */
-@Path("/api/banking")
+@Path("/banking")
 @RolesAllowed("user")
 @RunOnVirtualThread
 @Produces(MediaType.APPLICATION_JSON)

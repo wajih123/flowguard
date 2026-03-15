@@ -24,7 +24,7 @@ import java.util.UUID;
  * Super-admin endpoints — restricted to {@code ROLE_SUPER_ADMIN} only.
  * Covers: admin user management, audit log, ML retraining trigger.
  */
-@Path("/api/super-admin")
+@Path("/super-admin")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @RolesAllowed(Roles.SUPER_ADMIN)

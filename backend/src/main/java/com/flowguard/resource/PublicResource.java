@@ -22,7 +22,7 @@ import java.util.UUID;
  * feature flags and non-sensitive system settings at startup.
  * Results are cached in Redis for 5 minutes.
  */
-@Path("/api/config")
+@Path("/config")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @PermitAll

@@ -170,7 +170,7 @@ public class BridgeService {
                     .POST(HttpRequest.BodyPublishers.ofString(body)).build();
 
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() != 201) {
+            if (resp.statusCode() != 201 && resp.statusCode() != 200) {
                 throw new BridgeApiException("Auth token failed: " + resp.statusCode() + " — " + resp.body());
             }
 
@@ -211,12 +211,13 @@ public class BridgeService {
                     .POST(HttpRequest.BodyPublishers.ofString(body)).build();
 
             HttpResponse<String> resp = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
-            if (resp.statusCode() != 201) {
+            if (resp.statusCode() != 201 && resp.statusCode() != 200) {
                 throw new BridgeApiException("Connect session failed: " + resp.statusCode() + " — " + resp.body());
             }
 
             JsonNode json = objectMapper.readTree(resp.body());
-            String url = json.get("redirect_url").asText();
+            // Bridge API v3 returns 'url' field (older versions used 'redirect_url')
+            String url = json.has("redirect_url") ? json.get("redirect_url").asText() : json.get("url").asText();
             String ctx = json.has("context") && !json.get("context").isNull()
                     ? json.get("context").asText() : context;
             return new ConnectSession(url, ctx);
