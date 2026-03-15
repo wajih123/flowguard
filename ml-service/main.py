@@ -70,6 +70,14 @@ try:
 except Exception as _e:
     log.warning("v2_router_registration_failed", error=str(_e))
 
+# ── v3 ML router (TimesFM + LSTM ensemble) ───────────────
+try:
+    from app.api.prediction_router import router as v3_router
+    app.include_router(v3_router)
+    log.info("v3 ML router registered (TimesFM + LSTM ensemble)")
+except Exception as _e:
+    log.warning("v3_router_registration_failed", error=str(_e))
+
 # ── Pydantic models ───────────────────────────────────────
 
 class DailyBalance(BaseModel):
