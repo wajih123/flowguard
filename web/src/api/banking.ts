@@ -36,13 +36,18 @@ export const bankingApi = {
     const { data } = await apiClient.post<SyncResponse>(
       "/api/banking/connect/callback",
       { state },
+      { timeout: 120_000 },
     );
     return data;
   },
 
   /** Synchronisation manuelle des comptes */
   sync: async (): Promise<SyncResponse> => {
-    const { data } = await apiClient.post<SyncResponse>("/api/banking/sync");
+    const { data } = await apiClient.post<SyncResponse>(
+      "/api/banking/sync",
+      undefined,
+      { timeout: 120_000 },
+    );
     return data;
   },
 
