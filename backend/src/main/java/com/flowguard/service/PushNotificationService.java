@@ -172,7 +172,7 @@ public class PushNotificationService {
     }
 
     @Transactional
-    private void removeInvalidToken(String fcmToken) {
+    void removeInvalidToken(String fcmToken) {
         em.createNativeQuery("DELETE FROM push_tokens WHERE fcm_token = :token")
           .setParameter("token", fcmToken)
           .executeUpdate();
