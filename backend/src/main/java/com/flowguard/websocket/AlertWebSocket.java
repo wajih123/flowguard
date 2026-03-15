@@ -93,8 +93,19 @@ public class AlertWebSocket {
     }
 
     private String buildAlertPayload(AlertDto alert) {
+        String deficit = alert.projectedDeficit() != null ? alert.projectedDeficit().toPlainString() : "null";
+        String triggerDate = alert.triggerDate() != null ? "\"" + alert.triggerDate() + "\"" : "null";
         return "{" +
             "\"type\":\"NEW_ALERT\"," +
-            "\"alert\":" + alert.toJson() + "}";
+            "\"alert\":{" +
+                "\"id\":\"" + alert.id() + "\"," +
+                "\"type\":\"" + alert.type() + "\"," +
+                "\"severity\":\"" + alert.severity() + "\"," +
+                "\"message\":\"" + alert.message().replace("\"", "\\\"") + "\"," +
+                "\"projectedDeficit\":" + deficit + "," +
+                "\"triggerDate\":" + triggerDate + "," +
+                "\"isRead\":" + alert.isRead() + "," +
+                "\"createdAt\":\"" + alert.createdAt() + "\"" +
+            "}}";
     }
 }

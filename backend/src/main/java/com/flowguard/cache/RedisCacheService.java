@@ -6,6 +6,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import io.quarkus.redis.client.RedisClient;
 import io.quarkus.redis.client.RedisClientName;
 import io.vertx.redis.client.Response;
+import java.util.List;
 
 @ApplicationScoped
 public class RedisCacheService {
@@ -31,6 +32,6 @@ public class RedisCacheService {
     }
 
     public void delete(String key) {
-        redisClient.del(key);
+        redisClient.del(List.of(key));
     }
 }
