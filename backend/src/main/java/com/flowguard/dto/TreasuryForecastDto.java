@@ -9,7 +9,11 @@ public record TreasuryForecastDto(
     List<CriticalPoint> criticalPoints,
     double confidenceScore,
     double healthScore,
-    LocalDate generatedAt
+    LocalDate generatedAt,
+    /** Which model (or ensemble) produced this forecast. */
+    String modelUsed,
+    /** The Model Race winner if one was selected, null if blended. */
+    String modelRaceWinner
 ) {
     public record ForecastPoint(
         LocalDate date,
