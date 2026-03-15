@@ -1,7 +1,7 @@
 # FlowGuard ML Service Dockerfile
-# Python 3.12, FastAPI, PyTorch, structlog, Redis, PostgreSQL
+# Python 3.11 — required by timesfm (>=3.10,<3.12)
 
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
