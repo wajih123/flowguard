@@ -18,8 +18,9 @@ export interface ConnectStartResponse {
 }
 
 export interface SyncResponse {
-  accounts_synced: number;
-  synced_at: string;
+  status?: string; // "syncing" when async (202)
+  accounts_synced?: number;
+  synced_at?: string;
 }
 
 export const bankingApi = {
@@ -36,7 +37,7 @@ export const bankingApi = {
     const { data } = await apiClient.post<SyncResponse>(
       "/api/banking/connect/callback",
       { state },
-      { timeout: 120_000 },
+      { timeout: 15_000 },
     );
     return data;
   },
@@ -46,7 +47,7 @@ export const bankingApi = {
     const { data } = await apiClient.post<SyncResponse>(
       "/api/banking/sync",
       undefined,
-      { timeout: 120_000 },
+      { timeout: 15_000 },
     );
     return data;
   },

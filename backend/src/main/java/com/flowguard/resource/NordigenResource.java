@@ -14,8 +14,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.jboss.logging.Logger;
 
-import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +38,8 @@ import java.util.UUID;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class NordigenResource {
+
+    private static final Logger LOG = Logger.getLogger(NordigenResource.class);
 
     @Inject
     BridgeService bridgeService;
@@ -105,9 +107,9 @@ public class NordigenResource {
     /**
      * Step 2 of the Bridge connect flow.
      * Called after Bridge redirects the user back to the frontend.
-     * Syncs all accounts and last-6-months transactions.
+     * Immediately returns 202 and syncs accounts + transactions in the background.
      *
-     * @return {@code {"accounts_synced": N, "synced_at": "..."}}
+     * @return {@code {"status": "syncing"}}
      */
     @POST
     @Path("/connect/callback")
@@ -123,12 +125,15 @@ public class NordigenResource {
 
         try {
             String userToken = bridgeService.getUserToken(bridgeUuid);
-            int synced = syncUserAccounts(userId, userToken);
-
-            Map<String, Object> body = new LinkedHashMap<>();
-            body.put("accounts_synced", synced);
-            body.put("synced_at", Instant.now().toString());
-            return Response.ok(body).build();
+            // Fire-and-forget: sync runs in background; clients poll GET /accounts
+            Thread.ofVirtual().start(() -> {
+                try {
+                    syncUserAccounts(userId, userToken);
+                } catch (Exception e) {
+                    LOG.errorf(e, "Background sync failed for user %s", userId);
+                }
+            });
+            return Response.accepted(Map.of("status", "syncing")).build();
 
         } catch (BridgeApiException e) {
             return Response.serverError()
@@ -141,7 +146,7 @@ public class NordigenResource {
     //  POST /api/banking/sync
     // ══════════════════════════════════════════════════════════════
 
-    /** Manual re-sync of accounts and transactions. */
+    /** Manual re-sync of accounts and transactions. Returns 202 immediately. */
     @POST
     @Path("/sync")
     public Response sync() {
@@ -156,12 +161,14 @@ public class NordigenResource {
 
         try {
             String userToken = bridgeService.getUserToken(bridgeUuid);
-            int synced = syncUserAccounts(userId, userToken);
-
-            Map<String, Object> body = new LinkedHashMap<>();
-            body.put("accounts_synced", synced);
-            body.put("synced_at", Instant.now().toString());
-            return Response.ok(body).build();
+            Thread.ofVirtual().start(() -> {
+                try {
+                    syncUserAccounts(userId, userToken);
+                } catch (Exception e) {
+                    LOG.errorf(e, "Background sync failed for user %s", userId);
+                }
+            });
+            return Response.accepted(Map.of("status", "syncing")).build();
 
         } catch (BridgeApiException e) {
             return Response.serverError()
