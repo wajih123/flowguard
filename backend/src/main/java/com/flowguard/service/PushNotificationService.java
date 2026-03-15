@@ -14,7 +14,6 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.logging.Logger;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
@@ -35,8 +34,8 @@ public class PushNotificationService {
 
     private static final Logger LOG = Logger.getLogger(PushNotificationService.class);
 
-    @ConfigProperty(name = "firebase.service-account-json", defaultValue = "")
-    String serviceAccountJson;
+    @ConfigProperty(name = "firebase.service-account-json")
+    Optional<String> serviceAccountJson;
 
     @Inject
     EntityManager em;
@@ -44,13 +43,14 @@ public class PushNotificationService {
     private FirebaseMessaging messaging;
 
     void onStart(@Observes StartupEvent ev) {
-        if (serviceAccountJson == null || serviceAccountJson.isBlank()) {
+        String json = serviceAccountJson.orElse("");
+        if (json.isBlank()) {
             LOG.warn("Firebase not configured (FIREBASE_SERVICE_ACCOUNT_JSON not set). Push notifications disabled.");
             return;
         }
         try {
             GoogleCredentials credentials = GoogleCredentials.fromStream(
-                    new ByteArrayInputStream(serviceAccountJson.getBytes(StandardCharsets.UTF_8)));
+                    new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)));
 
             FirebaseOptions options = FirebaseOptions.builder()
                     .setCredentials(credentials)
@@ -61,8 +61,8 @@ public class PushNotificationService {
             }
             messaging = FirebaseMessaging.getInstance();
             LOG.info("Firebase initialized successfully");
-        } catch (IOException e) {
-            LOG.errorf("Failed to initialize Firebase: %s", e.getMessage());
+        } catch (Exception e) {
+            LOG.warnf("Firebase initialization failed (push notifications disabled): %s", e.getMessage());
         }
     }
 
