@@ -42,3 +42,25 @@ def get_training_data(min_days: int = 90) -> list[dict]:
             }
             for row in rows
         ]
+
+
+def get_user_series(user_id: str, min_days: int = 7) -> list[dict]:
+    """
+    Fetch daily balance series for a user's primary account.
+    Returns list of {"date": str, "balance": float} sorted by date.
+    Returns empty list if the user has no accounts or insufficient data.
+    """
+    with SessionLocal() as session:
+        result = session.execute(text("""
+            SELECT
+                db.date::text AS date,
+                db.cumulative_balance AS balance
+            FROM daily_balances db
+            JOIN accounts a ON a.id = db.account_id
+            WHERE a.user_id = CAST(:uid AS uuid)
+              AND a.status = 'ACTIVE'
+            ORDER BY db.date
+        """), {"uid": user_id})
+
+        rows = result.fetchall()
+        return [{"date": str(row.date), "balance": float(row.balance)} for row in rows]

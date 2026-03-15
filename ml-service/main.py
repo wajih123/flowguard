@@ -1,11 +1,11 @@
 import structlog
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field
 from datetime import date
 from model import TreasuryPredictor
-from database import get_training_data
+from database import get_training_data, get_user_series
 from cache import get_cached, set_cached
 import asyncio
 
@@ -128,7 +128,83 @@ async def health():
         "model_loaded": predictor.model is not None if predictor else False
     }
 
-@app.post("/predict", response_model=PredictionResponse)
+@app.get("/predict")
+async def predict_by_user(
+    user_id: str = Query(..., min_length=1),
+    horizon_days: int = Query(default=30, ge=1, le=180),
+):
+    """
+    Predict treasury forecast for a user by fetching their transaction data from DB.
+    Called by TreasuryService.java — returns JSON compatible with TreasuryForecastDto.
+    Falls back to synthetic data if the user has insufficient history.
+    """
+    if not predictor:
+        raise HTTPException(503, detail="Modèle non initialisé")
+
+    cache_key = f"ml:predict_user:{user_id}:{horizon_days}"
+    cached = get_cached(cache_key)
+    if cached:
+        return cached
+
+    try:
+        series = get_user_series(user_id)
+        if len(series) < 7:
+            # Not enough real data — generate synthetic series
+            import numpy as np
+            from datetime import timedelta
+            rng = np.random.default_rng(seed=hash(user_id) % (2 ** 31))
+            base, days_gen = 15000.0, 90
+            synthetic = (
+                base
+                + np.linspace(0, 2000, days_gen)
+                + 3000 * np.sin(np.linspace(0, 4 * 3.14159, days_gen))
+                + rng.normal(0, 500, days_gen)
+            )
+            today = date.today()
+            series = [
+                {"date": str(today - timedelta(days=days_gen - i - 1)), "balance": float(v)}
+                for i, v in enumerate(synthetic)
+            ]
+
+        predictions_raw, confidence = predictor.predict(series, horizon_days)
+        anomalies  = predictor.detect_anomalies(series)
+        critical   = predictor.detect_critical_points(predictions_raw)
+        health_score = predictor.compute_health_score(series, predictions_raw)
+
+        # Build response in TreasuryForecastDto format
+        response = {
+            "predictions": [
+                {
+                    "date": p["date"],
+                    "predictedBalance": p["balance"],
+                    "lowerBound": round(p["balance"] * 0.95, 2),
+                    "upperBound": round(p["balance"] * 1.05, 2),
+                }
+                for p in predictions_raw
+            ],
+            "criticalPoints": [
+                {
+                    "date": cp["date"],
+                    "predictedBalance": cp.get("projected_balance", 0),
+                    "reason": cp.get("urgency", "UPCOMING"),
+                }
+                for cp in critical
+            ],
+            "confidenceScore": round(confidence, 3),
+            "healthScore": health_score,
+            "generatedAt": str(date.today()),
+        }
+
+        set_cached(cache_key, response, ttl_seconds=7200)
+        log.info("predict_by_user", user_id=user_id, horizon=horizon_days,
+                 points=len(predictions_raw), confidence=round(confidence, 3))
+        return response
+
+    except Exception as e:
+        log.error("predict_by_user_failed", user_id=user_id, error=str(e))
+        raise HTTPException(500, detail="Erreur lors de la prévision de trésorerie")
+
+
 async def predict(req: PredictionRequest):
     if not predictor:
         raise HTTPException(503, detail="Modèle non initialisé")

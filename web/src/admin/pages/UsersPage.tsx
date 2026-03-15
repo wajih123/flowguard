@@ -19,6 +19,11 @@ const USER_TYPE_LABELS: Record<string, string> = {
   TPE: "TPE",
   PME: "PME",
   SME: "Grande ent.",
+  B2C_SALARIE: "Salarié",
+  B2C_FAMILLE: "Famille",
+  B2C_RETRAITE: "Retraité",
+  B2C_ETUDIANT: "Étudiant",
+  B2C_CADRE: "Cadre",
 };
 
 const AdminUsersPage: React.FC = () => {

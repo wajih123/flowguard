@@ -338,8 +338,11 @@ class TreasuryPredictor:
             return {"status": "insufficient_data",
                     "message": "Pas assez de données pour entraîner le modèle."}
 
-        # Normalize
-        all_values = np.array(all_sequences + all_targets).flatten()
+        # Normalize using separate flatten to avoid inhomogeneous array error
+        # (all_sequences has seqs of length SEQ_LEN=60, all_targets of length 30)
+        sequences_flat = np.array(all_sequences, dtype=np.float32).flatten()
+        targets_flat   = np.array(all_targets,   dtype=np.float32).flatten()
+        all_values = np.concatenate([sequences_flat, targets_flat])
         self.scaler_mean = float(np.mean(all_values))
         self.scaler_std  = float(np.std(all_values))
 
