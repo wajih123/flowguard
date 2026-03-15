@@ -12,4 +12,7 @@ export interface BankAccount {
   connectedAt: number
   lastSyncAt?: number
   connectionStatus: ConnectionStatus
-}\n\n/** @deprecated use BankAccount */\nexport type Account = BankAccount
+}
+
+/** @deprecated use BankAccount */
+export type Account = BankAccount
