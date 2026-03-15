@@ -58,20 +58,24 @@ else
 fi
 
 # Build images (sequential to avoid OOM on 4GB server)
+# --pull : force pull of latest base image (avoids stale python:3.xx cache)
+# All images must build successfully before ANY container is restarted.
+# This prevents partial deploys that leave the app broken.
+
 echo "[2/4] Building backend image..."
-$COMPOSE build backend
+$COMPOSE build --pull backend || { echo "✗ Backend build failed — aborting, running containers untouched"; exit 1; }
 
 echo "[2/4] Building ML service image..."
-$COMPOSE build ml-service
+$COMPOSE build --pull ml-service || { echo "✗ ML service build failed — aborting, running containers untouched"; exit 1; }
 
 echo "[2/4] Building web image..."
-$COMPOSE build web
+$COMPOSE build --pull web || { echo "✗ Web build failed — aborting, running containers untouched"; exit 1; }
 
-# Rolling restart (zero-downtime: start new, stop old)
+# All builds succeeded → safe to restart
 echo "[3/4] Restarting services..."
 $COMPOSE up -d --remove-orphans
 
-# Remove old dangling images to save disk space
+# Remove dangling images ONLY after successful restart (never prune before)
 docker image prune -f
 
 # Health check
