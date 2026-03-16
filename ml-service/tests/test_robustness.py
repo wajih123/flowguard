@@ -21,7 +21,7 @@ import asyncio
 import random
 from datetime import date, timedelta
 from typing import Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -32,7 +32,6 @@ from app.domain import (
     QualityLabel,
     RecurringCategory,
     Transaction,
-    UncertaintyResult,
 )
 from app.models.ensemble import EnsemblePredictor, SanityChecker
 

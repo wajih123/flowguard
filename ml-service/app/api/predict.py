@@ -25,7 +25,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.db import get_active_model_version, get_baseline_mae
-from app.domain import EnsemblePrediction, ModelUsed, Transaction
+from app.domain import EnsemblePrediction, Transaction
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["ML v2"])

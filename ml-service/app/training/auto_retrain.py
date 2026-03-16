@@ -20,7 +20,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from typing import Optional
 
 from app.db import (
@@ -169,8 +169,6 @@ class AutoRetrainScheduler:
 
 def run_once() -> None:
     """Run a single drift check + retrain cycle (for cron jobs or CI triggers)."""
-    import os
-    import sys
 
     logging.basicConfig(
         level=logging.INFO,

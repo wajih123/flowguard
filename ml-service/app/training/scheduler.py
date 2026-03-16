@@ -99,7 +99,6 @@ def _run_retrain(urgency: str = "normal") -> None:
     log.info("retrain_starting", n_users=n_users, urgency=urgency)
     try:
         from app.training.trainer import LSTMTrainer
-        from app.db import get_active_model_version
         import numpy as np
 
         # Fetch training data

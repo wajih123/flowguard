@@ -7,9 +7,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 # ── Enums ──────────────────────────────────────────────────────────────────────

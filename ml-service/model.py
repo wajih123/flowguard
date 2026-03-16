@@ -113,16 +113,12 @@ class TreasuryPredictor:
     ) -> tuple[list[dict], float]:
         """LSTM-based prediction (when model is trained)."""
         from datetime import date, timedelta
-        import pandas as pd
 
         last_date = date.fromisoformat(series[-1]["date"])
 
         # Normalize
         arr = np.array(balances[-self.SEQ_LEN:], dtype=np.float32)
         normalized = (arr - self.scaler_mean) / (self.scaler_std + 1e-8)
-
-        # Build input tensor
-        x = torch.tensor(normalized).unsqueeze(0).unsqueeze(-1)  # (1, seq, 1)
 
         # Predict
         with torch.no_grad():
@@ -193,9 +189,12 @@ class TreasuryPredictor:
 
             # French monthly patterns
             monthly = 0.0
-            if dom == 1:   monthly = +2500.0   # Salary
-            elif dom == 5: monthly = -800.0    # Rent
-            elif dom in (10, 15, 25): monthly = -180.0  # Subscriptions/charges
+            if dom == 1:
+                monthly = +2500.0  # Salary
+            elif dom == 5:
+                monthly = -800.0  # Rent
+            elif dom in (10, 15, 25):
+                monthly = -180.0  # Subscriptions/charges
 
             noise = float(np.random.normal(0, volatility * 0.20))
             current = current + avg_daily_change + monthly + noise
@@ -259,8 +258,10 @@ class TreasuryPredictor:
             bal = [float(h["balance"]) for h in history]
             changes = [abs(bal[i+1] - bal[i]) for i in range(len(bal)-1)]
             avg_vol = float(np.mean(changes))
-            if avg_vol > 800:  score -= 15
-            elif avg_vol > 400: score -= 8
+            if avg_vol > 800:
+                score -= 15
+            elif avg_vol > 400:
+                score -= 8
 
         # Penalize negative trend
         if len(history) >= 10:
@@ -311,7 +312,6 @@ class TreasuryPredictor:
         Returns training metrics.
         """
         import os
-        from sklearn.preprocessing import StandardScaler
         from torch.utils.data import DataLoader, TensorDataset
 
         log.info("Starting LSTM training", accounts=len(training_data), epochs=epochs)

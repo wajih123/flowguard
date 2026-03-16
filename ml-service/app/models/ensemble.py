@@ -27,7 +27,6 @@ from app.domain import (
     EnsembleWeights,
     ModelUsed,
     QualityLabel,
-    RecurringPattern,
     SanityResult,
     Transaction,
     UncertaintyResult,

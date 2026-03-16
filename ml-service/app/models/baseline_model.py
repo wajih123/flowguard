@@ -119,8 +119,6 @@ class RuleBasedPredictor:
             income_interval = 30
 
         # Project each day
-        next_income_day = income_interval  # first expected income in N days
-
         for i in range(horizon):
             day = today + timedelta(days=i + 1)
 

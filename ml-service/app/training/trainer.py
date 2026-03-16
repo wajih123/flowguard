@@ -5,7 +5,7 @@ segmented evaluation, model versioning and rollback.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 
 import numpy as np
@@ -15,15 +15,11 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, Dataset
 
 from app.db import (
-    get_active_model_version,
-    get_baseline_mae,
     promote_model_version,
     save_model_version,
 )
 from app.domain import (
     EvaluationReport,
-    ModelVersion,
-    QualityLabel,
     TrainingResult,
     UserProfile,
 )

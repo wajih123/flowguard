@@ -175,7 +175,6 @@ async def predict_by_user(
             ]
 
         predictions_raw, confidence = predictor.predict(series, horizon_days)
-        anomalies  = predictor.detect_anomalies(series)
         critical   = predictor.detect_critical_points(predictions_raw)
         health_score = predictor.compute_health_score(series, predictions_raw)
 
@@ -272,7 +271,7 @@ async def scenario(req: ScenarioRequest):
 
         # Apply scenario delta
         import copy
-        from datetime import date as date_type, timedelta
+        from datetime import date as date_type
 
         impact_raw = copy.deepcopy(baseline_raw)
         today = date_type.today()

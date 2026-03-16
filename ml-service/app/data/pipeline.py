@@ -6,15 +6,12 @@ Ne laisse jamais passer des données invalides au modèle.
 """
 from __future__ import annotations
 
-import hashlib
 from datetime import date, timedelta
-from typing import Optional
 
 import holidays
 import numpy as np
 import pandas as pd
 import structlog
-from scipy import stats as scipy_stats
 from sklearn.ensemble import IsolationForest
 
 from app.domain import (
@@ -725,7 +722,6 @@ class DataQualityPipeline:
                 history_days=0,
                 data_quality_score=0.0,
             )
-            empty_weights = EnsembleWeights_placeholder()
             return PipelineResult(
                 cleaned_series=pd.DataFrame(),
                 raw_series=pd.DataFrame(),
