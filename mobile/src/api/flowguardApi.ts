@@ -2,7 +2,13 @@
 import { setupInterceptors } from './interceptors'
 import { fetch } from 'react-native-ssl-pinning'
 import { FlowGuardError } from './errors'
-import type { AuthResponse, User, RegisterDto, RegisterBusinessDto } from '../domain/User'
+import type {
+  AuthResponse,
+  User,
+  RegisterDto,
+  RegisterBusinessDto,
+  LoginResult,
+} from '../domain/User'
 import type { TreasuryForecast } from '../domain/TreasuryForecast'
 import type { SpendingAnalysis } from '../domain/SpendingAnalysis'
 import type { ScenarioRequest, ScenarioResult } from '../domain/Scenario'
@@ -32,7 +38,7 @@ setupInterceptors(api)
 const sslHeaders = { 'Content-Type': 'application/json', 'X-App-Version': '1.0.0' }
 
 // â”€â”€ Auth (SSL pinning) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-export const login = async (email: string, password: string): Promise<AuthResponse> => {
+export const login = async (email: string, password: string): Promise<LoginResult> => {
   const res = await fetch(`${BASE_URL}/api/auth/login`, {
     method: 'POST',
     headers: sslHeaders,
@@ -41,6 +47,21 @@ export const login = async (email: string, password: string): Promise<AuthRespon
     timeoutInterval: 30000,
   })
   if (res.status !== 200) throw new FlowGuardError('UNAUTHORIZED', 'Identifiants incorrects')
+  return JSON.parse(res.bodyString!) as LoginResult
+}
+
+export const verifyOtp = async (sessionToken: string, code: string): Promise<AuthResponse> => {
+  const res = await fetch(`${BASE_URL}/api/auth/verify-otp`, {
+    method: 'POST',
+    headers: sslHeaders,
+    body: JSON.stringify({ sessionToken, code }),
+    sslPinning: { certs: ['flowguard'] },
+    timeoutInterval: 30000,
+  })
+  if (res.status !== 200) {
+    const body = JSON.parse(res.bodyString ?? '{}') as { message?: string }
+    throw new FlowGuardError('UNAUTHORIZED', body.message ?? 'Code incorrect')
+  }
   return JSON.parse(res.bodyString!) as AuthResponse
 }
 

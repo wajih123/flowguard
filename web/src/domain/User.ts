@@ -44,3 +44,14 @@ export interface LoginRequest {
   email: string;
   password: string;
 }
+
+export interface MfaChallenge {
+  mfaRequired: true;
+  sessionToken: string;
+  maskedEmail: string;
+}
+
+export type LoginResult = AuthResponse | MfaChallenge;
+
+export const isMfaChallenge = (r: LoginResult): r is MfaChallenge =>
+  (r as MfaChallenge).mfaRequired === true;

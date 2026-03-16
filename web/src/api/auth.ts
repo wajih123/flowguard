@@ -2,13 +2,19 @@ import apiClient from "./client";
 import type {
   AuthResponse,
   LoginRequest,
+  LoginResult,
   RegisterRequest,
   User,
 } from "@/domain/User";
 
 export const authApi = {
   login: (data: LoginRequest) =>
-    apiClient.post<AuthResponse>("/api/auth/login", data).then((r) => r.data),
+    apiClient.post<LoginResult>("/api/auth/login", data).then((r) => r.data),
+
+  verifyOtp: (sessionToken: string, code: string) =>
+    apiClient
+      .post<AuthResponse>("/api/auth/verify-otp", { sessionToken, code })
+      .then((r) => r.data),
 
   register: (data: RegisterRequest) =>
     apiClient

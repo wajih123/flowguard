@@ -81,11 +81,12 @@ public class RateLimitFilter implements ContainerRequestFilter {
 
     private boolean isPublicPath(String path) {
         return path != null && (
-            path.contains("/auth/register") ||
-            path.contains("/auth/login")    ||
-            path.contains("/auth/refresh")  ||
-            path.contains("/public")        ||
-            path.contains("/health")        ||
+            path.contains("/auth/register")   ||
+            path.contains("/auth/login")      ||
+            path.contains("/auth/verify-otp") ||
+            path.contains("/auth/refresh")    ||
+            path.contains("/public")          ||
+            path.contains("/health")          ||
             path.contains("/metrics")
         );
     }

@@ -42,3 +42,14 @@ export interface RegisterBusinessDto {
   employeeCount: string
   plan: 'PRO' | 'SCALE'
 }
+
+export interface MfaChallenge {
+  mfaRequired: true
+  sessionToken: string
+  maskedEmail: string
+}
+
+export type LoginResult = AuthResponse | MfaChallenge
+
+export const isMfaChallenge = (r: LoginResult): r is MfaChallenge =>
+  (r as MfaChallenge).mfaRequired === true

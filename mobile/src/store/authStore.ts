@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { User, RegisterDto, RegisterBusinessDto } from '../domain/User'
+import { isMfaChallenge } from '../domain/User'
 import * as flowguardApi from '../api/flowguardApi'
 import Keychain from 'react-native-keychain'
 import ReactNativeBiometrics from 'react-native-biometrics'
@@ -13,7 +14,13 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  // 2FA state
+  mfaPending: boolean
+  sessionToken: string | null
+  maskedEmail: string | null
   login: (email: string, password: string) => Promise<void>
+  verifyOtp: (code: string) => Promise<void>
+  cancelMfa: () => void
   loginWithBiometric: () => Promise<void>
   register: (data: RegisterDto) => Promise<void>
   registerBusiness: (data: RegisterBusinessDto) => Promise<void>
@@ -23,27 +30,79 @@ interface AuthState {
   clearError: () => void
 }
 
-export const useAuthStore = create<AuthState>((set, _get) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  mfaPending: false,
+  sessionToken: null,
+  maskedEmail: null,
 
   login: async (email: string, password: string) => {
     set({ isLoading: true, error: null })
     try {
       const response = await flowguardApi.login(email, password)
-      await Keychain.setGenericPassword(
-        'fg',
-        JSON.stringify({ accessToken: response.accessToken, refreshToken: response.refreshToken }),
-      )
-      mmkv.set('fg-user', JSON.stringify(response.user))
-      set({ user: response.user, isAuthenticated: true, isLoading: false })
+      if (isMfaChallenge(response)) {
+        set({
+          mfaPending: true,
+          sessionToken: response.sessionToken,
+          maskedEmail: response.maskedEmail,
+          isLoading: false,
+        })
+      } else {
+        await Keychain.setGenericPassword(
+          'fg',
+          JSON.stringify({
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+          }),
+        )
+        mmkv.set('fg-user', JSON.stringify(response.user))
+        set({
+          user: response.user,
+          isAuthenticated: true,
+          mfaPending: false,
+          sessionToken: null,
+          maskedEmail: null,
+          isLoading: false,
+        })
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erreur de connexion'
       set({ error: message, isLoading: false })
     }
   },
+
+  verifyOtp: async (code: string) => {
+    const { sessionToken } = get()
+    if (!sessionToken) {
+      set({ error: 'Session expirée. Veuillez vous reconnecter.', mfaPending: false })
+      return
+    }
+    set({ isLoading: true, error: null })
+    try {
+      const response = await flowguardApi.verifyOtp(sessionToken, code)
+      await Keychain.setGenericPassword(
+        'fg',
+        JSON.stringify({ accessToken: response.accessToken, refreshToken: response.refreshToken }),
+      )
+      mmkv.set('fg-user', JSON.stringify(response.user))
+      set({
+        user: response.user,
+        isAuthenticated: true,
+        mfaPending: false,
+        sessionToken: null,
+        maskedEmail: null,
+        isLoading: false,
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Code incorrect ou expiré'
+      set({ error: message, isLoading: false })
+    }
+  },
+
+  cancelMfa: () => set({ mfaPending: false, sessionToken: null, maskedEmail: null, error: null }),
 
   loginWithBiometric: async () => {
     set({ isLoading: true, error: null })

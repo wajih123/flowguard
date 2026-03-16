@@ -44,10 +44,23 @@ public class AuthResource {
     @RunOnVirtualThread
     public Response login(@Valid LoginRequest dto) {
         try {
-            AuthResponse response = authService.login(dto);
-            return Response.ok(response).build();
+            MfaChallengeResponse challenge = authService.login(dto);
+            return Response.ok(challenge).build();
         } catch (SecurityException e) {
             return Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorBody("Identifiants incorrects")).build();
+        }
+    }
+
+    @POST
+    @Path("/verify-otp")
+    @PermitAll
+    @RunOnVirtualThread
+    public Response verifyOtp(@Valid VerifyOtpRequest dto) {
+        try {
+            AuthResponse response = authService.completeLogin(dto);
+            return Response.ok(response).build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorBody(e.getMessage())).build();
         }
     }
 

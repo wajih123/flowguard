@@ -1,5 +1,13 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Keyboard,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { z } from 'zod'
 import type { StackScreenProps } from '@react-navigation/stack'
@@ -18,13 +26,118 @@ const loginSchema = z.object({
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
+// ── OTP step ─────────────────────────────────────────────────────────────────
+const OtpStep: React.FC = () => {
+  const { verifyOtp, cancelMfa, isLoading, error, clearError, maskedEmail } = useAuthStore()
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const inputRefs = useRef<(TextInput | null)[]>([])
+
+  useEffect(() => {
+    setTimeout(() => inputRefs.current[0]?.focus(), 200)
+  }, [])
+
+  const handleChange = useCallback(
+    (idx: number, val: string) => {
+      if (!/^\d?$/.test(val)) return
+      const next = [...digits]
+      next[idx] = val
+      setDigits(next)
+      if (val && idx < 5) inputRefs.current[idx + 1]?.focus()
+      if (next.every((d) => d !== '')) {
+        verifyOtp(next.join('')).catch(() => {
+          setDigits(['', '', '', '', '', ''])
+          setTimeout(() => inputRefs.current[0]?.focus(), 50)
+        })
+      }
+    },
+    [digits, verifyOtp],
+  )
+
+  const handleKeyPress = useCallback(
+    (idx: number, key: string) => {
+      if (key === 'Backspace' && !digits[idx] && idx > 0) {
+        inputRefs.current[idx - 1]?.focus()
+      }
+    },
+    [digits],
+  )
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableOpacity onPress={cancelMfa} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Retour</Text>
+        </TouchableOpacity>
+
+        <View style={styles.header}>
+          <Text style={styles.logo}>🔐 Vérification</Text>
+          <Text style={styles.subtitle}>
+            Code envoyé à{' '}
+            <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>{maskedEmail}</Text>
+          </Text>
+          <Text style={[styles.subtitle, { marginTop: spacing.xs }]}>
+            Expire dans <Text style={{ color: colors.primary }}>10 minutes</Text>.
+          </Text>
+        </View>
+
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{error}</Text>
+            <TouchableOpacity onPress={clearError}>
+              <Text style={[styles.errorBannerText, { marginLeft: spacing.sm }]}>×</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.otpRow}>
+          {digits.map((d, i) => (
+            <TextInput
+              key={i}
+              ref={(el) => {
+                inputRefs.current[i] = el
+              }}
+              style={[styles.otpBox, d ? styles.otpBoxFilled : null]}
+              value={d}
+              onChangeText={(v) => handleChange(i, v)}
+              onKeyPress={({ nativeEvent }) => handleKeyPress(i, nativeEvent.key)}
+              keyboardType="number-pad"
+              maxLength={1}
+              textAlign="center"
+              selectTextOnFocus
+            />
+          ))}
+        </View>
+
+        {isLoading ? (
+          <FlowGuardLoader />
+        ) : (
+          <FlowGuardButton
+            title="Confirmer"
+            onPress={() => verifyOtp(digits.join(''))}
+            variant="primary"
+            disabled={digits.some((d) => !d)}
+          />
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
+
+// ── Login step ───────────────────────────────────────────────────────────────
+
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const { login, loginWithBiometric, isLoading, error: authError } = useAuthStore()
+  const { login, loginWithBiometric, mfaPending, isLoading, error: authError } = useAuthStore()
   const { isAvailable: biometricAvailable } = useBiometric()
+
+  if (mfaPending) return <OtpStep />
 
   const validate = useCallback((): boolean => {
     const result = loginSchema.safeParse({ email, password })
@@ -147,11 +260,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   errorBannerText: {
     color: colors.danger,
     fontSize: typography.body.fontSize,
     fontWeight: '600',
+    flex: 1,
   },
   buttonGroup: {
     gap: spacing.sm,
@@ -169,5 +285,33 @@ const styles = StyleSheet.create({
   registerTextBold: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  // OTP styles
+  backButton: {
+    marginBottom: spacing.xl,
+  },
+  backButtonText: {
+    color: colors.textSecondary,
+    fontSize: typography.body.fontSize,
+  },
+  otpRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  otpBox: {
+    width: 48,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border ?? '#2a2a3e',
+    backgroundColor: colors.surface,
+    color: colors.textPrimary ?? colors.primary,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  otpBoxFilled: {
+    borderColor: colors.primary,
   },
 })

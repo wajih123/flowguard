@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { authApi } from "@/api/auth";
+import { isMfaChallenge } from "@/domain/User";
 import type { User, LoginRequest, RegisterRequest, Role } from "@/domain/User";
 
 // ─── Token storage — persisted in localStorage ───────────────────────────────
@@ -23,10 +24,16 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   isAdmin: boolean;
+  // 2FA state
+  mfaPending: boolean;
+  sessionToken: string | null;
+  maskedEmail: string | null;
 }
 
 interface AuthActions {
   login: (data: LoginRequest) => Promise<void>;
+  verifyOtp: (code: string) => Promise<void>;
+  cancelMfa: () => void;
   register: (data: RegisterRequest) => Promise<void>;
   logout: () => void;
   hydrate: () => Promise<void>;
@@ -37,24 +44,39 @@ interface AuthActions {
 const ADMIN_ROLES = new Set<Role>(["ROLE_ADMIN", "ROLE_SUPER_ADMIN"]);
 const checkAdmin = (user: User) => !!user.role && ADMIN_ROLES.has(user.role);
 
-export const useAuthStore = create<AuthState & AuthActions>((set) => ({
+export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: true, // true until hydrate() resolves — prevents redirect before token check
   error: null,
   isAdmin: false,
+  mfaPending: false,
+  sessionToken: null,
+  maskedEmail: null,
 
   login: async (data) => {
     set({ isLoading: true, error: null });
     try {
       const res = await authApi.login(data);
-      setTokens(res.accessToken, res.refreshToken);
-      set({
-        user: res.user,
-        isAuthenticated: true,
-        isAdmin: checkAdmin(res.user),
-        isLoading: false,
-      });
+      if (isMfaChallenge(res)) {
+        set({
+          mfaPending: true,
+          sessionToken: res.sessionToken,
+          maskedEmail: res.maskedEmail,
+          isLoading: false,
+        });
+      } else {
+        setTokens(res.accessToken, res.refreshToken);
+        set({
+          user: res.user,
+          isAuthenticated: true,
+          isAdmin: checkAdmin(res.user),
+          mfaPending: false,
+          sessionToken: null,
+          maskedEmail: null,
+          isLoading: false,
+        });
+      }
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Email ou mot de passe incorrect.";
@@ -62,6 +84,44 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
       throw err;
     }
   },
+
+  verifyOtp: async (code) => {
+    const { sessionToken } = get();
+    if (!sessionToken) {
+      set({
+        error: "Session expirée. Veuillez vous reconnecter.",
+        mfaPending: false,
+      });
+      return;
+    }
+    set({ isLoading: true, error: null });
+    try {
+      const res = await authApi.verifyOtp(sessionToken, code);
+      setTokens(res.accessToken, res.refreshToken);
+      set({
+        user: res.user,
+        isAuthenticated: true,
+        isAdmin: checkAdmin(res.user),
+        mfaPending: false,
+        sessionToken: null,
+        maskedEmail: null,
+        isLoading: false,
+      });
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Code incorrect ou expiré.";
+      set({ error: msg, isLoading: false });
+      throw err;
+    }
+  },
+
+  cancelMfa: () =>
+    set({
+      mfaPending: false,
+      sessionToken: null,
+      maskedEmail: null,
+      error: null,
+    }),
 
   register: async (data) => {
     set({ isLoading: true, error: null });

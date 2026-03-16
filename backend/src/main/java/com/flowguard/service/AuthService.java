@@ -3,8 +3,10 @@ package com.flowguard.service;
 import com.flowguard.domain.UserEntity;
 import com.flowguard.dto.AuthResponse;
 import com.flowguard.dto.LoginRequest;
+import com.flowguard.dto.MfaChallengeResponse;
 import com.flowguard.dto.RegisterRequest;
 import com.flowguard.dto.UserDto;
+import com.flowguard.dto.VerifyOtpRequest;
 import com.flowguard.repository.UserRepository;
 import com.flowguard.security.RateLimiter;
 import io.quarkus.elytron.security.common.BcryptUtil;
@@ -25,6 +27,9 @@ public class AuthService {
 
     @Inject
     RefreshTokenService refreshTokenService;
+
+    @Inject
+    OtpService otpService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -51,7 +56,13 @@ public class AuthService {
         return buildAuthResponse(user, accessToken, refreshToken);
     }
 
-    public AuthResponse login(LoginRequest request) {
+    /**
+     * Step 1 — validate credentials and send an e-mail OTP.
+     *
+     * @return {@link MfaChallengeResponse} with the session token the client
+     *         must present with the 6-digit code to {@code POST /auth/verify-otp}
+     */
+    public MfaChallengeResponse login(LoginRequest request) {
         rateLimiter.checkAndRecord(request.email());
 
         UserEntity user = userRepository.findByEmail(request.email())
@@ -66,8 +77,19 @@ public class AuthService {
         }
 
         rateLimiter.reset(request.email());
-        String accessToken = refreshTokenService.buildAccessToken(user);
-        String refreshToken = refreshTokenService.issueRefreshToken(user, null, "login");
+
+        String sessionToken = otpService.sendOtp(user);
+        return new MfaChallengeResponse(sessionToken, OtpService.maskEmail(user.getEmail()));
+    }
+
+    /**
+     * Step 2 — verify the OTP and issue the final JWT + refresh-token pair.
+     */
+    @Transactional
+    public AuthResponse completeLogin(VerifyOtpRequest request) {
+        UserEntity user       = otpService.verify(request.sessionToken(), request.code());
+        String accessToken    = refreshTokenService.buildAccessToken(user);
+        String refreshToken   = refreshTokenService.issueRefreshToken(user, null, "login");
         return buildAuthResponse(user, accessToken, refreshToken);
     }
 
