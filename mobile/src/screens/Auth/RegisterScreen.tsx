@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { z } from 'zod';
-import type { StackScreenProps } from '@react-navigation/stack';
-import { useAuthStore } from '../../store/authStore';
-import { FlowGuardButton } from '../../components/FlowGuardButton';
-import { FlowGuardInput } from '../../components/FlowGuardInput';
-import { FlowGuardLoader } from '../../components/FlowGuardLoader';
-import { Routes } from '../../navigation/routes';
-import { colors, typography, spacing } from '../../theme';
+import React, { useState, useCallback } from 'react'
+import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import { z } from 'zod'
+import type { StackScreenProps } from '@react-navigation/stack'
+import { useAuthStore } from '../../store/authStore'
+import { FlowGuardButton } from '../../components/FlowGuardButton'
+import { FlowGuardInput } from '../../components/FlowGuardInput'
+import { FlowGuardLoader } from '../../components/FlowGuardLoader'
+import { Routes } from '../../navigation/routes'
+import { colors, typography, spacing } from '../../theme'
 
 const registerSchema = z
   .object({
@@ -22,13 +22,13 @@ const registerSchema = z
       .regex(/[0-9]/, 'Au moins un chiffre')
       .regex(/[^A-Za-z0-9]/, 'Au moins un caractère spécial'),
     confirmPassword: z.string(),
-    companyName: z.string().min(1, "Nom de l'entreprise requis"),
+    companyName: z.string().optional(),
     userType: z.enum(['FREELANCE', 'TPE', 'PME']),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Les mots de passe ne correspondent pas',
     path: ['confirmPassword'],
-  });
+  })
 
 type UserType = 'FREELANCE' | 'TPE' | 'PME'
 
@@ -36,21 +36,21 @@ const USER_TYPES: { key: UserType; label: string; description: string }[] = [
   { key: 'FREELANCE', label: 'Freelance', description: 'Auto-entrepreneur, indépendant' },
   { key: 'TPE', label: 'TPE', description: '< 10 salariés' },
   { key: 'PME', label: 'PME', description: '10 à 250 salariés' },
-];
+]
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [userType, setUserType] = useState<UserType>('FREELANCE');
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [companyName, setCompanyName] = useState('')
+  const [userType, setUserType] = useState<UserType>('FREELANCE')
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const { register, isLoading, error: authError } = useAuthStore();
+  const { register, isLoading, error: authError } = useAuthStore()
 
   const validate = useCallback((): boolean => {
     const result = registerSchema.safeParse({
@@ -61,25 +61,27 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       confirmPassword,
       companyName,
       userType,
-    });
+    })
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {};
+      const fieldErrors: Record<string, string> = {}
       result.error.errors.forEach((err) => {
-        const field = err.path[0];
+        const field = err.path[0]
         if (typeof field === 'string') {
-          fieldErrors[field] = err.message;
+          fieldErrors[field] = err.message
         }
-      });
-      setErrors(fieldErrors);
-      return false;
+      })
+      setErrors(fieldErrors)
+      return false
     }
-    setErrors({});
-    return true;
-  }, [firstName, lastName, email, password, confirmPassword, companyName, userType]);
+    setErrors({})
+    return true
+  }, [firstName, lastName, email, password, confirmPassword, companyName, userType])
 
   const handleRegister = useCallback(async () => {
-    Keyboard.dismiss();
-    if (!validate()) {return;}
+    Keyboard.dismiss()
+    if (!validate()) {
+      return
+    }
     await register({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
@@ -87,8 +89,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       password,
       companyName: companyName.trim(),
       userType,
-    });
-  }, [firstName, lastName, email, password, companyName, userType, register, validate]);
+    })
+  }, [firstName, lastName, email, password, companyName, userType, register, validate])
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -110,7 +112,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <Text style={styles.sectionLabel}>Type d'entreprise</Text>
         <View style={styles.typeGrid}>
           {USER_TYPES.map((type) => {
-            const isActive = userType === type.key;
+            const isActive = userType === type.key
             return (
               <TouchableOpacity
                 key={type.key}
@@ -122,7 +124,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
                 </Text>
                 <Text style={styles.typeDesc}>{type.description}</Text>
               </TouchableOpacity>
-            );
+            )
           })}
         </View>
 
@@ -199,8 +201,8 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -288,4 +290,4 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: spacing.xxl,
   },
-});
+})

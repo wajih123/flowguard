@@ -31,7 +31,7 @@ public class UserEntity extends PanacheEntityBase {
     @Column(nullable = false)
     private String passwordHash;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String companyName;
 
     @Enumerated(EnumType.STRING)

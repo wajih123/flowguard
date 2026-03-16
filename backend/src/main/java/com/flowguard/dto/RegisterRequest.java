@@ -23,7 +23,6 @@ public record RegisterRequest(
     @Size(min = 8, message = "Minimum 8 caractères")
     String password,
 
-    @NotBlank(message = "Nom de l'entreprise requis")
     String companyName,
 
     @NotNull(message = "Type d'utilisateur requis")

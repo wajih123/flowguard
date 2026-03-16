@@ -70,6 +70,9 @@ public class SwanService {
      */
     public JsonNode createOnboarding(String email, String firstName, String lastName, String companyName) {
         ensureAuthenticated();
+        String resolvedName = (companyName != null && !companyName.isBlank())
+                ? companyName
+                : firstName + " " + lastName;
         try {
             String graphql = """
                 mutation {
@@ -83,7 +86,7 @@ public class SwanService {
                         }
                     }
                 }
-                """.formatted(email, companyName);
+                """.formatted(email, resolvedName);
 
             String payload = objectMapper.writeValueAsString(new GraphqlRequest(graphql));
 

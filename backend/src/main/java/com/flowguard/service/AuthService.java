@@ -47,7 +47,7 @@ public class AuthService {
                 .lastName(request.lastName())
                 .email(request.email())
                 .passwordHash(passwordHash)
-                .companyName(request.companyName())
+                .companyName(request.companyName() != null ? request.companyName() : "")
                 .userType(request.userType())
                 .kycStatus(UserEntity.KycStatus.PENDING)
                 .build();
