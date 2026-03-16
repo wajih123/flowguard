@@ -73,11 +73,14 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
+      # root-path=/api means health is at /api/health, not /health
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
       start_period: 90s
+    # Limit JVM to 768 MB on the 4 GB Hetzner CAX11
+    mem_limit: 768m
     restart: unless-stopped
     networks:
       - internal
@@ -107,6 +110,8 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    # PyTorch + TimesFM require ~1.5 GB; cap here to protect other services
+    mem_limit: 1536m
     restart: unless-stopped
     networks:
       - internal

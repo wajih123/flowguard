@@ -32,20 +32,22 @@ public class RateLimitFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext ctx) {
+        // 1. Skip all Redis checks for public unauthenticated endpoints (fast path,
+        //    no network I/O) — must be checked BEFORE any Redis call to prevent
+        //    Redis latency from blocking login/register/health requests.
+        String path = ctx.getUriInfo().getPath();
+        if (isPublicPath(path)) {
+            return;
+        }
+
         String ip = extractClientIp(ctx);
 
-        // 1. Check IP blocklist first (fastest exit)
+        // 2. Check IP blocklist (Redis GET — only for non-public paths)
         if (rateLimiter.isBlocked(ip)) {
             ctx.abortWith(Response.status(Response.Status.FORBIDDEN)
                 .entity("{\"error\":\"IP bloquée. Contactez le support : support@flowguard.fr\"}")
                 .header("Content-Type", "application/json")
                 .build());
-            return;
-        }
-
-        // 2. Skip global rate limit for public unauthenticated endpoints
-        String path = ctx.getUriInfo().getPath();
-        if (isPublicPath(path)) {
             return;
         }
 
