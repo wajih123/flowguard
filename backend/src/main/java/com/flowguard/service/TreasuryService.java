@@ -83,17 +83,31 @@ public class TreasuryService {
 
         // ── 3. Build JSON payload ─────────────────────────────────────────────
         try {
+            // Ensure ascending sort by date before computing running balance
+            txs.sort(java.util.Comparator.comparing(TransactionEntity::getDate));
+
+            // Compute running balance per transaction (no balance column in DB).
+            // Strategy: walk backwards from current account balance.
+            double currentBal = primary.getBalance() != null
+                    ? primary.getBalance().doubleValue() : 0.0;
+            double[] runningBalances = new double[txs.size()];
+            runningBalances[txs.size() - 1] = currentBal;
+            for (int i = txs.size() - 2; i >= 0; i--) {
+                runningBalances[i] = runningBalances[i + 1]
+                        - txs.get(i + 1).getAmount().doubleValue();
+            }
+
             ObjectNode payload = objectMapper.createObjectNode();
             payload.put("account_id", primary.getId().toString());
             payload.put("horizon", horizonDays);
 
             ArrayNode txArray = payload.putArray("transactions");
-            for (TransactionEntity tx : txs) {
+            for (int i = 0; i < txs.size(); i++) {
+                TransactionEntity tx = txs.get(i);
                 ObjectNode item = txArray.addObject();
                 item.put("date", tx.getDate().toString());
                 item.put("amount", tx.getAmount().doubleValue());
-                item.put("balance", primary.getBalance() != null
-                        ? primary.getBalance().doubleValue() : 0.0);
+                item.put("balance", runningBalances[i]);
                 item.put("description", tx.getLabel());
                 item.put("category", tx.getCategory() != null
                         ? tx.getCategory().name() : null);
