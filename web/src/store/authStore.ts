@@ -156,6 +156,12 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       set({ isLoading: false });
       return;
     }
+    // Already authenticated in this session (e.g., just completed MFA/login)
+    // Skipping refresh here avoids consuming a single-use refresh token unnecessarily.
+    if (get().isAuthenticated && get().user) {
+      set({ isLoading: false });
+      return;
+    }
     set({ isLoading: true });
     try {
       // Try to refresh to get a fresh token + user info

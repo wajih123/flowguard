@@ -25,7 +25,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 }) => {
   if (isLoading) return <SkeletonCard lines={4} />;
 
-  if (!dashboard) {
+  if (!dashboard || !dashboard.account) {
     return (
       <Card
         variant="flat"
@@ -33,6 +33,9 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
       >
         <Building2 size={32} className="text-text-muted mx-auto mb-2" />
         <p className="text-text-secondary text-sm">Aucun compte connecté</p>
+        <p className="text-text-muted text-xs mt-1">
+          Connectez une banque pour commencer
+        </p>
       </Card>
     );
   }

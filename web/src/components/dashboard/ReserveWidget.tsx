@@ -36,7 +36,7 @@ export const ReserveWidget: React.FC<ReserveWidgetProps> = ({
   const repaymentDate = format(addDays(new Date(), 30), "yyyy-MM-dd");
 
   const handleConfirm = async () => {
-    if (!dashboard?.account.id) return;
+    if (!dashboard?.account?.id) return;
     setIsSubmitting(true);
     setError(null);
     try {
