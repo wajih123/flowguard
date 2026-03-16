@@ -42,7 +42,6 @@ public class DataBreachService {
 
     /** CNIL breach notification portal */
     private static final String CNIL_PORTAL_URL = "https://notifications.cnil.fr/notifications/index";
-    private static final String CNIL_NOTIFICATION_EMAIL = "notifications@cnil.fr";
 
     @ConfigProperty(name = "flowguard.compliance.officer-email", defaultValue = "compliance@flowguard.fr")
     String complianceOfficerEmail;
@@ -82,7 +81,7 @@ public class DataBreachService {
 
         // For HIGH and CRITICAL: prepare CNIL notification draft
         if (severity == BreachSeverity.HIGH || severity == BreachSeverity.CRITICAL) {
-            sendCnilNotificationDraft(incidentId, description, severity,
+            sendCnilNotificationDraft(incidentId, description,
                     affectedUsers, dataCategories, discoveredAt);
         }
 
@@ -149,12 +148,12 @@ public class DataBreachService {
     }
 
     private void sendCnilNotificationDraft(
-            UUID incidentId, String description, BreachSeverity severity,
+            UUID incidentId, String description,
             List<UUID> affectedUsers, List<String> dataCategories, Instant discoveredAt
     ) {
         try {
             String subject = String.format("[ACTION REQUISE 72H] Brouillon notification CNIL — Incident %s", incidentId);
-            String html = buildCnilDraftBody(incidentId, description, severity,
+            String html = buildCnilDraftBody(description,
                     affectedUsers, dataCategories, discoveredAt);
             mailer.send(Mail.withHtml(dpoEmail, subject, html));
             LOG.warnf("CNIL notification draft sent for breach %s (72h deadline from %s)", incidentId, discoveredAt);
@@ -176,7 +175,7 @@ public class DataBreachService {
             UUID incidentId, String description, BreachSeverity severity,
             List<UUID> affectedUsers, List<String> dataCategories, Instant discoveredAt
     ) {
-        String deadline72h = DateTimeFormatter.ISO_INSTANT.format(discoveredAt.plusSeconds(72 * 3600));
+        String deadline72h = DateTimeFormatter.ISO_INSTANT.format(discoveredAt.plusSeconds(72L * 3600));
         return """
             <html><body style="font-family:sans-serif;color:#333">
             <h2 style="color:#c0392b">🔴 VIOLATION DE DONNÉES PERSONNELLES — Art. 33 RGPD</h2>
@@ -215,7 +214,7 @@ public class DataBreachService {
     }
 
     private String buildCnilDraftBody(
-            UUID incidentId, String description, BreachSeverity severity,
+            String description,
             List<UUID> affectedUsers, List<String> dataCategories, Instant discoveredAt
     ) {
         return """

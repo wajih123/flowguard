@@ -118,7 +118,7 @@ public class TracfinService {
                 report.getId(), userId, suspicionType, triggerAmount);
 
         // Alert compliance officer immediately (SANS délai)
-        notifyComplianceOfficer(report, user);
+        notifyComplianceOfficer(report);
 
         return report.getId();
     }
@@ -250,10 +250,10 @@ public class TracfinService {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
-    private void notifyComplianceOfficer(TracfinReport report, UserEntity user) {
+    private void notifyComplianceOfficer(TracfinReport report) {
         try {
             String subject = "[TRACFIN] Nouveau rapport de soupçon — " + report.getSuspicionType();
-            String body = buildComplianceEmailBody(report, user);
+            String body = buildComplianceEmailBody(report);
             mailer.send(Mail.withHtml(complianceOfficerEmail, subject, body));
         } catch (Exception e) {
             // Do not fail the transaction if email delivery fails — report is already persisted
@@ -271,7 +271,7 @@ public class TracfinService {
         }
     }
 
-    private String buildComplianceEmailBody(TracfinReport report, UserEntity user) {
+    private String buildComplianceEmailBody(TracfinReport report) {
         return """
             <html><body style="font-family:sans-serif;color:#333">
             <h2 style="color:#c0392b">⚠️ Rapport de soupçon TRACFIN — Action requise</h2>
