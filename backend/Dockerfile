@@ -17,9 +17,17 @@ RUN mvn package -DskipTests -B -q
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl \
+    # Create non-root user (security hardening — OWASP Docker security cheat sheet)
+    && addgroup -S flowguard \
+    && adduser -S flowguard -G flowguard
 
 COPY --from=builder /build/target/quarkus-app/ ./
+
+# Fix ownership before dropping privileges
+RUN chown -R flowguard:flowguard /app
+
+USER flowguard
 
 EXPOSE 8080
 

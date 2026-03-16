@@ -11,7 +11,6 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -37,9 +36,12 @@ public class FlashCreditResource {
 
     @POST
     @RunOnVirtualThread
-    public Response requestCredit(@Valid FlashCreditRequest request) {
+    public Response requestCredit(
+            @Valid FlashCreditRequest request,
+            @HeaderParam("Idempotency-Key") String idempotencyKey
+    ) {
         UUID userId = UUID.fromString(jwt.getSubject());
-        FlashCreditDto credit = flashCreditService.requestCredit(userId, request);
+        FlashCreditDto credit = flashCreditService.requestCredit(userId, request, idempotencyKey);
         return Response.status(Response.Status.CREATED).entity(credit).build();
     }
 

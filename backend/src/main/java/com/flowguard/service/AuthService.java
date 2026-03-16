@@ -31,6 +31,9 @@ public class AuthService {
     @Inject
     OtpService otpService;
 
+    @Inject
+    SanctionsScreeningService sanctionsScreeningService;
+
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -50,6 +53,16 @@ public class AuthService {
                 .build();
 
         userRepository.persist(user);
+
+        // LCB-FT Art. L561-5 CMF — screen against EU/OFAC/UN sanctions lists.
+        // Runs after persist so the userId is available for audit logging.
+        // SanctionsHitException is a RuntimeException → transaction rolls back automatically.
+        sanctionsScreeningService.screenRegistration(
+                user.getId(),
+                request.firstName(),
+                request.lastName(),
+                null   // dateOfBirth not yet collected at registration; re-check at KYC
+        );
 
         String accessToken = refreshTokenService.buildAccessToken(user);
         String refreshToken = refreshTokenService.issueRefreshToken(user, null, "registration");

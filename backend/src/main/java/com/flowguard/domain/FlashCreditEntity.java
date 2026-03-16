@@ -60,6 +60,14 @@ public class FlashCreditEntity extends PanacheEntityBase {
     @Builder.Default
     private boolean retractionExercised = false;
 
+    /**
+     * Client-supplied idempotency key (UUID format) — prevents duplicate credit requests
+     * on network retry. Unique per user; key is honoured for 24 hours after first use.
+     * See: FlashCreditResource.requestCredit() — header: Idempotency-Key
+     */
+    @Column(name = "idempotency_key", length = 36, unique = true)
+    private String idempotencyKey;
+
     @Column(nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();

@@ -14,6 +14,12 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
+# Create non-root user (security hardening)
+RUN adduser --disabled-password --gecos '' flowguard \
+    && chown -R flowguard:flowguard /app
+
+USER flowguard
+
 EXPOSE 8000
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

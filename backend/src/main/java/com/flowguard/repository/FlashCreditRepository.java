@@ -29,4 +29,12 @@ public class FlashCreditRepository implements PanacheRepositoryBase<FlashCreditE
     public List<FlashCreditEntity> findOverdueCandidates(Instant now) {
         return list("status = 'DISBURSED' AND dueDate < ?1", now);
     }
+
+    /**
+     * Find a credit by idempotency key (for deduplication on retry).
+     * Returns the existing credit if the key was already used.
+     */
+    public java.util.Optional<FlashCreditEntity> findByIdempotencyKey(String idempotencyKey) {
+        return find("idempotencyKey = ?1", idempotencyKey).firstResultOptional();
+    }
 }

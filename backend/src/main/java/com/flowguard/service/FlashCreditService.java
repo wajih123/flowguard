@@ -58,6 +58,18 @@ public class FlashCreditService {
 
     @Transactional
     public FlashCreditDto requestCredit(UUID userId, FlashCreditRequest request) {
+        return requestCredit(userId, request, null);
+    }
+
+    @Transactional
+    public FlashCreditDto requestCredit(UUID userId, FlashCreditRequest request, String idempotencyKey) {
+        // Idempotency check — return existing result if key was already processed
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            var existing = flashCreditRepository.findByIdempotencyKey(idempotencyKey);
+            if (existing.isPresent()) {
+                return FlashCreditDto.from(existing.get());
+            }
+        }
         UserEntity user = userRepository.findById(userId);
         if (user == null) {
             throw new IllegalArgumentException("Utilisateur introuvable");
@@ -106,6 +118,7 @@ public class FlashCreditService {
                 .disbursedAt(now)
                 .dueDate(now.plus(REPAYMENT_DAYS, ChronoUnit.DAYS))
                 .retractionDeadline(now.plus(RETRACTION_DAYS, ChronoUnit.DAYS))
+                .idempotencyKey(idempotencyKey)
                 .build();
 
         flashCreditRepository.persist(credit);

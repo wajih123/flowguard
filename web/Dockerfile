@@ -21,6 +21,18 @@ FROM nginx:1.27-alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx-web.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+# Run nginx as non-root (port 8080 instead of privileged 80)
+# The container is exposed on host port 80 via docker-compose port mapping
+RUN sed -i 's/listen 80;/listen 8080;/' /etc/nginx/conf.d/default.conf \
+    && addgroup -S flowguard \
+    && adduser -S flowguard -G flowguard \
+    # Allow nginx worker to write its pid and cache files
+    && chown -R flowguard:flowguard /var/cache/nginx /var/log/nginx /etc/nginx/conf.d \
+    && touch /var/run/nginx.pid \
+    && chown flowguard:flowguard /var/run/nginx.pid
+
+USER flowguard
+
+EXPOSE 8080
 
 CMD ["nginx", "-g", "daemon off;"]
