@@ -31,6 +31,6 @@ export const Routes = {
   Spending: 'Spending',
   Scenario: 'Scenario',
   FlashCredit: 'FlashCredit',
-} as const
+} as const;
 
 export type RouteName = (typeof Routes)[keyof typeof Routes]

@@ -1,7 +1,7 @@
-import React from 'react'
-import { Text, StyleSheet } from 'react-native'
-import { FlowGuardCard } from '../../../components/FlowGuardCard'
-import { colors, typography, spacing } from '../../../theme'
+import React from 'react';
+import { Text, StyleSheet } from 'react-native';
+import { FlowGuardCard } from '../../../components/FlowGuardCard';
+import { colors, typography, spacing } from '../../../theme';
 
 interface BalanceCardProps {
   balance: number
@@ -14,12 +14,12 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   healthScore,
   confidence,
 }) => {
-  const isPositive = balance >= 0
+  const isPositive = balance >= 0;
   const formattedBalance = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-  }).format(balance)
+  }).format(balance);
 
   return (
     <FlowGuardCard style={styles.card}>
@@ -31,8 +31,8 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
         Score santé: {healthScore}/100 · IA: {Math.round(confidence * 100)}%
       </Text>
     </FlowGuardCard>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -61,4 +61,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.caption.fontSize,
   },
-})
+});

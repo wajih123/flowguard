@@ -11,4 +11,4 @@ export const typography = {
     letterSpacing: 1,
     textTransform: 'uppercase' as const,
   },
-} as const
+} as const;

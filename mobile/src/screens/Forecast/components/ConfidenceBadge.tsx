@@ -1,22 +1,22 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { colors, typography, spacing } from '../../../theme'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, typography, spacing } from '../../../theme';
 
 interface ConfidenceBadgeProps {
   confidence: number
 }
 
 export const ConfidenceBadge: React.FC<ConfidenceBadgeProps> = ({ confidence }) => {
-  const percent = Math.round(confidence * 100)
-  const dotColor = percent >= 80 ? colors.success : percent >= 60 ? colors.warning : colors.danger
+  const percent = Math.round(confidence * 100);
+  const dotColor = percent >= 80 ? colors.success : percent >= 60 ? colors.warning : colors.danger;
 
   return (
     <View style={styles.container}>
       <View style={[styles.dot, { backgroundColor: dotColor }]} />
       <Text style={styles.text}>Confiance IA: {percent}%</Text>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -35,4 +35,4 @@ const styles = StyleSheet.create({
     fontSize: typography.caption.fontSize,
     fontWeight: '600',
   },
-})
+});

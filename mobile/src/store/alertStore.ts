@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import type { Alert } from '../domain/Alert'
+import { create } from 'zustand';
+import type { Alert } from '../domain/Alert';
 
 interface AlertState {
   unreadCount: number
@@ -30,8 +30,8 @@ export const useAlertStore = create<AlertState>((set) => ({
 
   markRead: (alertId: string) =>
     set((state) => {
-      const alerts = state.alerts.map((a) => (a.id === alertId ? { ...a, isRead: true } : a))
-      return { alerts, unreadCount: alerts.filter((a) => !a.isRead).length }
+      const alerts = state.alerts.map((a) => (a.id === alertId ? { ...a, isRead: true } : a));
+      return { alerts, unreadCount: alerts.filter((a) => !a.isRead).length };
     }),
 
   markAllRead: () =>
@@ -39,4 +39,4 @@ export const useAlertStore = create<AlertState>((set) => ({
       alerts: state.alerts.map((a) => ({ ...a, isRead: true })),
       unreadCount: 0,
     })),
-}))
+}));

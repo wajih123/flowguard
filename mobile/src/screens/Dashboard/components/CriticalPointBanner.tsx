@@ -1,8 +1,8 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { FlowGuardButton } from '../../../components/FlowGuardButton'
-import type { CriticalPoint } from '../../../domain/TreasuryForecast'
-import { colors, typography, spacing } from '../../../theme'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlowGuardButton } from '../../../components/FlowGuardButton';
+import type { CriticalPoint } from '../../../domain/TreasuryForecast';
+import { colors, typography, spacing } from '../../../theme';
 
 interface CriticalPointBannerProps {
   criticalPoints: CriticalPoint[]
@@ -14,18 +14,18 @@ export const CriticalPointBanner: React.FC<CriticalPointBannerProps> = ({
   onActivateCredit,
 }) => {
   if (criticalPoints.length === 0) {
-    return null
+    return null;
   }
 
   const nearest = criticalPoints.reduce((prev, curr) =>
     curr.daysUntil < prev.daysUntil ? curr : prev,
-  )
+  );
 
   const formattedAmount = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(Math.abs(nearest.projectedBalance))
+  }).format(Math.abs(nearest.projectedBalance));
 
   return (
     <View style={styles.banner}>
@@ -40,8 +40,8 @@ export const CriticalPointBanner: React.FC<CriticalPointBannerProps> = ({
         style={styles.button}
       />
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   banner: {
@@ -67,4 +67,4 @@ const styles = StyleSheet.create({
   button: {
     alignSelf: 'stretch',
   },
-})
+});

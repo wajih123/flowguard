@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { z } from 'zod'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { useAuthStore } from '../../store/authStore'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { FlowGuardInput } from '../../components/FlowGuardInput'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { useAuthStore } from '../../store/authStore';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { FlowGuardInput } from '../../components/FlowGuardInput';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
 
 const step1Schema = z
   .object({
@@ -21,14 +21,14 @@ const step1Schema = z
   .refine((d) => d.password === d.confirmPassword, {
     message: 'Les mots de passe ne correspondent pas',
     path: ['confirmPassword'],
-  })
+  });
 
 const step2Schema = z.object({
   companyName: z.string().min(1, "Nom de l'entreprise requis"),
   siret: z.string().regex(/^\d{14}$/, 'SIRET invalide (14 chiffres)'),
   sector: z.string().min(1, 'Secteur requis'),
   employeeCount: z.string().min(1, 'Requis'),
-})
+});
 
 const SECTORS = [
   'Commerce',
@@ -40,9 +40,9 @@ const SECTORS = [
   'Tech / Numérique',
   'Services aux entreprises',
   'Autre',
-]
+];
 
-const EMPLOYEE_COUNTS = ['1', '2-5', '6-10', '11-50', '51-250', '250+']
+const EMPLOYEE_COUNTS = ['1', '2-5', '6-10', '11-50', '51-250', '250+'];
 
 const PLAN_OPTIONS: { key: 'PRO' | 'SCALE'; price: string; features: string[] }[] = [
   {
@@ -67,70 +67,70 @@ const PLAN_OPTIONS: { key: 'PRO' | 'SCALE'; price: string; features: string[] }[
       '✅ Support prioritaire',
     ],
   },
-]
+];
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const RegisterBusinessScreen: React.FC<Props> = ({ navigation }) => {
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1);
 
   // Step 1 fields
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // Step 2 fields
-  const [companyName, setCompanyName] = useState('')
-  const [siret, setSiret] = useState('')
-  const [sector, setSector] = useState('')
-  const [employeeCount, setEmployeeCount] = useState('')
+  const [companyName, setCompanyName] = useState('');
+  const [siret, setSiret] = useState('');
+  const [sector, setSector] = useState('');
+  const [employeeCount, setEmployeeCount] = useState('');
 
   // Step 3 fields
-  const [selectedPlan, setSelectedPlan] = useState<'PRO' | 'SCALE'>('PRO')
+  const [selectedPlan, setSelectedPlan] = useState<'PRO' | 'SCALE'>('PRO');
 
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { registerBusiness, isLoading, error: authError } = useAuthStore()
+  const { registerBusiness, isLoading, error: authError } = useAuthStore();
 
   const handleStep1 = useCallback(() => {
-    Keyboard.dismiss()
+    Keyboard.dismiss();
     const result = step1Schema.safeParse({
       firstName,
       lastName,
       email,
       password,
       confirmPassword,
-    })
+    });
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {}
+      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((e) => {
-        const f = e.path[0]
-        if (typeof f === 'string') fieldErrors[f] = e.message
-      })
-      setErrors(fieldErrors)
-      return
+        const f = e.path[0];
+        if (typeof f === 'string') {fieldErrors[f] = e.message;}
+      });
+      setErrors(fieldErrors);
+      return;
     }
-    setErrors({})
-    setStep(2)
-  }, [firstName, lastName, email, password, confirmPassword])
+    setErrors({});
+    setStep(2);
+  }, [firstName, lastName, email, password, confirmPassword]);
 
   const handleStep2 = useCallback(() => {
-    Keyboard.dismiss()
-    const result = step2Schema.safeParse({ companyName, siret, sector, employeeCount })
+    Keyboard.dismiss();
+    const result = step2Schema.safeParse({ companyName, siret, sector, employeeCount });
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {}
+      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((e) => {
-        const f = e.path[0]
-        if (typeof f === 'string') fieldErrors[f] = e.message
-      })
-      setErrors(fieldErrors)
-      return
+        const f = e.path[0];
+        if (typeof f === 'string') {fieldErrors[f] = e.message;}
+      });
+      setErrors(fieldErrors);
+      return;
     }
-    setErrors({})
-    setStep(3)
-  }, [companyName, siret, sector, employeeCount])
+    setErrors({});
+    setStep(3);
+  }, [companyName, siret, sector, employeeCount]);
 
   const handleSubmit = useCallback(async () => {
     await registerBusiness({
@@ -143,7 +143,7 @@ export const RegisterBusinessScreen: React.FC<Props> = ({ navigation }) => {
       sector,
       employeeCount,
       plan: selectedPlan,
-    })
+    });
   }, [
     firstName,
     lastName,
@@ -155,7 +155,7 @@ export const RegisterBusinessScreen: React.FC<Props> = ({ navigation }) => {
     employeeCount,
     selectedPlan,
     registerBusiness,
-  ])
+  ]);
 
   const renderStepIndicator = () => (
     <View style={styles.stepRow}>
@@ -164,7 +164,7 @@ export const RegisterBusinessScreen: React.FC<Props> = ({ navigation }) => {
       ))}
       <Text style={styles.stepLabel}>Étape {step}/3</Text>
     </View>
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -338,8 +338,8 @@ export const RegisterBusinessScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -409,4 +409,4 @@ const styles = StyleSheet.create({
   loginLink: { alignItems: 'center', marginTop: spacing.xl },
   loginText: { color: colors.textSecondary, fontSize: typography.body.fontSize },
   loginBold: { color: colors.primary, fontWeight: '700' },
-})
+});

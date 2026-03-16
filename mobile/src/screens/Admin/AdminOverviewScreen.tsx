@@ -1,24 +1,24 @@
-import React, { useCallback, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useQuery } from '@tanstack/react-query'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { useAlerts } from '../../hooks/useAlerts'
-import { useAccountStore } from '../../store/accountStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import * as flowguardApi from '../../api/flowguardApi'
+import React, { useCallback, useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery } from '@tanstack/react-query';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { useAlerts } from '../../hooks/useAlerts';
+import { useAccountStore } from '../../store/accountStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import * as flowguardApi from '../../api/flowguardApi';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.AdminOverview>
 
-const POLL_INTERVAL_MS = 60_000
+const POLL_INTERVAL_MS = 60_000;
 
 export const AdminOverviewScreen: React.FC<Props> = ({ navigation }) => {
-  const [refreshing, setRefreshing] = useState(false)
-  const account = useAccountStore((s) => s.account)
+  const [refreshing, setRefreshing] = useState(false);
+  const account = useAccountStore((s) => s.account);
 
   const {
     data: kpis,
@@ -30,20 +30,20 @@ export const AdminOverviewScreen: React.FC<Props> = ({ navigation }) => {
     queryFn: () => flowguardApi.getAdminKpis(),
     refetchInterval: POLL_INTERVAL_MS,
     staleTime: POLL_INTERVAL_MS,
-  })
+  });
 
-  const { criticalAlerts } = useAlerts(account?.id)
+  const { criticalAlerts } = useAlerts(account?.id);
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    await refetch()
-    setRefreshing(false)
-  }, [refetch])
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
-  if (isLoading) return <FlowGuardLoader />
-  if (isError) return <ErrorScreen message="Impossible de charger les KPIs" onRetry={refetch} />
+  if (isLoading) {return <FlowGuardLoader />;}
+  if (isError) {return <ErrorScreen message="Impossible de charger les KPIs" onRetry={refetch} />;}
 
-  const entries = Object.entries(kpis ?? {})
+  const entries = Object.entries(kpis ?? {});
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -112,15 +112,15 @@ export const AdminOverviewScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 function formatKey(key: string): string {
   return key
     .replace(/_/g, ' ')
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     .toLowerCase()
-    .replace(/^\w/, (c) => c.toUpperCase())
+    .replace(/^\w/, (c) => c.toUpperCase());
 }
 
 const styles = StyleSheet.create({
@@ -166,4 +166,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   webCtaBtnText: { color: colors.background, ...typography.body, fontWeight: '800' },
-})
+});

@@ -1,44 +1,44 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { z } from 'zod'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { FlowGuardInput } from '../../components/FlowGuardInput'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import api from '../../api/flowguardApi'
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { FlowGuardInput } from '../../components/FlowGuardInput';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import api from '../../api/flowguardApi';
 
 const schema = z.object({
   email: z.string().email('Email invalide'),
-})
+});
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
-  const [email, setEmail] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = useCallback(async () => {
-    const result = schema.safeParse({ email })
+    const result = schema.safeParse({ email });
     if (!result.success) {
-      setError(result.error.errors[0]?.message ?? 'Email invalide')
-      return
+      setError(result.error.errors[0]?.message ?? 'Email invalide');
+      return;
     }
-    setError(null)
-    setLoading(true)
+    setError(null);
+    setLoading(true);
     try {
-      await api.post('/api/auth/forgot-password', { email: email.trim() })
-      setSuccess(true)
+      await api.post('/api/auth/forgot-password', { email: email.trim() });
+      setSuccess(true);
     } catch {
-      setError("Impossible d'envoyer l'email. Vérifiez votre connexion.")
+      setError("Impossible d'envoyer l'email. Vérifiez votre connexion.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [email])
+  }, [email]);
 
   if (success) {
     return (
@@ -56,7 +56,7 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
           />
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   return (
@@ -99,8 +99,8 @@ export const ForgotPasswordScreen: React.FC<Props> = ({ navigation }) => {
         />
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -137,4 +137,4 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: spacing.xl,
   },
-})
+});

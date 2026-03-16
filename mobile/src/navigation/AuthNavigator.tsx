@@ -1,15 +1,15 @@
-import React from 'react'
-import { createStackNavigator } from '@react-navigation/stack'
-import { OnboardingScreen } from '../screens/Auth/OnboardingScreen'
-import { LoginScreen } from '../screens/Auth/LoginScreen'
-import { RegisterScreen } from '../screens/Auth/RegisterScreen'
-import { RegisterBusinessScreen } from '../screens/Auth/RegisterBusinessScreen'
-import { ForgotPasswordScreen } from '../screens/Auth/ForgotPasswordScreen'
-import { KycScreen } from '../screens/Kyc/KycScreen'
-import { Routes } from './routes'
-import { colors } from '../theme'
+import React from 'react';
+import { createStackNavigator } from '@react-navigation/stack';
+import { OnboardingScreen } from '../screens/Auth/OnboardingScreen';
+import { LoginScreen } from '../screens/Auth/LoginScreen';
+import { RegisterScreen } from '../screens/Auth/RegisterScreen';
+import { RegisterBusinessScreen } from '../screens/Auth/RegisterBusinessScreen';
+import { ForgotPasswordScreen } from '../screens/Auth/ForgotPasswordScreen';
+import { KycScreen } from '../screens/Kyc/KycScreen';
+import { Routes } from './routes';
+import { colors } from '../theme';
 
-const Stack = createStackNavigator()
+const Stack = createStackNavigator();
 
 export const AuthNavigator: React.FC = () => {
   return (
@@ -37,5 +37,5 @@ export const AuthNavigator: React.FC = () => {
       />
       <Stack.Screen name={Routes.Kyc} component={KycScreen} />
     </Stack.Navigator>
-  )
-}
+  );
+};

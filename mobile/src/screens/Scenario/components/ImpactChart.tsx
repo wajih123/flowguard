@@ -1,47 +1,47 @@
-import React from 'react'
-import { View, Text, StyleSheet, Dimensions } from 'react-native'
-import { colors, typography, spacing } from '../../../theme'
-import type { ScenarioResult } from '../../../domain/Scenario'
+import React from 'react';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { colors, typography, spacing } from '../../../theme';
+import type { ScenarioResult } from '../../../domain/Scenario';
 
 interface ImpactChartProps {
   result: ScenarioResult
 }
 
-const CHART_WIDTH = Dimensions.get('window').width - spacing.md * 2 - spacing.md * 2
-const CHART_HEIGHT = 180
+const CHART_WIDTH = Dimensions.get('window').width - spacing.md * 2 - spacing.md * 2;
+const CHART_HEIGHT = 180;
 
 export const ImpactChart: React.FC<ImpactChartProps> = ({ result }) => {
-  const allValues = [...result.baselineForecast, ...result.impactedForecast]
-  const maxVal = Math.max(...allValues, 1)
-  const minVal = Math.min(...allValues, 0)
-  const range = maxVal - minVal || 1
+  const allValues = [...result.baselineForecast, ...result.impactedForecast];
+  const maxVal = Math.max(...allValues, 1);
+  const minVal = Math.min(...allValues, 0);
+  const range = maxVal - minVal || 1;
 
   const getY = (value: number) => {
-    return CHART_HEIGHT - ((value - minVal) / range) * CHART_HEIGHT
-  }
+    return CHART_HEIGHT - ((value - minVal) / range) * CHART_HEIGHT;
+  };
 
   const baselinePoints = result.baselineForecast.map((val, i) => {
     const x = result.baselineForecast.length > 1
       ? (i / (result.baselineForecast.length - 1)) * CHART_WIDTH
-      : CHART_WIDTH / 2
-    return { x, y: getY(val) }
-  })
+      : CHART_WIDTH / 2;
+    return { x, y: getY(val) };
+  });
 
   const impactedPoints = result.impactedForecast.map((val, i) => {
     const x = result.impactedForecast.length > 1
       ? (i / (result.impactedForecast.length - 1)) * CHART_WIDTH
-      : CHART_WIDTH / 2
-    return { x, y: getY(val) }
-  })
+      : CHART_WIDTH / 2;
+    return { x, y: getY(val) };
+  });
 
-  const zeroY = getY(0)
+  const zeroY = getY(0);
 
   const formatAmount = (amount: number): string =>
     new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
-    }).format(amount)
+    }).format(amount);
 
   return (
     <View style={styles.container}>
@@ -115,8 +115,8 @@ export const ImpactChart: React.FC<ImpactChartProps> = ({ result }) => {
         </View>
       </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -192,4 +192,4 @@ const styles = StyleSheet.create({
     fontSize: typography.h3.fontSize,
     fontWeight: '700',
   },
-})
+});

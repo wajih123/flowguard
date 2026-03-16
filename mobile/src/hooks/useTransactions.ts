@@ -1,7 +1,7 @@
-import { useInfiniteQuery } from '@tanstack/react-query'
-import * as flowguardApi from '../api/flowguardApi'
-import type { Transaction } from '../domain/Transaction'
-import type { Page } from '../domain/Transaction'
+import { useInfiniteQuery } from '@tanstack/react-query';
+import * as flowguardApi from '../api/flowguardApi';
+import type { Transaction } from '../domain/Transaction';
+import type { Page } from '../domain/Transaction';
 
 export const useTransactions = (accountId: string | undefined) => {
   const query = useInfiniteQuery<Page<Transaction>>({
@@ -15,9 +15,9 @@ export const useTransactions = (accountId: string | undefined) => {
     initialPageParam: 0,
     enabled: !!accountId,
     staleTime: 5 * 60 * 1000,
-  })
+  });
 
-  const transactions = query.data?.pages.flatMap((p) => p.content) ?? []
+  const transactions = query.data?.pages.flatMap((p) => p.content) ?? [];
 
   return {
     transactions,
@@ -28,5 +28,5 @@ export const useTransactions = (accountId: string | undefined) => {
     hasNextPage: !!query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
     refetch: query.refetch,
-  }
-}
+  };
+};

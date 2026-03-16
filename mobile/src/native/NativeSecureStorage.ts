@@ -1,5 +1,5 @@
-import type { TurboModule } from 'react-native'
-import { TurboModuleRegistry } from 'react-native'
+import type { TurboModule } from 'react-native';
+import { TurboModuleRegistry } from 'react-native';
 
 export interface Spec extends TurboModule {
   saveToken(key: string, value: string): Promise<boolean>
@@ -8,4 +8,4 @@ export interface Spec extends TurboModule {
   clearAll(): Promise<boolean>
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('FlowGuardSecureStorage')
+export default TurboModuleRegistry.getEnforcing<Spec>('FlowGuardSecureStorage');

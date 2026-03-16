@@ -1,13 +1,13 @@
-import React, { useCallback } from 'react'
-import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { useAuthStore } from '../../store/authStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import type { Plan } from '../../domain/User'
+import React, { useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { useAuthStore } from '../../store/authStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import type { Plan } from '../../domain/User';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.Subscription>
 
@@ -58,15 +58,15 @@ const PLANS: PlanInfo[] = [
       'Tout ce qui est inclus dans Pro',
     ],
   },
-]
+];
 
 export const SubscriptionScreen: React.FC<Props> = ({ navigation: _navigation }) => {
-  const user = useAuthStore((s) => s.user)
-  const currentPlan = user?.plan ?? 'FREE'
+  const user = useAuthStore((s) => s.user);
+  const currentPlan = user?.plan ?? 'FREE';
 
   const handleSelect = useCallback(
     (plan: Plan) => {
-      if (plan === currentPlan) return
+      if (plan === currentPlan) {return;}
       if (plan === 'FREE') {
         Alert.alert(
           'Rétrograder',
@@ -83,7 +83,7 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation: _navigation })
                 ),
             },
           ],
-        )
+        );
       } else {
         Alert.alert(
           'Mise à niveau',
@@ -99,11 +99,11 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation: _navigation })
                 ),
             },
           ],
-        )
+        );
       }
     },
     [currentPlan],
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -112,7 +112,7 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation: _navigation })
         <Text style={styles.subtitle}>Choisissez le plan adapté à votre activité.</Text>
 
         {PLANS.map((p) => {
-          const isCurrent = p.plan === currentPlan
+          const isCurrent = p.plan === currentPlan;
           return (
             <FlowGuardCard
               key={p.plan}
@@ -153,7 +153,7 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation: _navigation })
                 style={styles.selectBtn}
               />
             </FlowGuardCard>
-          )
+          );
         })}
 
         <Text style={styles.footer}>
@@ -161,8 +161,8 @@ export const SubscriptionScreen: React.FC<Props> = ({ navigation: _navigation })
         </Text>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -205,4 +205,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
   },
-})
+});

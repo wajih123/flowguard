@@ -1,6 +1,6 @@
-import React from 'react'
-import { TouchableOpacity, View, type ViewStyle, type StyleProp } from 'react-native'
-import { colors, spacing } from '../theme'
+import React from 'react';
+import { TouchableOpacity, View, type ViewStyle, type StyleProp } from 'react-native';
+import { colors, spacing } from '../theme';
 
 type CardVariant = 'default' | 'alert' | 'success' | 'info' | 'warning'
 
@@ -18,7 +18,7 @@ const VARIANT_STYLES: Record<CardVariant, { bg: string; border: string }> = {
   success: { bg: '#F0FFF4', border: '#10B981' },
   info: { bg: '#E0F7FF', border: '#06B6D4' },
   warning: { bg: '#FFFBEB', border: '#F59E0B' },
-}
+};
 
 export const FlowGuardCard: React.FC<FlowGuardCardProps> = ({
   children,
@@ -27,7 +27,7 @@ export const FlowGuardCard: React.FC<FlowGuardCardProps> = ({
   variant = 'default',
   elevated = false,
 }) => {
-  const { bg, border } = VARIANT_STYLES[variant]
+  const { bg, border } = VARIANT_STYLES[variant];
 
   const cardStyle: ViewStyle = {
     backgroundColor: bg,
@@ -44,17 +44,17 @@ export const FlowGuardCard: React.FC<FlowGuardCardProps> = ({
           elevation: 4,
         }
       : {}),
-  }
+  };
 
   if (onPress) {
     return (
       <TouchableOpacity style={[cardStyle, style]} onPress={onPress} activeOpacity={0.85}>
         {children}
       </TouchableOpacity>
-    )
+    );
   }
 
-  return <View style={[cardStyle, style]}>{children}</View>
-}
+  return <View style={[cardStyle, style]}>{children}</View>;
+};
 
-export default FlowGuardCard
+export default FlowGuardCard;

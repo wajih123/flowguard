@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
-import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useSpending } from '../../hooks/useSpending'
-import { DonutChart } from './components/DonutChart'
-import { InsightCard } from './components/InsightCard'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { EmptyState } from '../../components/EmptyState'
-import { useAccountStore } from '../../store/accountStore'
-import { colors, typography, spacing } from '../../theme'
+import React, { useState } from 'react';
+import { View, Text, ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSpending } from '../../hooks/useSpending';
+import { DonutChart } from './components/DonutChart';
+import { InsightCard } from './components/InsightCard';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { EmptyState } from '../../components/EmptyState';
+import { useAccountStore } from '../../store/accountStore';
+import { colors, typography, spacing } from '../../theme';
 
 type Period = '7j' | '30j' | '90j'
 
@@ -16,23 +16,23 @@ const PERIOD_OPTIONS: { key: Period; label: string }[] = [
   { key: '7j', label: '7 jours' },
   { key: '30j', label: '30 jours' },
   { key: '90j', label: '90 jours' },
-]
+];
 
 export const SpendingScreen: React.FC = () => {
-  const [period, setPeriod] = useState<Period>('30j')
-  const account = useAccountStore((s) => s.account)
-  const { spending: data, isLoading, isError, refetch } = useSpending(account?.id, period)
+  const [period, setPeriod] = useState<Period>('30j');
+  const account = useAccountStore((s) => s.account);
+  const { spending: data, isLoading, isError, refetch } = useSpending(account?.id, period);
 
-  if (isLoading) return <FlowGuardLoader />
-  if (isError) return <ErrorScreen message="Impossible d'analyser les dépenses" onRetry={refetch} />
+  if (isLoading) {return <FlowGuardLoader />;}
+  if (isError) {return <ErrorScreen message="Impossible d'analyser les dépenses" onRetry={refetch} />;}
   if (!data)
-    return (
+    {return (
       <EmptyState
         icon="chart-donut"
         title="Aucune dépense"
         subtitle="Pas de transactions sur la période"
       />
-    )
+    );}
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -50,7 +50,7 @@ export const SpendingScreen: React.FC = () => {
 
         <View style={styles.periodSelector}>
           {PERIOD_OPTIONS.map((opt) => {
-            const isActive = period === opt.key
+            const isActive = period === opt.key;
             return (
               <Text
                 key={opt.key}
@@ -59,7 +59,7 @@ export const SpendingScreen: React.FC = () => {
               >
                 {opt.label}
               </Text>
-            )
+            );
           })}
         </View>
 
@@ -91,7 +91,7 @@ export const SpendingScreen: React.FC = () => {
                 style: 'currency',
                 currency: 'EUR',
                 minimumFractionDigits: 0,
-              }).format(merchant.totalAmount)
+              }).format(merchant.totalAmount);
 
               return (
                 <View key={merchant.name} style={styles.merchantRow}>
@@ -99,7 +99,7 @@ export const SpendingScreen: React.FC = () => {
                   <Text style={styles.merchantCount}>{merchant.transactionCount} opérations</Text>
                   <Text style={styles.merchantAmount}>{formattedAmount}</Text>
                 </View>
-              )
+              );
             })}
           </View>
         )}
@@ -107,8 +107,8 @@ export const SpendingScreen: React.FC = () => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -186,4 +186,4 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: spacing.xxl,
   },
-})
+});

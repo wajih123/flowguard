@@ -1,7 +1,7 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { FlowGuardButton } from './FlowGuardButton'
-import { colors, typography, spacing } from '../theme'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlowGuardButton } from './FlowGuardButton';
+import { colors, typography, spacing } from '../theme';
 
 interface ErrorScreenProps {
   message: string
@@ -22,8 +22,8 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) =>
         />
       )}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -47,4 +47,4 @@ const styles = StyleSheet.create({
   button: {
     minWidth: 160,
   },
-})
+});

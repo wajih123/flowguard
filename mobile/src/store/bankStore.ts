@@ -1,5 +1,5 @@
-import { create } from 'zustand'
-import type { BankAccount } from '../domain/Account'
+import { create } from 'zustand';
+import type { BankAccount } from '../domain/Account';
 
 interface BankState {
   accounts: BankAccount[]
@@ -18,4 +18,4 @@ export const useBankStore = create<BankState>((set) => ({
   setAccounts: (accounts: BankAccount[]) => set({ accounts }),
   setSyncing: (v: boolean) => set({ isSyncing: v }),
   setLastSync: (date: Date) => set({ lastSyncAt: date }),
-}))
+}));

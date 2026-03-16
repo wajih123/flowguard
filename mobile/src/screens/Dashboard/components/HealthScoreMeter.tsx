@@ -1,34 +1,34 @@
-import React, { useEffect } from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   Easing,
-} from 'react-native-reanimated'
-import { colors, typography, spacing } from '../../../theme'
+} from 'react-native-reanimated';
+import { colors, typography, spacing } from '../../../theme';
 
 interface HealthScoreMeterProps {
   score: number
 }
 
 export const HealthScoreMeter: React.FC<HealthScoreMeterProps> = ({ score }) => {
-  const width = useSharedValue(0)
+  const width = useSharedValue(0);
 
   useEffect(() => {
     width.value = withTiming(score, {
       duration: 800,
       easing: Easing.out(Easing.cubic),
-    })
-  }, [score, width])
+    });
+  }, [score, width]);
 
   const barColor =
-    score >= 70 ? colors.success : score >= 40 ? colors.warning : colors.danger
+    score >= 70 ? colors.success : score >= 40 ? colors.warning : colors.danger;
 
   const animatedStyle = useAnimatedStyle(() => ({
     width: `${width.value}%`,
     backgroundColor: barColor,
-  }))
+  }));
 
   return (
     <View style={styles.container}>
@@ -40,8 +40,8 @@ export const HealthScoreMeter: React.FC<HealthScoreMeterProps> = ({ score }) => 
         <Animated.View style={[styles.fill, animatedStyle]} />
       </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -73,4 +73,4 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: 4,
   },
-})
+});

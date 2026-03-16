@@ -1,22 +1,22 @@
-import React, { useRef, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import WebView from 'react-native-webview'
-import type { WebViewNavigation } from 'react-native-webview'
-import type { StackScreenProps } from '@react-navigation/stack'
-import * as Keychain from 'react-native-keychain'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
+import React, { useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import WebView from 'react-native-webview';
+import type { WebViewNavigation } from 'react-native-webview';
+import type { StackScreenProps } from '@react-navigation/stack';
+import * as Keychain from 'react-native-keychain';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.AdminWeb>
 
-const ADMIN_WEB_URL = 'https://app.flowguard.fr/admin'
+const ADMIN_WEB_URL = 'https://app.flowguard.fr/admin';
 
 export const AdminWebScreen: React.FC<Props> = ({ navigation }) => {
-  const webViewRef = useRef<WebView>(null)
+  const webViewRef = useRef<WebView>(null);
   // Build injected JS to set Authorization header via meta tag + fetch override
   const buildInjectedJS = useCallback((token: string) => {
-    const escaped = token.replace(/'/g, "\\'")
+    const escaped = token.replace(/'/g, "\\'");
     return `
       (function() {
         const originalFetch = window.fetch;
@@ -36,42 +36,42 @@ export const AdminWebScreen: React.FC<Props> = ({ navigation }) => {
         };
         true;
       })();
-    `
-  }, [])
+    `;
+  }, []);
 
-  const [injectedJS, setInjectedJS] = React.useState<string>('')
-  const [loading, setLoading] = React.useState(true)
-  const [error, setError] = React.useState(false)
+  const [injectedJS, setInjectedJS] = React.useState<string>('');
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(false);
 
   React.useEffect(() => {
-    ;(async () => {
-      const creds = await Keychain.getGenericPassword({ service: 'fg' }).catch(() => null)
-      if (!creds) return
-      let token: string
+    (async () => {
+      const creds = await Keychain.getGenericPassword({ service: 'fg' }).catch(() => null);
+      if (!creds) {return;}
+      let token: string;
       try {
-        const parsed = JSON.parse(creds.password) as { accessToken?: string }
-        token = parsed.accessToken ?? creds.password
+        const parsed = JSON.parse(creds.password) as { accessToken?: string };
+        token = parsed.accessToken ?? creds.password;
       } catch {
-        token = creds.password
+        token = creds.password;
       }
-      setInjectedJS(buildInjectedJS(token))
-    })()
-  }, [buildInjectedJS])
+      setInjectedJS(buildInjectedJS(token));
+    })();
+  }, [buildInjectedJS]);
 
   const handleNavigationChange = useCallback((navState: WebViewNavigation) => {
     // If navigated away from admin area, allow back
     if (!navState.url.startsWith('https://app.flowguard.fr')) {
-      webViewRef.current?.stopLoading()
-      webViewRef.current?.goBack()
+      webViewRef.current?.stopLoading();
+      webViewRef.current?.goBack();
     }
-  }, [])
+  }, []);
 
   if (!injectedJS) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <ActivityIndicator color={colors.primary} style={styles.centered} />
       </SafeAreaView>
-    )
+    );
   }
 
   return (
@@ -91,8 +91,8 @@ export const AdminWebScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.errorText}>Impossible de charger l'interface web.</Text>
           <TouchableOpacity
             onPress={() => {
-              setError(false)
-              webViewRef.current?.reload()
+              setError(false);
+              webViewRef.current?.reload();
             }}
             style={styles.retryBtn}
           >
@@ -123,8 +123,8 @@ export const AdminWebScreen: React.FC<Props> = ({ navigation }) => {
         </>
       )}
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -170,4 +170,4 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   retryText: { color: colors.background, ...typography.body, fontWeight: '700' },
-})
+});

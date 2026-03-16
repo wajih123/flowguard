@@ -1,6 +1,6 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { colors, typography, spacing } from '../../../theme'
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, typography, spacing } from '../../../theme';
 
 interface QuickActionsProps {
   onFlashCredit: () => void
@@ -26,7 +26,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     { icon: '📊', label: 'Mes dépenses', onPress: onSpending },
     { icon: '🔮', label: 'Simuler', onPress: onScenario },
     { icon: '🏦', label: 'Ma banque', onPress: onBankConnect },
-  ]
+  ];
 
   return (
     <View style={styles.container}>
@@ -45,8 +45,8 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
         ))}
       </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -85,4 +85,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-})
+});

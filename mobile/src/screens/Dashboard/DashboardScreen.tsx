@@ -1,46 +1,46 @@
-import React, { useCallback } from 'react'
-import { ScrollView, View, Text, RefreshControl, StyleSheet } from 'react-native'
-import { useNavigation } from '@react-navigation/native'
-import type { StackNavigationProp } from '@react-navigation/stack'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { BalanceCard } from './components/BalanceCard'
-import { HealthScoreMeter } from './components/HealthScoreMeter'
-import { MiniTreasuryChart } from './components/MiniTreasuryChart'
-import { CriticalPointBanner } from './components/CriticalPointBanner'
-import { QuickActions } from './components/QuickActions'
-import { SkeletonCard } from '../../components/SkeletonCard'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { AlertCard } from '../Alerts/components/AlertCard'
-import { useForecast } from '../../hooks/useForecast'
-import { useAlerts } from '../../hooks/useAlerts'
-import { useAccountStore } from '../../store/accountStore'
-import { useAuthStore } from '../../store/authStore'
-import { useAlertStore } from '../../store/alertStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
+import React, { useCallback } from 'react';
+import { ScrollView, View, Text, RefreshControl, StyleSheet } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { BalanceCard } from './components/BalanceCard';
+import { HealthScoreMeter } from './components/HealthScoreMeter';
+import { MiniTreasuryChart } from './components/MiniTreasuryChart';
+import { CriticalPointBanner } from './components/CriticalPointBanner';
+import { QuickActions } from './components/QuickActions';
+import { SkeletonCard } from '../../components/SkeletonCard';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { AlertCard } from '../Alerts/components/AlertCard';
+import { useForecast } from '../../hooks/useForecast';
+import { useAlerts } from '../../hooks/useAlerts';
+import { useAccountStore } from '../../store/accountStore';
+import { useAuthStore } from '../../store/authStore';
+import { useAlertStore } from '../../store/alertStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
 
 export const DashboardScreen: React.FC = () => {
-  const navigation = useNavigation<StackNavigationProp<Record<string, undefined>>>()
-  const account = useAccountStore((s) => s.account)
-  const user = useAuthStore((s) => s.user)
-  const unreadCount = useAlertStore((s) => s.unreadCount)
+  const navigation = useNavigation<StackNavigationProp<Record<string, undefined>>>();
+  const account = useAccountStore((s) => s.account);
+  const user = useAuthStore((s) => s.user);
+  const unreadCount = useAlertStore((s) => s.unreadCount);
 
   const {
     forecast,
     isLoading: forecastLoading,
     isError: forecastError,
     refetch: refetchForecast,
-  } = useForecast(account?.id, 30)
+  } = useForecast(account?.id, 30);
 
-  const { criticalAlerts, markAsRead } = useAlerts(account?.id)
+  const { criticalAlerts, markAsRead } = useAlerts(account?.id);
 
-  const [refreshing, setRefreshing] = React.useState(false)
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    await refetchForecast()
-    setRefreshing(false)
-  }, [refetchForecast])
+    setRefreshing(true);
+    await refetchForecast();
+    setRefreshing(false);
+  }, [refetchForecast]);
 
   if (forecastError) {
     return (
@@ -48,7 +48,7 @@ export const DashboardScreen: React.FC = () => {
         message="Impossible de charger vos données"
         onRetry={() => refetchForecast()}
       />
-    )
+    );
   }
 
   return (
@@ -128,8 +128,8 @@ export const DashboardScreen: React.FC = () => {
         ) : null}
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -184,4 +184,4 @@ const styles = StyleSheet.create({
     letterSpacing: typography.label.letterSpacing,
     marginBottom: spacing.sm,
   },
-})
+});

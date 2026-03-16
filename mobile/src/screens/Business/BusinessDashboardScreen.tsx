@@ -1,22 +1,22 @@
-import React, { useCallback, useState } from 'react'
-import { ScrollView, View, Text, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { SkeletonCard } from '../../components/SkeletonCard'
-import { HealthScoreGauge } from '../../components/HealthScoreGauge'
-import { AlertCard } from '../Alerts/components/AlertCard'
-import { useForecast } from '../../hooks/useForecast'
-import { useAlerts } from '../../hooks/useAlerts'
-import { useBankStore } from '../../store/bankStore'
-import { useAccountStore } from '../../store/accountStore'
-import { useAuthStore } from '../../store/authStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import type { BankAccount } from '../../domain/Account'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import React, { useCallback, useState } from 'react';
+import { ScrollView, View, Text, RefreshControl, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { SkeletonCard } from '../../components/SkeletonCard';
+import { HealthScoreGauge } from '../../components/HealthScoreGauge';
+import { AlertCard } from '../Alerts/components/AlertCard';
+import { useForecast } from '../../hooks/useForecast';
+import { useAlerts } from '../../hooks/useAlerts';
+import { useBankStore } from '../../store/bankStore';
+import { useAccountStore } from '../../store/accountStore';
+import { useAuthStore } from '../../store/authStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import type { BankAccount } from '../../domain/Account';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.BusinessDashboard>
 
@@ -24,41 +24,41 @@ const HORIZONS = [
   { label: '30j', value: 30 },
   { label: '60j', value: 60 },
   { label: '90j', value: 90 },
-]
+];
 
 const fmtEur = (val: number) =>
   new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(val)
+  }).format(val);
 
 export const BusinessDashboardScreen: React.FC<Props> = ({ navigation }) => {
-  const account = useAccountStore((s) => s.account)
-  const accounts = useBankStore((s) => s.accounts)
-  const user = useAuthStore((s) => s.user)
-  const [horizon, setHorizon] = useState(90)
-  const [refreshing, setRefreshing] = useState(false)
+  const account = useAccountStore((s) => s.account);
+  const accounts = useBankStore((s) => s.accounts);
+  const user = useAuthStore((s) => s.user);
+  const [horizon, setHorizon] = useState(90);
+  const [refreshing, setRefreshing] = useState(false);
 
   const {
     forecast,
     isLoading: forecastLoading,
     isError: forecastError,
     refetch,
-  } = useForecast(account?.id, horizon)
-  const { criticalAlerts, markAsRead } = useAlerts(account?.id)
+  } = useForecast(account?.id, horizon);
+  const { criticalAlerts, markAsRead } = useAlerts(account?.id);
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    await refetch()
-    setRefreshing(false)
-  }, [refetch])
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   if (forecastError) {
-    return <ErrorScreen message="Impossible de charger le tableau de bord" onRetry={refetch} />
+    return <ErrorScreen message="Impossible de charger le tableau de bord" onRetry={refetch} />;
   }
 
-  const currentAccount = accounts[0] ?? account
+  const currentAccount = accounts[0] ?? account;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -162,9 +162,9 @@ export const BusinessDashboardScreen: React.FC<Props> = ({ navigation }) => {
                       try {
                         return format(new Date(forecast.criticalPoints[0].date), 'dd/MM', {
                           locale: fr,
-                        })
+                        });
                       } catch {
-                        return '—'
+                        return '—';
                       }
                     })()}
                   </Text>
@@ -214,8 +214,8 @@ export const BusinessDashboardScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -274,4 +274,4 @@ const styles = StyleSheet.create({
   },
   quickBtnIcon: { fontSize: 28, marginBottom: 4 },
   quickBtnLabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
-})
+});

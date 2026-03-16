@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,19 +7,19 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { EmptyState } from '../../components/EmptyState'
-import { useAccountStore } from '../../store/accountStore'
-import { useTransactions } from '../../hooks/useTransactions'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import type { Transaction } from '../../domain/Transaction'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { EmptyState } from '../../components/EmptyState';
+import { useAccountStore } from '../../store/accountStore';
+import { useTransactions } from '../../hooks/useTransactions';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import type { Transaction } from '../../domain/Transaction';
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 type Props = StackScreenProps<
   Record<string, { transaction: Transaction }>,
@@ -32,36 +32,36 @@ const FILTERS: { key: FilterType; label: string }[] = [
   { key: 'all', label: 'Toutes' },
   { key: 'DEBIT', label: 'Dépenses' },
   { key: 'CREDIT', label: 'Revenus' },
-]
+];
 
 const fmtEur = (val: number) =>
   new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-  }).format(val)
+  }).format(val);
 
 function groupByMonth(transactions: Transaction[]): { title: string; data: Transaction[] }[] {
-  const map = new Map<string, Transaction[]>()
+  const map = new Map<string, Transaction[]>();
   for (const tx of transactions) {
     const key = (() => {
       try {
-        return format(parseISO(tx.date), 'MMMM yyyy', { locale: fr })
+        return format(parseISO(tx.date), 'MMMM yyyy', { locale: fr });
       } catch {
-        return 'Date inconnue'
+        return 'Date inconnue';
       }
-    })()
-    const existing = map.get(key) ?? []
-    existing.push(tx)
-    map.set(key, existing)
+    })();
+    const existing = map.get(key) ?? [];
+    existing.push(tx);
+    map.set(key, existing);
   }
-  return Array.from(map.entries()).map(([title, data]) => ({ title, data }))
+  return Array.from(map.entries()).map(([title, data]) => ({ title, data }));
 }
 
 export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
-  const account = useAccountStore((s) => s.account)
-  const [filter, setFilter] = useState<FilterType>('all')
-  const [refreshing, setRefreshing] = useState(false)
+  const account = useAccountStore((s) => s.account);
+  const [filter, setFilter] = useState<FilterType>('all');
+  const [refreshing, setRefreshing] = useState(false);
 
   const {
     transactions,
@@ -71,24 +71,24 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useTransactions(account?.id)
+  } = useTransactions(account?.id);
 
-  const filtered = filter === 'all' ? transactions : transactions.filter((t) => t.type === filter)
-  const sections = groupByMonth(filtered)
+  const filtered = filter === 'all' ? transactions : transactions.filter((t) => t.type === filter);
+  const sections = groupByMonth(filtered);
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    await refetch()
-    setRefreshing(false)
-  }, [refetch])
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   const onEndReached = useCallback(() => {
-    if (hasNextPage && !isFetchingNextPage) void fetchNextPage()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+    if (hasNextPage && !isFetchingNextPage) {void fetchNextPage();}
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  if (isLoading) return <FlowGuardLoader />
+  if (isLoading) {return <FlowGuardLoader />;}
   if (isError)
-    return <ErrorScreen message="Impossible de charger les transactions" onRetry={refetch} />
+    {return <ErrorScreen message="Impossible de charger les transactions" onRetry={refetch} />;}
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -136,9 +136,9 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
               <Text style={styles.txDate}>
                 {(() => {
                   try {
-                    return format(parseISO(item.date), 'dd/MM/yyyy')
+                    return format(parseISO(item.date), 'dd/MM/yyyy');
                   } catch {
-                    return item.date
+                    return item.date;
                   }
                 })()}
                 {item.status === 'PENDING' && <Text style={styles.pending}> • En attente</Text>}
@@ -170,8 +170,8 @@ export const TransactionsScreen: React.FC<Props> = ({ navigation }) => {
         stickySectionHeadersEnabled
       />
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -224,4 +224,4 @@ const styles = StyleSheet.create({
   credit: { color: colors.success },
   debit: { color: colors.textPrimary },
   footer: { paddingVertical: spacing.md },
-})
+});

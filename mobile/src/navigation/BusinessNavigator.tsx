@@ -1,25 +1,25 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { createStackNavigator } from '@react-navigation/stack'
-import { BusinessDashboardScreen } from '../screens/Business/BusinessDashboardScreen'
-import { ForecastScreen } from '../screens/Forecast/ForecastScreen'
-import { ScenariosScreen } from '../screens/Business/ScenariosScreen'
-import { AlertsScreen } from '../screens/Alerts/AlertsScreen'
-import { AlertDetailScreen } from '../screens/Alerts/AlertDetailScreen'
-import { ProfileScreen } from '../screens/Profile/ProfileScreen'
-import { KycScreen } from '../screens/Kyc/KycScreen'
-import { SubscriptionScreen } from '../screens/Business/SubscriptionScreen'
-import { BankConnectScreen } from '../screens/BankConnect/BankConnectScreen'
-import { ReserveScreen } from '../screens/Reserve/ReserveScreen'
-import { TransactionsScreen } from '../screens/Transactions/TransactionsScreen'
-import { TransactionDetailScreen } from '../screens/Transactions/TransactionDetailScreen'
-import { Routes } from './routes'
-import { useAlertStore } from '../store/alertStore'
-import { colors, spacing } from '../theme'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import { BusinessDashboardScreen } from '../screens/Business/BusinessDashboardScreen';
+import { ForecastScreen } from '../screens/Forecast/ForecastScreen';
+import { ScenariosScreen } from '../screens/Business/ScenariosScreen';
+import { AlertsScreen } from '../screens/Alerts/AlertsScreen';
+import { AlertDetailScreen } from '../screens/Alerts/AlertDetailScreen';
+import { ProfileScreen } from '../screens/Profile/ProfileScreen';
+import { KycScreen } from '../screens/Kyc/KycScreen';
+import { SubscriptionScreen } from '../screens/Business/SubscriptionScreen';
+import { BankConnectScreen } from '../screens/BankConnect/BankConnectScreen';
+import { ReserveScreen } from '../screens/Reserve/ReserveScreen';
+import { TransactionsScreen } from '../screens/Transactions/TransactionsScreen';
+import { TransactionDetailScreen } from '../screens/Transactions/TransactionDetailScreen';
+import { Routes } from './routes';
+import { useAlertStore } from '../store/alertStore';
+import { colors, spacing } from '../theme';
 
-const Tab = createBottomTabNavigator()
-const Stack = createStackNavigator()
+const Tab = createBottomTabNavigator();
+const Stack = createStackNavigator();
 
 const TabIcon: React.FC<{ emoji: string; focused: boolean; badge?: number }> = ({
   emoji,
@@ -34,7 +34,7 @@ const TabIcon: React.FC<{ emoji: string; focused: boolean; badge?: number }> = (
       </View>
     )}
   </View>
-)
+);
 
 const BusinessDashboardStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -57,7 +57,7 @@ const BusinessDashboardStack: React.FC = () => (
       component={BankConnectScreen as React.ComponentType<object>}
     />
   </Stack.Navigator>
-)
+);
 
 const AlertsStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -69,7 +69,7 @@ const AlertsStack: React.FC = () => (
     />
     <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
-)
+);
 
 const ProfileStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -81,10 +81,10 @@ const ProfileStack: React.FC = () => (
     />
     <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
-)
+);
 
 export const BusinessNavigator: React.FC = () => {
-  const unreadCount = useAlertStore((s) => s.unreadCount)
+  const unreadCount = useAlertStore((s) => s.unreadCount);
 
   return (
     <Tab.Navigator
@@ -144,8 +144,8 @@ export const BusinessNavigator: React.FC = () => {
         }}
       />
     </Tab.Navigator>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   iconWrapper: {
@@ -177,4 +177,4 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
   },
-})
+});

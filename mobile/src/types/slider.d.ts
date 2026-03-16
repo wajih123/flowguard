@@ -1,6 +1,6 @@
 declare module '@react-native-community/slider' {
-  import { Component } from 'react'
-  import { StyleProp, ViewStyle } from 'react-native'
+  import { Component } from 'react';
+  import { StyleProp, ViewStyle } from 'react-native';
 
   export interface SliderProps {
     value?: number

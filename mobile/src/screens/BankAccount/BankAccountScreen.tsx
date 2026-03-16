@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,21 +7,21 @@ import {
   StyleSheet,
   RefreshControl,
   Alert,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { SkeletonCard } from '../../components/SkeletonCard'
-import { useBankStore } from '../../store/bankStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import * as flowguardApi from '../../api/flowguardApi'
-import type { BankAccount } from '../../domain/Account'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { SkeletonCard } from '../../components/SkeletonCard';
+import { useBankStore } from '../../store/bankStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import * as flowguardApi from '../../api/flowguardApi';
+import type { BankAccount } from '../../domain/Account';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.BankAccount>
 
@@ -29,28 +29,28 @@ const statusLabel: Record<string, string> = {
   ACTIVE: 'Actif',
   EXPIRED: 'Expiré',
   PENDING: 'En attente',
-}
+};
 
 const statusColor: Record<string, string> = {
   ACTIVE: colors.success,
   EXPIRED: colors.danger,
   PENDING: colors.warning,
-}
+};
 
 const fmtEur = (val: number) =>
   new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(val)
+  }).format(val);
 
 export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
-  const queryClient = useQueryClient()
-  const [refreshing, setRefreshing] = useState(false)
-  const setSyncing = useBankStore((s) => s.setSyncing)
-  const isSyncing = useBankStore((s) => s.isSyncing)
-  const lastSyncAt = useBankStore((s) => s.lastSyncAt)
-  const setLastSync = useBankStore((s) => s.setLastSync)
+  const queryClient = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const setSyncing = useBankStore((s) => s.setSyncing);
+  const isSyncing = useBankStore((s) => s.isSyncing);
+  const lastSyncAt = useBankStore((s) => s.lastSyncAt);
+  const setLastSync = useBankStore((s) => s.setLastSync);
 
   const {
     data: accounts,
@@ -61,26 +61,26 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
     queryKey: ['bank-accounts'],
     queryFn: () => flowguardApi.getAccounts(),
     staleTime: 5 * 60 * 1000,
-  })
+  });
 
   const { mutate: syncMutate } = useMutation({
     mutationFn: (accountId: string) => flowguardApi.syncBank(accountId),
     onMutate: () => setSyncing(true),
     onSettled: () => {
-      setSyncing(false)
-      setLastSync(new Date())
-      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      setSyncing(false);
+      setLastSync(new Date());
+      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
-  })
+  });
 
   const { mutate: disconnectMutate } = useMutation({
     mutationFn: (accountId: string) => flowguardApi.disconnectAccount(accountId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] })
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
+      queryClient.invalidateQueries({ queryKey: ['bank-accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
     },
-  })
+  });
 
   const confirmDisconnect = useCallback(
     (account: BankAccount) => {
@@ -95,16 +95,16 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
             onPress: () => disconnectMutate(account.id),
           },
         ],
-      )
+      );
     },
     [disconnectMutate],
-  )
+  );
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true)
-    await refetch()
-    setRefreshing(false)
-  }, [refetch])
+    setRefreshing(true);
+    await refetch();
+    setRefreshing(false);
+  }, [refetch]);
 
   if (isLoading) {
     return (
@@ -118,14 +118,14 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
           ))}
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   if (isError) {
-    return <ErrorScreen message="Impossible de charger vos comptes" onRetry={refetch} />
+    return <ErrorScreen message="Impossible de charger vos comptes" onRetry={refetch} />;
   }
 
-  const list = accounts ?? []
+  const list = accounts ?? [];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -200,9 +200,9 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
                         try {
                           return format(new Date(account.lastSyncAt!), 'dd/MM à HH:mm', {
                             locale: fr,
-                          })
+                          });
                         } catch {
-                          return '—'
+                          return '—';
                         }
                       })()}
                     </Text>
@@ -253,8 +253,8 @@ export const BankAccountScreen: React.FC<Props> = ({ navigation }) => {
         />
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -320,4 +320,4 @@ const styles = StyleSheet.create({
   },
   disconnectBtnText: { color: colors.danger, ...typography.caption, fontWeight: '700' },
   addBtn: { marginTop: spacing.md },
-})
+});

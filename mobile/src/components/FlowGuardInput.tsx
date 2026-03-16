@@ -1,6 +1,6 @@
-import React from 'react'
-import { View, TextInput, Text, StyleSheet, type KeyboardTypeOptions } from 'react-native'
-import { colors, spacing, typography } from '../theme'
+import React from 'react';
+import { View, TextInput, Text, StyleSheet, type KeyboardTypeOptions } from 'react-native';
+import { colors, spacing, typography } from '../theme';
 
 interface FlowGuardInputProps {
   label: string
@@ -25,7 +25,7 @@ export const FlowGuardInput: React.FC<FlowGuardInputProps> = ({
   autoCapitalize,
   autoCorrect,
 }) => {
-  const [focused, setFocused] = React.useState(false)
+  const [focused, setFocused] = React.useState(false);
 
   return (
     <View style={styles.container}>
@@ -49,8 +49,8 @@ export const FlowGuardInput: React.FC<FlowGuardInputProps> = ({
       />
       {error && <Text style={styles.error}>{error}</Text>}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -85,4 +85,4 @@ const styles = StyleSheet.create({
     fontSize: typography.caption.fontSize,
     marginTop: spacing.xs,
   },
-})
+});

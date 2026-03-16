@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,60 +7,60 @@ import {
   Keyboard,
   TouchableOpacity,
   TextInput,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { z } from 'zod'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { useAuthStore } from '../../store/authStore'
-import { useBiometric } from '../../hooks/useBiometric'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { FlowGuardInput } from '../../components/FlowGuardInput'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { z } from 'zod';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { useAuthStore } from '../../store/authStore';
+import { useBiometric } from '../../hooks/useBiometric';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { FlowGuardInput } from '../../components/FlowGuardInput';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
 
 const loginSchema = z.object({
   email: z.string().min(1, 'Email requis').email('Email invalide'),
   password: z.string().min(8, 'Minimum 8 caractères'),
-})
+});
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
 // ── OTP step ─────────────────────────────────────────────────────────────────
 const OtpStep: React.FC = () => {
-  const { verifyOtp, cancelMfa, isLoading, error, clearError, maskedEmail } = useAuthStore()
-  const [digits, setDigits] = useState(['', '', '', '', '', ''])
-  const inputRefs = useRef<(TextInput | null)[]>([])
+  const { verifyOtp, cancelMfa, isLoading, error, clearError, maskedEmail } = useAuthStore();
+  const [digits, setDigits] = useState(['', '', '', '', '', '']);
+  const inputRefs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
-    setTimeout(() => inputRefs.current[0]?.focus(), 200)
-  }, [])
+    setTimeout(() => inputRefs.current[0]?.focus(), 200);
+  }, []);
 
   const handleChange = useCallback(
     (idx: number, val: string) => {
-      if (!/^\d?$/.test(val)) return
-      const next = [...digits]
-      next[idx] = val
-      setDigits(next)
-      if (val && idx < 5) inputRefs.current[idx + 1]?.focus()
+      if (!/^\d?$/.test(val)) {return;}
+      const next = [...digits];
+      next[idx] = val;
+      setDigits(next);
+      if (val && idx < 5) {inputRefs.current[idx + 1]?.focus();}
       if (next.every((d) => d !== '')) {
         verifyOtp(next.join('')).catch(() => {
-          setDigits(['', '', '', '', '', ''])
-          setTimeout(() => inputRefs.current[0]?.focus(), 50)
-        })
+          setDigits(['', '', '', '', '', '']);
+          setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        });
       }
     },
     [digits, verifyOtp],
-  )
+  );
 
   const handleKeyPress = useCallback(
     (idx: number, key: string) => {
       if (key === 'Backspace' && !digits[idx] && idx > 0) {
-        inputRefs.current[idx - 1]?.focus()
+        inputRefs.current[idx - 1]?.focus();
       }
     },
     [digits],
-  )
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -98,7 +98,7 @@ const OtpStep: React.FC = () => {
             <TextInput
               key={i}
               ref={(el) => {
-                inputRefs.current[i] = el
+                inputRefs.current[i] = el;
               }}
               style={[styles.otpBox, d ? styles.otpBoxFilled : null]}
               value={d}
@@ -124,47 +124,47 @@ const OtpStep: React.FC = () => {
         )}
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 // ── Login step ───────────────────────────────────────────────────────────────
 
 export const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { login, loginWithBiometric, mfaPending, isLoading, error: authError } = useAuthStore()
-  const { isAvailable: biometricAvailable } = useBiometric()
+  const { login, loginWithBiometric, mfaPending, isLoading, error: authError } = useAuthStore();
+  const { isAvailable: biometricAvailable } = useBiometric();
 
-  if (mfaPending) return <OtpStep />
+  if (mfaPending) {return <OtpStep />;}
 
   const validate = useCallback((): boolean => {
-    const result = loginSchema.safeParse({ email, password })
+    const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
-      const fieldErrors: Record<string, string> = {}
+      const fieldErrors: Record<string, string> = {};
       result.error.errors.forEach((err) => {
-        const field = err.path[0]
+        const field = err.path[0];
         if (typeof field === 'string') {
-          fieldErrors[field] = err.message
+          fieldErrors[field] = err.message;
         }
-      })
-      setErrors(fieldErrors)
-      return false
+      });
+      setErrors(fieldErrors);
+      return false;
     }
-    setErrors({})
-    return true
-  }, [email, password])
+    setErrors({});
+    return true;
+  }, [email, password]);
 
   const handleLogin = useCallback(async () => {
-    Keyboard.dismiss()
-    if (!validate()) return
-    await login(email.trim(), password)
-  }, [email, password, login, validate])
+    Keyboard.dismiss();
+    if (!validate()) {return;}
+    await login(email.trim(), password);
+  }, [email, password, login, validate]);
 
   const handleBiometric = useCallback(async () => {
-    await loginWithBiometric()
-  }, [loginWithBiometric])
+    await loginWithBiometric();
+  }, [loginWithBiometric]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -230,8 +230,8 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -314,4 +314,4 @@ const styles = StyleSheet.create({
   otpBoxFilled: {
     borderColor: colors.primary,
   },
-})
+});

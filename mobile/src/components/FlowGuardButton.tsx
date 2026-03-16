@@ -1,4 +1,4 @@
-﻿import React from 'react'
+﻿import React from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -6,8 +6,8 @@ import {
   StyleSheet,
   type ViewStyle,
   type StyleProp,
-} from 'react-native'
-import { colors, spacing, typography } from '../theme'
+} from 'react-native';
+import { colors, spacing, typography } from '../theme';
 
 interface FlowGuardButtonProps {
   /** Display text */
@@ -34,8 +34,8 @@ export const FlowGuardButton: React.FC<FlowGuardButtonProps> = ({
   style,
   fullWidth = true,
 }) => {
-  const isDisabled = disabled || loading
-  const displayText = label ?? title ?? ''
+  const isDisabled = disabled || loading;
+  const displayText = label ?? title ?? '';
 
   const buttonStyles = [
     styles.base,
@@ -47,7 +47,7 @@ export const FlowGuardButton: React.FC<FlowGuardButtonProps> = ({
     variant === 'outline' && styles.outline,
     isDisabled && styles.disabled,
     style,
-  ]
+  ];
 
   const textStyles = [
     styles.text,
@@ -55,7 +55,7 @@ export const FlowGuardButton: React.FC<FlowGuardButtonProps> = ({
     variant === 'ghost' && styles.ghostText,
     variant === 'outline' && styles.outlineText,
     variant === 'danger' && styles.dangerText,
-  ]
+  ];
 
   return (
     <TouchableOpacity
@@ -77,8 +77,8 @@ export const FlowGuardButton: React.FC<FlowGuardButtonProps> = ({
         <Text style={textStyles}>{icon ? `${icon}  ${displayText}` : displayText}</Text>
       )}
     </TouchableOpacity>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   base: {
@@ -133,4 +133,4 @@ const styles = StyleSheet.create({
   dangerText: {
     color: colors.textPrimary,
   },
-})
+});

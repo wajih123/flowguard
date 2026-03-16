@@ -1,4 +1,4 @@
-import type { DailyBalance } from './TreasuryForecast'
+import type { DailyBalance } from './TreasuryForecast';
 
 export type ScenarioType =
   | 'LATE_PAYMENT'

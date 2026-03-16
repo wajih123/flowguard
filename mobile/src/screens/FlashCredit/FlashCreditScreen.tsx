@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView, StyleSheet, Keyboard } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import Slider from '@react-native-community/slider'
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, StyleSheet, Keyboard } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Slider from '@react-native-community/slider';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,13 +9,13 @@ import Animated, {
   withSequence,
   withTiming,
   runOnJS,
-} from 'react-native-reanimated'
-import { useFlashCredit } from '../../hooks/useFlashCredit'
-import { useAccountStore } from '../../store/accountStore'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { colors, typography, spacing } from '../../theme'
+} from 'react-native-reanimated';
+import { useFlashCredit } from '../../hooks/useFlashCredit';
+import { useAccountStore } from '../../store/accountStore';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { colors, typography, spacing } from '../../theme';
 
 const PURPOSE_OPTIONS = [
   { key: 'SALARY', label: '💼 Salaires' },
@@ -24,61 +24,61 @@ const PURPOSE_OPTIONS = [
   { key: 'RENT', label: '🏢 Loyer' },
   { key: 'EMERGENCY', label: '🚨 Urgence' },
   { key: 'OTHER', label: '📋 Autre' },
-]
+];
 
-const MIN_AMOUNT = 500
-const MAX_AMOUNT = 10000
-const STEP = 100
+const MIN_AMOUNT = 500;
+const MAX_AMOUNT = 10000;
+const STEP = 100;
 
 export const FlashCreditScreen: React.FC = () => {
-  const [amount, setAmount] = useState(2000)
-  const [purpose, setPurpose] = useState('SALARY')
-  const [showSuccess, setShowSuccess] = useState(false)
+  const [amount, setAmount] = useState(2000);
+  const [purpose, setPurpose] = useState('SALARY');
+  const [showSuccess, setShowSuccess] = useState(false);
 
-  const account = useAccountStore((s) => s.account)
-  const { requestCredit, isLoading: isPending } = useFlashCredit()
+  const account = useAccountStore((s) => s.account);
+  const { requestCredit, isLoading: isPending } = useFlashCredit();
 
-  const successScale = useSharedValue(0)
-  const successOpacity = useSharedValue(0)
+  const successScale = useSharedValue(0);
+  const successOpacity = useSharedValue(0);
 
   const successAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: successScale.value }],
     opacity: successOpacity.value,
-  }))
+  }));
 
   const playSuccessAnimation = useCallback(() => {
-    setShowSuccess(true)
-    successOpacity.value = withTiming(1, { duration: 200 })
+    setShowSuccess(true);
+    successOpacity.value = withTiming(1, { duration: 200 });
     successScale.value = withSequence(
       withSpring(1.2, { damping: 8 }),
       withSpring(1, { damping: 12 }),
-    )
-  }, [successOpacity, successScale])
+    );
+  }, [successOpacity, successScale]);
 
   const handleRequest = useCallback(() => {
-    Keyboard.dismiss()
+    Keyboard.dismiss();
     requestCredit(
       { amount, purpose, accountId: account?.id ?? '' },
       {
         onSuccess: () => {
-          runOnJS(playSuccessAnimation)()
+          runOnJS(playSuccessAnimation)();
         },
       },
-    )
-  }, [amount, purpose, requestCredit, playSuccessAnimation])
+    );
+  }, [amount, purpose, requestCredit, playSuccessAnimation]);
 
   const formattedAmount = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(amount)
+  }).format(amount);
 
-  const estimatedFee = amount * 0.015
+  const estimatedFee = amount * 0.015;
   const formattedFee = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-  }).format(estimatedFee)
+  }).format(estimatedFee);
 
   if (showSuccess) {
     return (
@@ -99,7 +99,7 @@ export const FlashCreditScreen: React.FC = () => {
           </View>
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   return (
@@ -147,7 +147,7 @@ export const FlashCreditScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Motif du crédit</Text>
         <View style={styles.purposeGrid}>
           {PURPOSE_OPTIONS.map((opt) => {
-            const isActive = purpose === opt.key
+            const isActive = purpose === opt.key;
             return (
               <Text
                 key={opt.key}
@@ -156,7 +156,7 @@ export const FlashCreditScreen: React.FC = () => {
               >
                 {opt.label}
               </Text>
-            )
+            );
           })}
         </View>
 
@@ -207,8 +207,8 @@ export const FlashCreditScreen: React.FC = () => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -385,4 +385,4 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: spacing.xxl,
   },
-})
+});

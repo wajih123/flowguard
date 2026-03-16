@@ -1,33 +1,33 @@
-import axios from 'axios'
+import axios from 'axios';
 
-const NORDIGEN_BASE_URL = 'https://bankaccountdata.gocardless.com/api/v2'
+const NORDIGEN_BASE_URL = 'https://bankaccountdata.gocardless.com/api/v2';
 
 const nordigenClient = axios.create({
   baseURL: NORDIGEN_BASE_URL,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
-})
+});
 
-let nordigenAccessToken: string | null = null
+let nordigenAccessToken: string | null = null;
 
 export const authenticate = async (): Promise<void> => {
-  const secretId = process.env.EXPO_PUBLIC_NORDIGEN_SECRET_ID ?? 'demo_id'
-  const secretKey = process.env.EXPO_PUBLIC_NORDIGEN_SECRET_KEY ?? 'demo_key'
+  const secretId = process.env.EXPO_PUBLIC_NORDIGEN_SECRET_ID ?? 'demo_id';
+  const secretKey = process.env.EXPO_PUBLIC_NORDIGEN_SECRET_KEY ?? 'demo_key';
 
   const { data } = await nordigenClient.post('/token/new/', {
     secret_id: secretId,
     secret_key: secretKey,
-  })
+  });
 
-  nordigenAccessToken = data.access
-  nordigenClient.defaults.headers.common.Authorization = `Bearer ${nordigenAccessToken}`
-}
+  nordigenAccessToken = data.access;
+  nordigenClient.defaults.headers.common.Authorization = `Bearer ${nordigenAccessToken}`;
+};
 
 const ensureAuthenticated = async (): Promise<void> => {
   if (!nordigenAccessToken) {
-    await authenticate()
+    await authenticate();
   }
-}
+};
 
 export interface NordigenInstitution {
   id: string
@@ -38,12 +38,12 @@ export interface NordigenInstitution {
 }
 
 export const getInstitutions = async (): Promise<NordigenInstitution[]> => {
-  await ensureAuthenticated()
+  await ensureAuthenticated();
   const { data } = await nordigenClient.get<NordigenInstitution[]>('/institutions/', {
     params: { country: 'fr' },
-  })
-  return data
-}
+  });
+  return data;
+};
 
 export interface NordigenRequisition {
   id: string
@@ -57,23 +57,23 @@ export const createRequisition = async (
   redirectUri: string,
   userId: string,
 ): Promise<NordigenRequisition> => {
-  await ensureAuthenticated()
+  await ensureAuthenticated();
   const { data } = await nordigenClient.post<NordigenRequisition>('/requisitions/', {
     institution_id: institutionId,
     redirect: redirectUri,
     reference: userId,
     user_language: 'FR',
-  })
-  return data
-}
+  });
+  return data;
+};
 
 export const getRequisitionStatus = async (requisitionId: string): Promise<NordigenRequisition> => {
-  await ensureAuthenticated()
+  await ensureAuthenticated();
   const { data } = await nordigenClient.get<NordigenRequisition>(
     `/requisitions/${encodeURIComponent(requisitionId)}/`,
-  )
-  return data
-}
+  );
+  return data;
+};
 
 export interface NordigenBalance {
   balanceAmount: { amount: string; currency: string }
@@ -84,12 +84,12 @@ export interface NordigenBalance {
 export const getAccountBalances = async (
   accountId: string,
 ): Promise<{ balances: NordigenBalance[] }> => {
-  await ensureAuthenticated()
+  await ensureAuthenticated();
   const { data } = await nordigenClient.get<{ balances: NordigenBalance[] }>(
     `/accounts/${encodeURIComponent(accountId)}/balances/`,
-  )
-  return data
-}
+  );
+  return data;
+};
 
 export interface NordigenTransaction {
   transactionId: string
@@ -104,13 +104,13 @@ export const getAccountTransactions = async (
   accountId: string,
   dateFrom: string,
 ): Promise<{ transactions: { booked: NordigenTransaction[] } }> => {
-  await ensureAuthenticated()
+  await ensureAuthenticated();
   const { data } = await nordigenClient.get(
     `/accounts/${encodeURIComponent(accountId)}/transactions/`,
     { params: { date_from: dateFrom } },
-  )
-  return data
-}
+  );
+  return data;
+};
 
 // ── Namespace object for screens that import nordigenApi as a single object ──
 export const nordigenApi = {
@@ -121,4 +121,4 @@ export const nordigenApi = {
   getRequisitionStatus,
   getAccountBalances,
   getAccountTransactions,
-}
+};

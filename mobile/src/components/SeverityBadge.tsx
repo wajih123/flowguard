@@ -1,14 +1,14 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import type { AlertSeverity } from '../domain/Alert'
-import { colors } from '../theme'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import type { AlertSeverity } from '../domain/Alert';
+import { colors } from '../theme';
 
 const SEVERITY_CONFIG: Record<AlertSeverity, { color: string; label: string }> = {
   CRITICAL: { color: colors.danger, label: 'CRITIQUE' },
   HIGH: { color: colors.severityHigh, label: 'IMPORTANT' },
   MEDIUM: { color: colors.warning, label: 'MODÉRÉ' },
   LOW: { color: colors.severityLow, label: 'INFO' },
-}
+};
 
 interface SeverityBadgeProps {
   severity: AlertSeverity
@@ -16,7 +16,7 @@ interface SeverityBadgeProps {
 }
 
 export const SeverityBadge: React.FC<SeverityBadgeProps> = ({ severity, size = 'md' }) => {
-  const { color, label } = SEVERITY_CONFIG[severity]
+  const { color, label } = SEVERITY_CONFIG[severity];
 
   return (
     <View
@@ -28,8 +28,8 @@ export const SeverityBadge: React.FC<SeverityBadgeProps> = ({ severity, size = '
     >
       <Text style={[styles.text, { color }, size === 'sm' && styles.textSm]}>{label}</Text>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   badge: {
@@ -51,4 +51,4 @@ const styles = StyleSheet.create({
   textSm: {
     fontSize: 9,
   },
-})
+});

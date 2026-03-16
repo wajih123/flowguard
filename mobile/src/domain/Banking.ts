@@ -1,4 +1,4 @@
-export type { BankAccount } from './Account'
+export type { BankAccount } from './Account';
 
 export interface Institution {
   id: string

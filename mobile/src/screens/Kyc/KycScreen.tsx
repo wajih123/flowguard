@@ -1,58 +1,58 @@
-import React, { useState, useCallback, useRef } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { WebView, type WebViewNavigation } from 'react-native-webview'
-import { useAuthStore } from '../../store/authStore'
-import flowguardApi from '../../api/flowguardApi'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { colors, typography, spacing } from '../../theme'
+import React, { useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView, type WebViewNavigation } from 'react-native-webview';
+import { useAuthStore } from '../../store/authStore';
+import flowguardApi from '../../api/flowguardApi';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { colors, typography, spacing } from '../../theme';
 
-const KYC_REDIRECT_URI = 'flowguard://kyc/callback'
+const KYC_REDIRECT_URI = 'flowguard://kyc/callback';
 
 export const KycScreen: React.FC = () => {
-  const [kycUrl, setKycUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
-  const webViewRef = useRef<WebView>(null)
-  const { user } = useAuthStore()
+  const [kycUrl, setKycUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const webViewRef = useRef<WebView>(null);
+  const { user } = useAuthStore();
 
   const initKyc = useCallback(async () => {
     try {
-      setLoading(true)
-      setError(false)
+      setLoading(true);
+      setError(false);
       const response = await flowguardApi.post<{ url: string }>('/kyc/init', {
         userId: user?.id,
         redirectUri: KYC_REDIRECT_URI,
-      })
-      setKycUrl(response.data.url)
+      });
+      setKycUrl(response.data.url);
     } catch {
-      setError(true)
+      setError(true);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [user?.id])
+  }, [user?.id]);
 
   React.useEffect(() => {
-    initKyc()
-  }, [initKyc])
+    initKyc();
+  }, [initKyc]);
 
   const handleNavigationChange = useCallback((navState: WebViewNavigation) => {
     if (navState.url.startsWith(KYC_REDIRECT_URI)) {
-      const url = new URL(navState.url)
-      const status = url.searchParams.get('status')
+      const url = new URL(navState.url);
+      const status = url.searchParams.get('status');
       if (status === 'success') {
-        useAuthStore.getState().hydrate()
+        useAuthStore.getState().hydrate();
       }
     }
-  }, [])
+  }, []);
 
   if (error) {
-    return <ErrorScreen message="Impossible d'initialiser la vérification KYC" onRetry={initKyc} />
+    return <ErrorScreen message="Impossible d'initialiser la vérification KYC" onRetry={initKyc} />;
   }
 
   if (loading || !kycUrl) {
-    return <FlowGuardLoader />
+    return <FlowGuardLoader />;
   }
 
   return (
@@ -75,8 +75,8 @@ export const KycScreen: React.FC = () => {
         style={styles.webview}
       />
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -112,4 +112,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.body.fontSize,
   },
-})
+});

@@ -1,13 +1,13 @@
-import React from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import type { Transaction } from '../../domain/Transaction'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import type { Transaction } from '../../domain/Transaction';
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 type Props = StackScreenProps<
   Record<string, { transaction: Transaction }>,
@@ -28,38 +28,38 @@ const categoryLabels: Record<string, string> = {
   CLIENT_PAYMENT: 'Paiement client',
   VIREMENT: 'Virement',
   AUTRE: 'Autre',
-}
+};
 
 const fmtEur = (val: number) =>
   new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-  }).format(val)
+  }).format(val);
 
 export const TransactionDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  const tx = route.params?.transaction
+  const tx = route.params?.transaction;
 
   const formattedDate = (() => {
     try {
-      return format(parseISO(tx.date), 'EEEE dd MMMM yyyy', { locale: fr })
+      return format(parseISO(tx.date), 'EEEE dd MMMM yyyy', { locale: fr });
     } catch {
-      return tx.date
+      return tx.date;
     }
-  })()
+  })();
 
   const formattedBooking = tx.bookingDate
     ? (() => {
         try {
-          return format(parseISO(tx.bookingDate!), 'dd MMMM yyyy', { locale: fr })
+          return format(parseISO(tx.bookingDate!), 'dd MMMM yyyy', { locale: fr });
         } catch {
-          return tx.bookingDate
+          return tx.bookingDate;
         }
       })()
-    : null
+    : null;
 
-  const isCredit = tx.type === 'CREDIT'
-  const amountColor = isCredit ? colors.success : colors.textPrimary
+  const isCredit = tx.type === 'CREDIT';
+  const amountColor = isCredit ? colors.success : colors.textPrimary;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -93,15 +93,15 @@ export const TransactionDetailScreen: React.FC<Props> = ({ route, navigation }) 
         </FlowGuardCard>
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   <View style={rowStyles.row}>
     <Text style={rowStyles.label}>{label}</Text>
     <Text style={rowStyles.value}>{value}</Text>
   </View>
-)
+);
 
 const rowStyles = StyleSheet.create({
   row: {
@@ -120,7 +120,7 @@ const rowStyles = StyleSheet.create({
     flex: 1,
     textAlign: 'right',
   },
-})
+});
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -144,4 +144,4 @@ const styles = StyleSheet.create({
   },
   pendingText: { color: colors.warning, ...typography.caption, fontWeight: '700' },
   detailCard: {},
-})
+});

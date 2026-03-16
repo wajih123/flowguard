@@ -14,7 +14,7 @@ export class FlowGuardError extends Error {
     public fields?: Record<string, string>,
     public statusCode?: number,
   ) {
-    super(message)
-    this.name = 'FlowGuardError'
+    super(message);
+    this.name = 'FlowGuardError';
   }
 }

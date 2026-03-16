@@ -1,10 +1,10 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { FlowGuardCard } from '../../../components/FlowGuardCard'
-import type { Alert } from '../../../domain/Alert'
-import { colors, typography, spacing } from '../../../theme'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { FlowGuardCard } from '../../../components/FlowGuardCard';
+import type { Alert } from '../../../domain/Alert';
+import { colors, typography, spacing } from '../../../theme';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface AlertCardProps {
   alert: Alert
@@ -16,17 +16,17 @@ const severityColorMap: Record<string, string> = {
   MEDIUM: colors.severityMedium,
   HIGH: colors.severityHigh,
   CRITICAL: colors.severityCritical,
-}
+};
 
 const typeLabels: Record<string, string> = {
   CASH_SHORTAGE: 'Déficit de trésorerie',
   UNUSUAL_SPEND: 'Dépense inhabituelle',
   PAYMENT_DUE: 'Échéance à venir',
   POSITIVE_TREND: 'Tendance positive',
-}
+};
 
 export const AlertCard: React.FC<AlertCardProps> = ({ alert, onMarkRead }) => {
-  const borderColor = severityColorMap[alert.severity] ?? colors.primary
+  const borderColor = severityColorMap[alert.severity] ?? colors.primary;
 
   const formattedDeficit = alert.projectedDeficit
     ? new Intl.NumberFormat('fr-FR', {
@@ -34,14 +34,14 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert, onMarkRead }) => {
         currency: 'EUR',
         minimumFractionDigits: 0,
       }).format(Math.abs(alert.projectedDeficit))
-    : null
+    : null;
 
-  let triggerLabel: string | null = null
+  let triggerLabel: string | null = null;
   if (alert.triggerDate) {
     try {
-      triggerLabel = format(new Date(alert.triggerDate), 'dd MMMM yyyy', { locale: fr })
+      triggerLabel = format(new Date(alert.triggerDate), 'dd MMMM yyyy', { locale: fr });
     } catch {
-      triggerLabel = alert.triggerDate
+      triggerLabel = alert.triggerDate;
     }
   }
 
@@ -72,8 +72,8 @@ export const AlertCard: React.FC<AlertCardProps> = ({ alert, onMarkRead }) => {
         </TouchableOpacity>
       )}
     </FlowGuardCard>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -129,4 +129,4 @@ const styles = StyleSheet.create({
     fontSize: typography.caption.fontSize,
     fontWeight: '600',
   },
-})
+});

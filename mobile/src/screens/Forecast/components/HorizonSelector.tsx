@@ -1,13 +1,13 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { colors, typography, spacing } from '../../../theme'
+import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { colors, typography, spacing } from '../../../theme';
 
 interface HorizonSelectorProps {
   selected: number
   onSelect: (horizon: number) => void
 }
 
-const HORIZONS = [30, 60, 90] as const
+const HORIZONS = [30, 60, 90] as const;
 
 export const HorizonSelector: React.FC<HorizonSelectorProps> = ({ selected, onSelect }) => {
   return (
@@ -25,8 +25,8 @@ export const HorizonSelector: React.FC<HorizonSelectorProps> = ({ selected, onSe
         </TouchableOpacity>
       ))}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -53,4 +53,4 @@ const styles = StyleSheet.create({
   labelActive: {
     color: colors.textPrimary,
   },
-})
+});

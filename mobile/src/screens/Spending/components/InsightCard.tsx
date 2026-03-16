@@ -1,7 +1,7 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { FlowGuardCard } from '../../../components/FlowGuardCard'
-import { colors, typography, spacing } from '../../../theme'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlowGuardCard } from '../../../components/FlowGuardCard';
+import { colors, typography, spacing } from '../../../theme';
 
 interface InsightCardProps {
   icon: string
@@ -15,7 +15,7 @@ export const InsightCard: React.FC<InsightCardProps> = ({ icon, text, type }) =>
       ? colors.success
       : type === 'negative'
         ? colors.danger
-        : colors.primary
+        : colors.primary;
 
   return (
     <FlowGuardCard style={[styles.card, { borderLeftColor: borderColor, borderLeftWidth: 3 }]}>
@@ -24,8 +24,8 @@ export const InsightCard: React.FC<InsightCardProps> = ({ icon, text, type }) =>
         <Text style={styles.text}>{text}</Text>
       </View>
     </FlowGuardCard>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   card: {
@@ -45,4 +45,4 @@ const styles = StyleSheet.create({
     fontSize: typography.body.fontSize,
     lineHeight: 22,
   },
-})
+});

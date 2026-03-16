@@ -1,4 +1,4 @@
-import type { TransactionCategory } from './Transaction'
+import type { TransactionCategory } from './Transaction';
 
 export interface SpendingCategory {
   category: string

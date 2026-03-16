@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useAlerts, useMarkAlertAsRead } from '../../hooks/useAlerts'
-import { AlertCard } from './components/AlertCard'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { EmptyState } from '../../components/EmptyState'
-import type { Alert } from '../../domain/Alert'
-import { useAccountStore } from '../../store/accountStore'
-import { colors, typography, spacing } from '../../theme'
+import React, { useState, useCallback } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAlerts, useMarkAlertAsRead } from '../../hooks/useAlerts';
+import { AlertCard } from './components/AlertCard';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { EmptyState } from '../../components/EmptyState';
+import type { Alert } from '../../domain/Alert';
+import { useAccountStore } from '../../store/accountStore';
+import { colors, typography, spacing } from '../../theme';
 
 type TabKey = 'all' | 'unread' | 'critical'
 
@@ -16,37 +16,37 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'all', label: 'Toutes' },
   { key: 'unread', label: 'Non lues' },
   { key: 'critical', label: 'Critiques' },
-]
+];
 
 export const AlertsScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<TabKey>('all')
-  const account = useAccountStore((s) => s.account)
-  const { alerts, isLoading, isError, refetch } = useAlerts(account?.id)
-  const { mutate: markRead } = useMarkAlertAsRead()
+  const [activeTab, setActiveTab] = useState<TabKey>('all');
+  const account = useAccountStore((s) => s.account);
+  const { alerts, isLoading, isError, refetch } = useAlerts(account?.id);
+  const { mutate: markRead } = useMarkAlertAsRead();
 
   const filteredAlerts = useCallback((): Alert[] => {
-    if (!alerts) return []
+    if (!alerts) {return [];}
     switch (activeTab) {
       case 'unread':
-        return alerts.filter((a) => !a.isRead)
+        return alerts.filter((a) => !a.isRead);
       case 'critical':
-        return alerts.filter((a) => a.severity === 'CRITICAL')
+        return alerts.filter((a) => a.severity === 'CRITICAL');
       default:
-        return alerts
+        return alerts;
     }
-  }, [alerts, activeTab])
+  }, [alerts, activeTab]);
 
   const handleMarkRead = useCallback(
     (alertId: string) => {
-      markRead(alertId)
+      markRead(alertId);
     },
     [markRead],
-  )
+  );
 
-  if (isLoading) return <FlowGuardLoader />
-  if (isError) return <ErrorScreen message="Impossible de charger les alertes" onRetry={refetch} />
+  if (isLoading) {return <FlowGuardLoader />;}
+  if (isError) {return <ErrorScreen message="Impossible de charger les alertes" onRetry={refetch} />;}
 
-  const data = filteredAlerts()
+  const data = filteredAlerts();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -54,7 +54,7 @@ export const AlertsScreen: React.FC = () => {
 
       <View style={styles.tabBar}>
         {TABS.map((tab) => {
-          const isActive = activeTab === tab.key
+          const isActive = activeTab === tab.key;
           return (
             <TouchableOpacity
               key={tab.key}
@@ -68,7 +68,7 @@ export const AlertsScreen: React.FC = () => {
                 </View>
               )}
             </TouchableOpacity>
-          )
+          );
         })}
       </View>
 
@@ -103,8 +103,8 @@ export const AlertsScreen: React.FC = () => {
         />
       )}
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -162,4 +162,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xxl,
   },
-})
+});

@@ -1,25 +1,25 @@
-import React, { useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { SeverityBadge } from '../../components/SeverityBadge'
-import { useAccountStore } from '../../store/accountStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import * as flowguardApi from '../../api/flowguardApi'
-import type { Alert } from '../../domain/Alert'
-import { format } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import React, { useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { SeverityBadge } from '../../components/SeverityBadge';
+import { useAccountStore } from '../../store/accountStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import * as flowguardApi from '../../api/flowguardApi';
+import type { Alert } from '../../domain/Alert';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 const typeLabels: Record<string, string> = {
   CASH_SHORTAGE: 'Déficit de trésorerie',
   UNUSUAL_SPEND: 'Dépense inhabituelle',
   PAYMENT_DUE: 'Échéance à venir',
   POSITIVE_TREND: 'Tendance positive',
-}
+};
 
 const typeActions: Record<string, string> = {
   CASH_SHORTAGE:
@@ -30,41 +30,41 @@ const typeActions: Record<string, string> = {
     "Assurez-vous que votre solde sera suffisant à la date d'échéance. Utilisez la Réserve si besoin.",
   POSITIVE_TREND:
     "Votre trésorerie est en bonne santé. Pensez à épargner l'excédent ou à anticiper des investissements.",
-}
+};
 
 type Props = StackScreenProps<Record<string, { alert: Alert }>, typeof Routes.AlertDetail>
 
 export const AlertDetailScreen: React.FC<Props> = ({ route, navigation }) => {
-  const alert = route.params?.alert
-  const account = useAccountStore((s) => s.account)
-  const queryClient = useQueryClient()
+  const alert = route.params?.alert;
+  const account = useAccountStore((s) => s.account);
+  const queryClient = useQueryClient();
 
   const { mutate: markRead, isPending } = useMutation({
     mutationFn: () => flowguardApi.markAlertRead(alert.id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['alerts', account?.id] })
+      queryClient.invalidateQueries({ queryKey: ['alerts', account?.id] });
     },
-  })
+  });
 
   const handleMarkRead = useCallback(() => {
-    if (!alert.isRead) markRead()
-  }, [alert.isRead, markRead])
+    if (!alert.isRead) {markRead();}
+  }, [alert.isRead, markRead]);
 
   const formattedDate = (() => {
     try {
-      return format(new Date(alert.createdAt), 'dd MMMM yyyy à HH:mm', { locale: fr })
+      return format(new Date(alert.createdAt), 'dd MMMM yyyy à HH:mm', { locale: fr });
     } catch {
-      return ''
+      return '';
     }
-  })()
+  })();
 
   const severityVariantMap: Record<string, 'alert' | 'success' | 'info' | 'warning'> = {
     CRITICAL: 'alert',
     HIGH: 'alert',
     MEDIUM: 'warning',
     LOW: 'info',
-  }
-  const cardVariant = severityVariantMap[alert.severity] ?? 'info'
+  };
+  const cardVariant = severityVariantMap[alert.severity] ?? 'info';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -102,9 +102,9 @@ export const AlertDetailScreen: React.FC<Props> = ({ route, navigation }) => {
             <Text style={styles.infoValue}>
               {(() => {
                 try {
-                  return format(new Date(alert.triggerDate!), 'dd MMMM yyyy', { locale: fr })
+                  return format(new Date(alert.triggerDate!), 'dd MMMM yyyy', { locale: fr });
                 } catch {
-                  return alert.triggerDate
+                  return alert.triggerDate;
                 }
               })()}
             </Text>
@@ -138,8 +138,8 @@ export const AlertDetailScreen: React.FC<Props> = ({ route, navigation }) => {
         )}
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -174,4 +174,4 @@ const styles = StyleSheet.create({
   actionText: { color: colors.textPrimary, ...typography.body },
   ctaBtn: { marginBottom: spacing.sm },
   readBtn: { marginBottom: spacing.sm },
-})
+});

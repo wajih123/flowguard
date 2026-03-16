@@ -1,20 +1,20 @@
-import React from 'react'
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
-import { createStackNavigator } from '@react-navigation/stack'
-import { View, Text, StyleSheet } from 'react-native'
-import { DashboardScreen } from '../screens/Dashboard/DashboardScreen'
-import { ForecastScreen } from '../screens/Forecast/ForecastScreen'
-import { AlertsScreen } from '../screens/Alerts/AlertsScreen'
-import { SpendingScreen } from '../screens/Spending/SpendingScreen'
-import { ScenarioScreen } from '../screens/Scenario/ScenarioScreen'
-import { FlashCreditScreen } from '../screens/FlashCredit/FlashCreditScreen'
-import { BankConnectScreen } from '../screens/BankConnect/BankConnectScreen'
-import { Routes } from './routes'
-import { useAlertStore } from '../store/alertStore'
-import { colors, spacing } from '../theme'
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
+import { View, Text, StyleSheet } from 'react-native';
+import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
+import { ForecastScreen } from '../screens/Forecast/ForecastScreen';
+import { AlertsScreen } from '../screens/Alerts/AlertsScreen';
+import { SpendingScreen } from '../screens/Spending/SpendingScreen';
+import { ScenarioScreen } from '../screens/Scenario/ScenarioScreen';
+import { FlashCreditScreen } from '../screens/FlashCredit/FlashCreditScreen';
+import { BankConnectScreen } from '../screens/BankConnect/BankConnectScreen';
+import { Routes } from './routes';
+import { useAlertStore } from '../store/alertStore';
+import { colors, spacing } from '../theme';
 
-const Tab = createBottomTabNavigator()
-const DashboardStack = createStackNavigator()
+const Tab = createBottomTabNavigator();
+const DashboardStack = createStackNavigator();
 
 const DashboardStackNavigator: React.FC = () => {
   return (
@@ -33,14 +33,14 @@ const DashboardStackNavigator: React.FC = () => {
         component={BankConnectScreen as React.ComponentType<object>}
       />
     </DashboardStack.Navigator>
-  )
-}
+  );
+};
 
 const ProfilePlaceholder: React.FC = () => (
   <View style={styles.placeholder}>
     <Text style={styles.placeholderText}>Profil</Text>
   </View>
-)
+);
 
 const TabIcon: React.FC<{ label: string; focused: boolean }> = ({ label, focused }) => {
   const iconMap: Record<string, string> = {
@@ -48,15 +48,15 @@ const TabIcon: React.FC<{ label: string; focused: boolean }> = ({ label, focused
     Prévisions: '📈',
     Alertes: '🔔',
     Profil: '👤',
-  }
+  };
 
   return (
     <Text style={[styles.tabIcon, focused && styles.tabIconActive]}>{iconMap[label] ?? '•'}</Text>
-  )
-}
+  );
+};
 
 export const MainTabNavigator: React.FC = () => {
-  const unreadCount = useAlertStore((s) => s.unreadCount)
+  const unreadCount = useAlertStore((s) => s.unreadCount);
 
   return (
     <Tab.Navigator
@@ -120,8 +120,8 @@ export const MainTabNavigator: React.FC = () => {
         }}
       />
     </Tab.Navigator>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   placeholder: {
@@ -141,4 +141,4 @@ const styles = StyleSheet.create({
   tabIconActive: {
     opacity: 1,
   },
-})
+});

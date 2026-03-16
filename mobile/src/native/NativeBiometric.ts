@@ -1,5 +1,5 @@
-import type { TurboModule } from 'react-native'
-import { TurboModuleRegistry } from 'react-native'
+import type { TurboModule } from 'react-native';
+import { TurboModuleRegistry } from 'react-native';
 
 export interface Spec extends TurboModule {
   isAvailable(): Promise<boolean>
@@ -7,4 +7,4 @@ export interface Spec extends TurboModule {
   getBiometryType(): Promise<'FaceID' | 'TouchID' | 'Fingerprint' | 'None'>
 }
 
-export default TurboModuleRegistry.getEnforcing<Spec>('FlowGuardBiometric')
+export default TurboModuleRegistry.getEnforcing<Spec>('FlowGuardBiometric');

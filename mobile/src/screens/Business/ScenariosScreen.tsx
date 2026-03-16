@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,16 +8,16 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { useScenario } from '../../hooks/useScenario'
-import { useAccountStore } from '../../store/accountStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import type { ScenarioType } from '../../domain/Scenario'
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { useScenario } from '../../hooks/useScenario';
+import { useAccountStore } from '../../store/accountStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import type { ScenarioType } from '../../domain/Scenario';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.Scenarios>
 
@@ -55,27 +55,27 @@ const SCENARIOS: ScenarioConfig[] = [
     amountLabel: 'Montant de la facture (€)',
     delayLabel: 'Anticipation (jours)',
   },
-]
+];
 
 const fmtEur = (val: number) =>
   new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(val)
+  }).format(val);
 
 export const ScenariosScreen: React.FC<Props> = () => {
-  const account = useAccountStore((s) => s.account)
-  const [selectedType, setSelectedType] = useState<ScenarioType>('LATE_PAYMENT')
-  const [amount, setAmount] = useState('')
-  const [delayDays, setDelayDays] = useState('')
-  const { runScenario, isLoading, result, reset } = useScenario()
+  const account = useAccountStore((s) => s.account);
+  const [selectedType, setSelectedType] = useState<ScenarioType>('LATE_PAYMENT');
+  const [amount, setAmount] = useState('');
+  const [delayDays, setDelayDays] = useState('');
+  const { runScenario, isLoading, result, reset } = useScenario();
 
-  const selectedConfig = SCENARIOS.find((s) => s.type === selectedType)!
+  const selectedConfig = SCENARIOS.find((s) => s.type === selectedType)!;
 
   const handleRun = useCallback(() => {
-    const parsedAmount = parseFloat(amount.replace(',', '.'))
-    const parsedDelay = parseInt(delayDays, 10)
+    const parsedAmount = parseFloat(amount.replace(',', '.'));
+    const parsedDelay = parseInt(delayDays, 10);
     if (
       !account?.id ||
       isNaN(parsedAmount) ||
@@ -83,20 +83,20 @@ export const ScenariosScreen: React.FC<Props> = () => {
       parsedAmount <= 0 ||
       parsedDelay < 0
     )
-      return
+      {return;}
     runScenario({
       accountId: account.id,
       type: selectedType,
       amount: parsedAmount,
       delayDays: parsedDelay,
-    })
-  }, [account, selectedType, amount, delayDays, runScenario])
+    });
+  }, [account, selectedType, amount, delayDays, runScenario]);
 
   const handleReset = useCallback(() => {
-    reset()
-    setAmount('')
-    setDelayDays('')
-  }, [reset])
+    reset();
+    setAmount('');
+    setDelayDays('');
+  }, [reset]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -117,8 +117,8 @@ export const ScenariosScreen: React.FC<Props> = () => {
               <TouchableOpacity
                 key={s.type}
                 onPress={() => {
-                  setSelectedType(s.type)
-                  reset()
+                  setSelectedType(s.type);
+                  reset();
                 }}
                 style={[styles.scenarioChip, selectedType === s.type && styles.scenarioChipActive]}
               >
@@ -210,8 +210,8 @@ export const ScenariosScreen: React.FC<Props> = () => {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -268,4 +268,4 @@ const styles = StyleSheet.create({
   recLabel: { ...typography.caption, color: colors.textSecondary, marginBottom: 4 },
   recText: { color: colors.textPrimary, ...typography.body },
   resetBtn: {},
-})
+});

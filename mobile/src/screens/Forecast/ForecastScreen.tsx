@@ -1,26 +1,26 @@
-import React, { useState } from 'react'
-import { ScrollView, View, Text, StyleSheet } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { HorizonSelector } from './components/HorizonSelector'
-import { ConfidenceBadge } from './components/ConfidenceBadge'
-import { ForecastChart } from './components/ForecastChart'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { useForecast } from '../../hooks/useForecast'
-import { useAccountStore } from '../../store/accountStore'
-import { colors, typography, spacing } from '../../theme'
-import { format, parseISO } from 'date-fns'
-import { fr } from 'date-fns/locale'
+import React, { useState } from 'react';
+import { ScrollView, View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { HorizonSelector } from './components/HorizonSelector';
+import { ConfidenceBadge } from './components/ConfidenceBadge';
+import { ForecastChart } from './components/ForecastChart';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { useForecast } from '../../hooks/useForecast';
+import { useAccountStore } from '../../store/accountStore';
+import { colors, typography, spacing } from '../../theme';
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export const ForecastScreen: React.FC = () => {
-  const account = useAccountStore((s) => s.account)
-  const [horizon, setHorizon] = useState(30)
+  const account = useAccountStore((s) => s.account);
+  const [horizon, setHorizon] = useState(30);
 
-  const { forecast, isLoading, isError, refetch } = useForecast(account?.id, horizon)
+  const { forecast, isLoading, isError, refetch } = useForecast(account?.id, horizon);
 
   if (isLoading) {
-    return <FlowGuardLoader message="Calcul des prévisions en cours..." />
+    return <FlowGuardLoader message="Calcul des prévisions en cours..." />;
   }
 
   if (isError) {
@@ -29,11 +29,11 @@ export const ForecastScreen: React.FC = () => {
         message="Impossible de charger les prévisions"
         onRetry={() => refetch()}
       />
-    )
+    );
   }
 
   if (!forecast) {
-    return <FlowGuardLoader message="Chargement..." />
+    return <FlowGuardLoader message="Chargement..." />;
   }
 
   const formatAmount = (val: number) =>
@@ -41,7 +41,7 @@ export const ForecastScreen: React.FC = () => {
       style: 'currency',
       currency: 'EUR',
       minimumFractionDigits: 0,
-    }).format(val)
+    }).format(val);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -60,11 +60,11 @@ export const ForecastScreen: React.FC = () => {
           <View style={styles.criticalSection}>
             <Text style={styles.sectionTitle}>POINTS CRITIQUES</Text>
             {forecast.criticalPoints.map((cp) => {
-              let dateLabel = cp.date
+              let dateLabel = cp.date;
               try {
-                dateLabel = format(parseISO(cp.date), 'dd MMMM yyyy', { locale: fr })
+                dateLabel = format(parseISO(cp.date), 'dd MMMM yyyy', { locale: fr });
               } catch {
-                dateLabel = cp.date
+                dateLabel = cp.date;
               }
 
               return (
@@ -102,14 +102,14 @@ export const ForecastScreen: React.FC = () => {
                     </Text>
                   </View>
                 </FlowGuardCard>
-              )
+              );
             })}
           </View>
         )}
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -172,4 +172,4 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.caption.fontSize,
   },
-})
+});

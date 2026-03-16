@@ -1,15 +1,15 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useMutation } from '@tanstack/react-query'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { useAuthStore } from '../../store/authStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import * as flowguardApi from '../../api/flowguardApi'
-import ReactNativeBiometrics from 'react-native-biometrics'
+import React, { useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Switch, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMutation } from '@tanstack/react-query';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { useAuthStore } from '../../store/authStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import * as flowguardApi from '../../api/flowguardApi';
+import ReactNativeBiometrics from 'react-native-biometrics';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.Profile>
 
@@ -17,51 +17,51 @@ const kycLabels: Record<string, string> = {
   PENDING: 'En attente',
   VERIFIED: 'Vérifié',
   REJECTED: 'Refusé',
-}
+};
 const kycColors: Record<string, string> = {
   PENDING: colors.warning,
   VERIFIED: colors.success,
   REJECTED: colors.danger,
-}
+};
 const planLabels: Record<string, string> = {
   FREE: 'Gratuit',
   PRO: 'Pro — 49 €/mois',
   SCALE: 'Scale — 99 €/mois',
-}
+};
 
-const rnBiometrics = new ReactNativeBiometrics()
+const rnBiometrics = new ReactNativeBiometrics();
 
 export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
-  const user = useAuthStore((s) => s.user)
-  const logout = useAuthStore((s) => s.logout)
-  const [biometricEnabled, setBiometricEnabled] = useState(false)
-  const [biometricLoading, setBiometricLoading] = useState(false)
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
 
   const { mutate: exportData, isPending: exporting } = useMutation({
     mutationFn: () => flowguardApi.exportUserData(),
     onSuccess: () => Alert.alert('Export', 'Votre export de données a été envoyé par email.'),
     onError: () => Alert.alert('Erreur', "Impossible d'exporter vos données."),
-  })
+  });
 
   const { mutate: deleteAccount, isPending: deleting } = useMutation({
     mutationFn: () => flowguardApi.deleteAccount(),
     onSuccess: () => logout(),
     onError: () => Alert.alert('Erreur', 'Impossible de supprimer votre compte.'),
-  })
+  });
 
   const handleToggleBiometric = useCallback(async () => {
-    setBiometricLoading(true)
+    setBiometricLoading(true);
     try {
-      const { available } = await rnBiometrics.isSensorAvailable()
+      const { available } = await rnBiometrics.isSensorAvailable();
       if (!available) {
-        Alert.alert('Non disponible', "La biométrie n'est pas disponible sur cet appareil.")
-        return
+        Alert.alert('Non disponible', "La biométrie n'est pas disponible sur cet appareil.");
+        return;
       }
-      setBiometricEnabled((prev) => !prev)
+      setBiometricEnabled((prev) => !prev);
     } finally {
-      setBiometricLoading(false)
+      setBiometricLoading(false);
     }
-  }, [])
+  }, []);
 
   const handleDeleteAccount = useCallback(() => {
     Alert.alert(
@@ -71,20 +71,20 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         { text: 'Annuler', style: 'cancel' },
         { text: 'Supprimer', style: 'destructive', onPress: () => deleteAccount() },
       ],
-    )
-  }, [deleteAccount])
+    );
+  }, [deleteAccount]);
 
   const handleLogout = useCallback(() => {
     Alert.alert('Déconnexion', 'Vous allez être déconnecté.', [
       { text: 'Annuler', style: 'cancel' },
       { text: 'Déconnexion', style: 'destructive', onPress: () => logout() },
-    ])
-  }, [logout])
+    ]);
+  }, [logout]);
 
-  if (!user) return null
+  if (!user) {return null;}
 
-  const kycColor = kycColors[user.kycStatus] ?? colors.textMuted
-  const kycLabel = kycLabels[user.kycStatus] ?? user.kycStatus
+  const kycColor = kycColors[user.kycStatus] ?? colors.textMuted;
+  const kycLabel = kycLabels[user.kycStatus] ?? user.kycStatus;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -197,8 +197,8 @@ export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
         />
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -247,4 +247,4 @@ const styles = StyleSheet.create({
   inlineBtn: { marginTop: spacing.xs },
   dangerBtn: { borderColor: colors.danger },
   logoutBtn: { marginTop: spacing.lg, borderColor: colors.danger },
-})
+});

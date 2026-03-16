@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,20 +7,20 @@ import {
   Alert,
   TouchableOpacity,
   TextInput,
-} from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { useMutation } from '@tanstack/react-query'
-import type { StackScreenProps } from '@react-navigation/stack'
-import ReactNativeBiometrics from 'react-native-biometrics'
-import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { FlowGuardLoader } from '../../components/FlowGuardLoader'
-import { useReserveEligibility } from '../../hooks/useReserveEligibility'
-import { useAccountStore } from '../../store/accountStore'
-import { Routes } from '../../navigation/routes'
-import { colors, typography, spacing } from '../../theme'
-import * as flowguardApi from '../../api/flowguardApi'
-import type { CreditResponse } from '../../domain/Banking'
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useMutation } from '@tanstack/react-query';
+import type { StackScreenProps } from '@react-navigation/stack';
+import ReactNativeBiometrics from 'react-native-biometrics';
+import { FlowGuardCard } from '../../components/FlowGuardCard';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { FlowGuardLoader } from '../../components/FlowGuardLoader';
+import { useReserveEligibility } from '../../hooks/useReserveEligibility';
+import { useAccountStore } from '../../store/accountStore';
+import { Routes } from '../../navigation/routes';
+import { colors, typography, spacing } from '../../theme';
+import * as flowguardApi from '../../api/flowguardApi';
+import type { CreditResponse } from '../../domain/Banking';
 
 type Props = StackScreenProps<Record<string, undefined>, typeof Routes.Reserve>
 
@@ -29,47 +29,47 @@ const fmtEur = (val: number) =>
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(val)
+  }).format(val);
 
-const COMMISSION_RATE = 0.015
+const COMMISSION_RATE = 0.015;
 
-const rnBiometrics = new ReactNativeBiometrics()
+const rnBiometrics = new ReactNativeBiometrics();
 
 export const ReserveScreen: React.FC<Props> = ({ navigation }) => {
-  const account = useAccountStore((s) => s.account)
-  const { eligibility, isLoading, blocked } = useReserveEligibility(account?.id)
-  const [amount, setAmount] = useState(0)
-  const [result, setResult] = useState<CreditResponse | null>(null)
+  const account = useAccountStore((s) => s.account);
+  const { eligibility, isLoading, blocked } = useReserveEligibility(account?.id);
+  const [amount, setAmount] = useState(0);
+  const [result, setResult] = useState<CreditResponse | null>(null);
 
-  const effectiveAmount = amount > 0 ? amount : 0
-  const commission = Math.round(effectiveAmount * COMMISSION_RATE * 100) / 100
-  const totalToRepay = effectiveAmount + commission
+  const effectiveAmount = amount > 0 ? amount : 0;
+  const commission = Math.round(effectiveAmount * COMMISSION_RATE * 100) / 100;
+  const totalToRepay = effectiveAmount + commission;
 
   const { mutate: activate, isPending: activating } = useMutation({
     mutationFn: () => flowguardApi.activateReserve(account!.id, amount),
     onSuccess: (res) => setResult(res as CreditResponse),
     onError: () => Alert.alert('Erreur', "Impossible d'activer la Réserve. Réessayez."),
-  })
+  });
 
   const handleConfirm = useCallback(async () => {
     if (amount <= 0) {
-      Alert.alert('Montant invalide', 'Sélectionnez un montant supérieur à 0 €.')
-      return
+      Alert.alert('Montant invalide', 'Sélectionnez un montant supérieur à 0 €.');
+      return;
     }
 
-    const { available } = await rnBiometrics.isSensorAvailable()
+    const { available } = await rnBiometrics.isSensorAvailable();
     if (available) {
       const { success } = await rnBiometrics.simplePrompt({
         promptMessage: "Confirmer l'activation de la Réserve",
-      })
+      });
       if (!success) {
-        Alert.alert('Authentification échouée', 'La confirmation biométrique a échoué.')
-        return
+        Alert.alert('Authentification échouée', 'La confirmation biométrique a échoué.');
+        return;
       }
     }
 
-    activate()
-  }, [amount, activate])
+    activate();
+  }, [amount, activate]);
 
   // Guard: feature flag
   if (blocked === 'flag') {
@@ -84,7 +84,7 @@ export const ReserveScreen: React.FC<Props> = ({ navigation }) => {
           <FlowGuardButton label="Retour" onPress={() => navigation.goBack()} variant="outline" />
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   // Guard: KYC
@@ -106,10 +106,10 @@ export const ReserveScreen: React.FC<Props> = ({ navigation }) => {
           <FlowGuardButton label="Retour" onPress={() => navigation.goBack()} variant="outline" />
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
-  if (isLoading) return <FlowGuardLoader />
+  if (isLoading) {return <FlowGuardLoader />;}
 
   // Guard: not eligible
   if (eligibility && !eligibility.eligible) {
@@ -124,7 +124,7 @@ export const ReserveScreen: React.FC<Props> = ({ navigation }) => {
           <FlowGuardButton label="Retour" onPress={() => navigation.goBack()} variant="outline" />
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   // Success state
@@ -162,11 +162,11 @@ export const ReserveScreen: React.FC<Props> = ({ navigation }) => {
           />
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
-  const maxAmount = eligibility?.maxAmount ?? 5000
-  const suggested = eligibility?.suggestedAmount ?? 1000
+  const maxAmount = eligibility?.maxAmount ?? 5000;
+  const suggested = eligibility?.suggestedAmount ?? 1000;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -186,9 +186,9 @@ export const ReserveScreen: React.FC<Props> = ({ navigation }) => {
             style={styles.amountInput}
             value={amount > 0 ? String(amount) : ''}
             onChangeText={(t) => {
-              const parsed = parseFloat(t.replace(',', '.'))
-              if (!isNaN(parsed)) setAmount(Math.min(parsed, maxAmount))
-              else if (t === '') setAmount(0)
+              const parsed = parseFloat(t.replace(',', '.'));
+              if (!isNaN(parsed)) {setAmount(Math.min(parsed, maxAmount));}
+              else if (t === '') {setAmount(0);}
             }}
             keyboardType="decimal-pad"
             placeholder={fmtEur(suggested)}
@@ -243,8 +243,8 @@ export const ReserveScreen: React.FC<Props> = ({ navigation }) => {
         />
       </ScrollView>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -330,4 +330,4 @@ const styles = StyleSheet.create({
   },
   blockedBtn: { marginBottom: spacing.sm, width: '100%' },
   resultCard: { width: '100%', marginBottom: spacing.xl },
-})
+});

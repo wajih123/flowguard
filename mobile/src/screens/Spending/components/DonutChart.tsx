@@ -1,15 +1,15 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { colors, typography, spacing } from '../../../theme'
-import type { SpendingCategory } from '../../../domain/SpendingAnalysis'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, typography, spacing } from '../../../theme';
+import type { SpendingCategory } from '../../../domain/SpendingAnalysis';
 
 interface DonutChartProps {
   categories: SpendingCategory[]
   totalAmount: number
 }
 
-const SIZE = 200
-const STROKE_WIDTH = 28
+const SIZE = 200;
+const STROKE_WIDTH = 28;
 
 const CATEGORY_COLORS: string[] = [
   colors.primary,
@@ -20,26 +20,26 @@ const CATEGORY_COLORS: string[] = [
   '#EC4899',
   '#6366F1',
   '#14B8A6',
-]
+];
 
 export const DonutChart: React.FC<DonutChartProps> = ({ categories, totalAmount }) => {
   const formattedTotal = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(totalAmount)
+  }).format(totalAmount);
 
-  let cumulativePercent = 0
+  let cumulativePercent = 0;
 
   return (
     <View style={styles.container}>
       <View style={styles.chartWrapper}>
         {/* We build a manual donut via layered Views with border arcs */}
         {categories.map((cat, index) => {
-          const percent = cat.percentage / 100
-          const rotation = cumulativePercent * 360 - 90
-          cumulativePercent += percent
-          const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length]
+          const percent = cat.percentage / 100;
+          const rotation = cumulativePercent * 360 - 90;
+          cumulativePercent += percent;
+          const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
 
           return (
             <View
@@ -60,7 +60,7 @@ export const DonutChart: React.FC<DonutChartProps> = ({ categories, totalAmount 
                 },
               ]}
             />
-          )
+          );
         })}
         <View style={styles.centerLabel}>
           <Text style={styles.totalLabel}>Total</Text>
@@ -70,12 +70,12 @@ export const DonutChart: React.FC<DonutChartProps> = ({ categories, totalAmount 
 
       <View style={styles.legend}>
         {categories.map((cat, index) => {
-          const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length]
+          const color = CATEGORY_COLORS[index % CATEGORY_COLORS.length];
           const formattedAmount = new Intl.NumberFormat('fr-FR', {
             style: 'currency',
             currency: 'EUR',
             minimumFractionDigits: 0,
-          }).format(cat.amount)
+          }).format(cat.amount);
 
           return (
             <View key={cat.category} style={styles.legendItem}>
@@ -84,12 +84,12 @@ export const DonutChart: React.FC<DonutChartProps> = ({ categories, totalAmount 
               <Text style={styles.legendPercent}>{cat.percentage}%</Text>
               <Text style={styles.legendAmount}>{formattedAmount}</Text>
             </View>
-          )
+          );
         })}
       </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -150,4 +150,4 @@ const styles = StyleSheet.create({
     width: 80,
     textAlign: 'right',
   },
-})
+});

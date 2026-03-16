@@ -1,48 +1,48 @@
-import React, { useState, useCallback, useRef } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-import { WebView, type WebViewNavigation } from 'react-native-webview'
-import type { StackScreenProps } from '@react-navigation/stack'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
-import { ErrorScreen } from '../../components/ErrorScreen'
-import { useAccountStore } from '../../store/accountStore'
-import { nordigenApi } from '../../api/nordigenApi'
-import { colors, typography, spacing } from '../../theme'
+import React, { useState, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WebView, type WebViewNavigation } from 'react-native-webview';
+import type { StackScreenProps } from '@react-navigation/stack';
+import { FlowGuardButton } from '../../components/FlowGuardButton';
+import { ErrorScreen } from '../../components/ErrorScreen';
+import { useAccountStore } from '../../store/accountStore';
+import { nordigenApi } from '../../api/nordigenApi';
+import { colors, typography, spacing } from '../../theme';
 
-const REDIRECT_URI = 'flowguard://bank-connect/callback'
+const REDIRECT_URI = 'flowguard://bank-connect/callback';
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const BankConnectScreen: React.FC<Props> = ({ navigation }) => {
-  const [step, setStep] = useState<'select' | 'webview' | 'success' | 'error'>('select')
-  const [connectUrl, setConnectUrl] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
-  const { fetchAccount } = useAccountStore()
-  const webViewRef = useRef<WebView>(null)
+  const [step, setStep] = useState<'select' | 'webview' | 'success' | 'error'>('select');
+  const [connectUrl, setConnectUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const { fetchAccount } = useAccountStore();
+  const webViewRef = useRef<WebView>(null);
 
   const handleConnect = useCallback(async () => {
     try {
-      setLoading(true)
-      await nordigenApi.authenticate()
-      const requisition = await nordigenApi.createRequisition(REDIRECT_URI)
-      setConnectUrl(requisition.link)
-      setStep('webview')
+      setLoading(true);
+      await nordigenApi.authenticate();
+      const requisition = await nordigenApi.createRequisition(REDIRECT_URI);
+      setConnectUrl(requisition.link);
+      setStep('webview');
     } catch {
-      setStep('error')
+      setStep('error');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [])
+  }, []);
 
   const handleNavigationChange = useCallback(
     (navState: WebViewNavigation) => {
       if (navState.url.startsWith(REDIRECT_URI)) {
-        setStep('success')
-        fetchAccount()
+        setStep('success');
+        fetchAccount();
       }
     },
     [fetchAccount],
-  )
+  );
 
   if (step === 'error') {
     return (
@@ -50,7 +50,7 @@ export const BankConnectScreen: React.FC<Props> = ({ navigation }) => {
         message="Impossible de se connecter à la banque"
         onRetry={() => setStep('select')}
       />
-    )
+    );
   }
 
   if (step === 'success') {
@@ -69,7 +69,7 @@ export const BankConnectScreen: React.FC<Props> = ({ navigation }) => {
           />
         </View>
       </SafeAreaView>
-    )
+    );
   }
 
   if (step === 'webview' && connectUrl) {
@@ -95,7 +95,7 @@ export const BankConnectScreen: React.FC<Props> = ({ navigation }) => {
           style={styles.webview}
         />
       </SafeAreaView>
-    )
+    );
   }
 
   return (
@@ -142,8 +142,8 @@ export const BankConnectScreen: React.FC<Props> = ({ navigation }) => {
         </View>
       </View>
     </SafeAreaView>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -264,4 +264,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xl,
   },
-})
+});

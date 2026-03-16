@@ -52,4 +52,4 @@ export interface MfaChallenge {
 export type LoginResult = AuthResponse | MfaChallenge
 
 export const isMfaChallenge = (r: LoginResult): r is MfaChallenge =>
-  (r as MfaChallenge).mfaRequired === true
+  (r as MfaChallenge).mfaRequired === true;

@@ -1,6 +1,6 @@
-import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
-import { colors, typography, spacing } from '../theme'
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { colors, typography, spacing } from '../theme';
 
 interface EmptyStateProps {
   message?: string
@@ -15,15 +15,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   subtitle,
   icon = '📭',
 }) => {
-  const heading = title ?? message ?? ''
+  const heading = title ?? message ?? '';
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>{icon}</Text>
       {heading ? <Text style={styles.message}>{heading}</Text> : null}
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -49,4 +49,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
     lineHeight: 20,
   },
-})
+});

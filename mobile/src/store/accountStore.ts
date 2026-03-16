@@ -1,6 +1,6 @@
-import { create } from 'zustand'
-import type { Account } from '../domain/Account'
-import * as flowguardApi from '../api/flowguardApi'
+import { create } from 'zustand';
+import type { Account } from '../domain/Account';
+import * as flowguardApi from '../api/flowguardApi';
 
 interface AccountState {
   account: Account | null
@@ -17,17 +17,17 @@ export const useAccountStore = create<AccountState>((set) => ({
   error: null,
 
   fetchAccount: async () => {
-    set({ isLoading: true, error: null })
+    set({ isLoading: true, error: null });
     try {
-      const account = await flowguardApi.getCurrentAccount()
-      set({ account, isLoading: false })
+      const account = await flowguardApi.getCurrentAccount();
+      set({ account, isLoading: false });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Erreur de chargement du compte'
-      set({ error: message, isLoading: false })
+      const message = err instanceof Error ? err.message : 'Erreur de chargement du compte';
+      set({ error: message, isLoading: false });
     }
   },
 
   setAccount: (account: Account) => set({ account }),
 
   clearAccount: () => set({ account: null, error: null }),
-}))
+}));

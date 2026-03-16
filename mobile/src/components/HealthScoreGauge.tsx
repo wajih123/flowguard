@@ -1,7 +1,7 @@
-import React, { useEffect, useRef } from 'react'
-import { View, Text, Animated, StyleSheet } from 'react-native'
-import Svg, { Path } from 'react-native-svg'
-import { colors } from '../theme'
+import React, { useEffect, useRef } from 'react';
+import { View, Text, Animated, StyleSheet } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { colors } from '../theme';
 
 interface HealthScoreGaugeProps {
   score: number // 0–100
@@ -9,15 +9,15 @@ interface HealthScoreGaugeProps {
 }
 
 function getColor(score: number): string {
-  if (score <= 40) return colors.danger
-  if (score <= 70) return colors.warning
-  return colors.success
+  if (score <= 40) {return colors.danger;}
+  if (score <= 70) {return colors.warning;}
+  return colors.success;
 }
 
 function getLabel(score: number): string {
-  if (score <= 40) return 'Critique'
-  if (score <= 70) return 'Attention'
-  return 'Bonne santé'
+  if (score <= 40) {return 'Critique';}
+  if (score <= 70) {return 'Attention';}
+  return 'Bonne santé';
 }
 
 // Draws an arc path on a circle
@@ -28,29 +28,29 @@ function describeArc(
   startAngle: number,
   endAngle: number,
 ): string {
-  const start = polarToCartesian(cx, cy, r, endAngle)
-  const end = polarToCartesian(cx, cy, r, startAngle)
-  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1'
-  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
+  const start = polarToCartesian(cx, cy, r, endAngle);
+  const end = polarToCartesian(cx, cy, r, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`;
 }
 
 function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
-  const rad = ((angle - 90) * Math.PI) / 180
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
+  const rad = ((angle - 90) * Math.PI) / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
 export const HealthScoreGauge: React.FC<HealthScoreGaugeProps> = ({ score, size = 140 }) => {
-  const animatedScore = useRef(new Animated.Value(0)).current
-  const color = getColor(score)
-  const label = getLabel(score)
-  const cx = size / 2
-  const cy = size / 2
-  const r = size / 2 - 12
-  const strokeWidth = 14
-  const startAngle = -140
-  const endAngle = 140
-  const totalAngle = endAngle - startAngle
-  const arcAngle = startAngle + (totalAngle * Math.clamp(score, 0, 100)) / 100
+  const animatedScore = useRef(new Animated.Value(0)).current;
+  const color = getColor(score);
+  const label = getLabel(score);
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 12;
+  const strokeWidth = 14;
+  const startAngle = -140;
+  const endAngle = 140;
+  const totalAngle = endAngle - startAngle;
+  const arcAngle = startAngle + (totalAngle * Math.clamp(score, 0, 100)) / 100;
 
   useEffect(() => {
     Animated.spring(animatedScore, {
@@ -58,11 +58,11 @@ export const HealthScoreGauge: React.FC<HealthScoreGaugeProps> = ({ score, size 
       useNativeDriver: false,
       tension: 50,
       friction: 8,
-    }).start()
-  }, [score, animatedScore])
+    }).start();
+  }, [score, animatedScore]);
 
-  const bgArc = describeArc(cx, cy, r, startAngle, endAngle)
-  const fgArc = describeArc(cx, cy, r, startAngle, arcAngle)
+  const bgArc = describeArc(cx, cy, r, startAngle, endAngle);
+  const fgArc = describeArc(cx, cy, r, startAngle, arcAngle);
 
   return (
     <View style={styles.container}>
@@ -89,8 +89,8 @@ export const HealthScoreGauge: React.FC<HealthScoreGaugeProps> = ({ score, size 
         <Text style={[styles.label, { color }]}>{label}</Text>
       </View>
     </View>
-  )
-}
+  );
+};
 
 // Polyfill Math.clamp for environments that don't have it
 declare global {
@@ -99,7 +99,7 @@ declare global {
   }
 }
 if (!Math.clamp) {
-  Math.clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
+  Math.clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 }
 
 const styles = StyleSheet.create({
@@ -120,4 +120,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 2,
   },
-})
+});
