@@ -78,8 +78,9 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      # root-path=/api means health is at /api/health, not /health
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/api/health || exit 1"]
+      # Health endpoint is NOT under root-path=/api
+      # Quarkus health is served at /health (configured by quarkus.smallrye-health.root-path)
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/health || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
