@@ -39,7 +39,7 @@ public class EncryptedStringConverter implements AttributeConverter<String, Stri
         String raw = System.getenv("ENCRYPTION_KEY");
         if (raw == null || raw.isBlank()) {
             // Fallback for local dev ONLY — production MUST set ENCRYPTION_KEY
-            raw = "Zmxvd2d1YXJkLWRldi1rZXktMzItYnl0ZXMA";
+            raw = "M1324CXxoTaqeVFo0EDTloJiJAzefgLQJF7j98w9blw=";
         }
         byte[] keyBytes = Base64.getDecoder().decode(raw);
         if (keyBytes.length != 32) {
