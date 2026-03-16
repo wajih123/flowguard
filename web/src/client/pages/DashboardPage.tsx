@@ -30,7 +30,7 @@ const DashboardPage: React.FC = () => {
   const { data: transactions, isLoading: txLoading } =
     useDashboardTransactions();
   const { data: prediction, isLoading: predLoading } = usePredictions(
-    dashboard?.account.id,
+    dashboard?.account?.id,
   );
 
   const [alertDismissed, setAlertDismissed] = useState(false);
