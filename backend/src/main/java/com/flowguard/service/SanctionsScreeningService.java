@@ -1,5 +1,6 @@
 package com.flowguard.service;
 
+import com.flowguard.repository.SanctionsScreeningLogRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
