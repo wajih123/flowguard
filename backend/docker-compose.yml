@@ -1,0 +1,231 @@
+name: flowguard
+
+# ============================================================
+# FlowGuard — Production Application Stack
+# ============================================================
+# Usage:
+#   docker compose up -d
+#
+# With monitoring:
+#   docker compose -f docker-compose.yml \
+#                  -f docker-compose.monitoring.yml up -d
+#
+# With backup:
+#   docker compose -f docker-compose.yml \
+#                  -f docker-compose.backup.yml up -d
+# ============================================================
+
+networks:
+  flowguard_default:
+    driver: bridge
+    name: flowguard_default # explicit name — monitoring compose joins this
+
+volumes:
+  postgres_data:
+  redis_data:
+
+services:
+  # ── PostgreSQL 16 ──────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: flowguard-postgres
+    restart: unless-stopped
+    networks: [flowguard_default]
+    environment:
+      POSTGRES_USER: ${DB_USER:-flowguard}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
+      POSTGRES_DB: ${DB_NAME:-flowguard}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-flowguard} -d ${DB_NAME:-flowguard}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+  # ── Redis 7 ────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: flowguard-redis
+    restart: unless-stopped
+    networks: [flowguard_default]
+    command: >
+      redis-server
+        --requirepass "${REDIS_PASSWORD:-}"
+        --maxmemory 256mb
+        --maxmemory-policy allkeys-lru
+        --save 900 1
+        --save 300 10
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # ── ML Service ────────────────────────────────────────────────────────────
+  ml-service:
+    build:
+      context: ../ml-service
+      dockerfile: Dockerfile
+    image: flowguard-ml-service:latest
+    container_name: flowguard-ml-service
+    restart: unless-stopped
+    networks: [flowguard_default]
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-flowguard}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-flowguard}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      autoheal: "true"
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+  # ── Backend (Quarkus) ──────────────────────────────────────────────────────
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: flowguard-backend:latest
+    container_name: flowguard-backend
+    restart: unless-stopped
+    networks: [flowguard_default]
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: ${DB_USER:-flowguard}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
+      DB_NAME: ${DB_NAME:-flowguard}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      ML_SERVICE_URL: http://ml-service:8000
+      JWT_PRIVATE_KEY_LOCATION: ${JWT_PRIVATE_KEY_LOCATION:-privateKey.pem}
+      JWT_PUBLIC_KEY_LOCATION: ${JWT_PUBLIC_KEY_LOCATION:-publicKey.pem}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?ENCRYPTION_KEY required}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      BRIDGE_CLIENT_ID: ${BRIDGE_CLIENT_ID:-}
+      BRIDGE_CLIENT_SECRET: ${BRIDGE_CLIENT_SECRET:-}
+      FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://app.flowguard.fr}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # SmallRye Health serves at /health (absolute path — quarkus.smallrye-health.root-path=/health)
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "--max-time",
+          "10",
+          "http://localhost:8080/health",
+        ]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      autoheal: "true"
+    logging:
+      driver: json-file
+      options: { max-size: "50m", max-file: "10" }
+
+  # ── Frontend (React SPA served by nginx) ──────────────────────────────────
+  frontend:
+    build:
+      context: ../web
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: "" # relative paths — nginx on same origin proxies /api/*
+    image: flowguard-frontend:latest
+    container_name: flowguard-frontend
+    restart: unless-stopped
+    networks: [flowguard_default]
+    # nginx-web.conf serves SPA; / always returns index.html (200)
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    labels:
+      autoheal: "true"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  # ── Nginx Reverse Proxy ────────────────────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: flowguard-nginx
+    restart: unless-stopped
+    networks: [flowguard_default]
+    ports:
+      - "${HTTP_BIND:-0.0.0.0}:80:80"
+      - "${HTTPS_BIND:-0.0.0.0}:443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro # mount TLS certs here in production
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "--max-time", "5", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options: { max-size: "20m", max-file: "5" }
+
+  # ── Autoheal — restart unhealthy containers automatically ─────────────────
+  # Watches containers labelled autoheal=true and restarts them when unhealthy.
+  # Security note: requires read-only access to the Docker socket for event monitoring.
+  autoheal:
+    image: willfarrell/autoheal:1.0.0
+    container_name: flowguard-autoheal
+    restart: unless-stopped
+    networks: [flowguard_default]
+    environment:
+      AUTOHEAL_CONTAINER_LABEL: autoheal # only restart containers with this label
+      AUTOHEAL_INTERVAL: 10 # check every 10 seconds
+      AUTOHEAL_START_PERIOD: 60 # wait 60s before first check (startup grace)
+      DOCKER_SOCK: /var/run/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }

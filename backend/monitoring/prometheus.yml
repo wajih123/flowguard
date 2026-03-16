@@ -14,6 +14,7 @@ alerting:
         - targets: [alertmanager:9093]
 
 scrape_configs:
+  # ── Backend API (Quarkus / Micrometer metrics) ─────────────────────────────
   - job_name: flowguard-backend
     metrics_path: /api/metrics
     static_configs:
@@ -23,19 +24,58 @@ scrape_configs:
         target_label: instance
         replacement: flowguard-backend
 
+  # ── ML Service ─────────────────────────────────────────────────────────────
   - job_name: flowguard-ml-service
     metrics_path: /metrics
     static_configs:
       - targets: [ml-service:8000]
 
+  # ── HTTP endpoint probing (frontend + backend health) ───────────────────────
+  # Uses Blackbox Exporter to verify HTTP 200 responses — distinct from the
+  # Prometheus scrape "up" metric which only checks connectivity.
+  - job_name: flowguard-http-probes
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://frontend:8080/ # SPA availability
+          - http://backend:8080/health # backend health (SmallRye)
+          - http://nginx/health # reverse proxy liveness
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  # ── PostgreSQL ─────────────────────────────────────────────────────────────
   - job_name: postgres
     static_configs:
       - targets: [postgres-exporter:9187]
 
+  # ── Redis ──────────────────────────────────────────────────────────────────
   - job_name: redis
     static_configs:
       - targets: [redis-exporter:9121]
 
+  # ── Host metrics (CPU / RAM / disk / network) ──────────────────────────────
   - job_name: node
     static_configs:
       - targets: [node-exporter:9100]
+
+  # ── Container metrics (per-container CPU / RAM / restarts) ─────────────────
+  - job_name: cadvisor
+    static_configs:
+      - targets: [cadvisor:8080]
+    metric_relabel_configs:
+      # Keep only flowguard containers to reduce cardinality
+      - source_labels: [container_label_com_docker_compose_service]
+        regex: (backend|frontend|ml-service|postgres|redis|nginx)
+        action: keep
+
+  # ── Nginx reverse proxy metrics ────────────────────────────────────────────
+  - job_name: nginx
+    static_configs:
+      - targets: [nginx-exporter:9113]

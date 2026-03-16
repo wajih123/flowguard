@@ -50,6 +50,9 @@ public class SecurityHeadersFilter implements ContainerResponseFilter {
             headers.putSingle("Expires", "0");
         }
 
+        // Disable legacy XSS auditor (disabled per OWASP recommendation to avoid re-introducing vulnerabilities)
+        headers.putSingle("X-XSS-Protection", "0");
+
         // Remove server information disclosure
         headers.remove("Server");
         headers.remove("X-Powered-By");

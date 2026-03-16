@@ -104,3 +104,40 @@ groups:
           severity: warning
         annotations:
           summary: "Host CPU usage > 90% for 10 minutes"
+
+      # ── Host memory ───────────────────────────────────────────────────────
+      - alert: HostMemoryHigh
+        expr: |
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes)
+          / node_memory_MemTotal_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Host memory usage > 90% ({{ $value | printf "%.1f" }}%)'
+          description: "Available memory is critically low. Risk of OOM kills."
+
+      # ── Frontend availability (Blackbox Exporter probe) ───────────────────
+      - alert: FrontendDown
+        expr: probe_success{instance="http://frontend:8080/"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "FlowGuard frontend is unreachable"
+          description: "HTTP probe to the frontend container has been failing for more than 1 minute."
+
+      # ── Container restart loop ─────────────────────────────────────────────
+      # Fires when a flowguard container has been restarted at least twice
+      # within 15 minutes — a strong indicator of a crash loop.
+      - alert: ContainerRestartLoop
+        expr: |
+          changes(container_start_time_seconds{
+            name=~"flowguard-(backend|frontend|ml-service|postgres|redis)"
+          }[15m]) >= 2
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container {{ $labels.name }} is in a restart loop"
+          description: "Container {{ $labels.name }} has restarted {{ $value }} times in the last 15 minutes."

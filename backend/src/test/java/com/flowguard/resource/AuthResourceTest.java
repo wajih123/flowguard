@@ -139,8 +139,8 @@ class AuthResourceTest {
         .when()
             .get("/auth/me")
         .then()
-            .statusCode(anyOf(is(200), is(500)));
-            // 500 is acceptable here since the test user may not exist in DB
+            .statusCode(anyOf(is(200), is(401), is(500)));
+            // 401 is returned when the test user does not exist in DB (SecurityException → 401 via GlobalExceptionMapper)
     }
 
     @Test

@@ -147,3 +147,45 @@ services:
       - --path.rootfs=/rootfs
       - --path.sysfs=/host/sys
       - --collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)
+
+  # ── cAdvisor (container-level metrics) ─────────────────────────────────────
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: flowguard-cadvisor
+    restart: unless-stopped
+    networks: [monitoring, flowguard_default]
+    ports:
+      - "8090:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+
+  # ── Blackbox Exporter (HTTP endpoint probing) ────────────────────────────────
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.25.0
+    container_name: flowguard-blackbox
+    restart: unless-stopped
+    networks: [monitoring, flowguard_default]
+    ports:
+      - "9115:9115"
+    volumes:
+      - ./monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
+
+  # ── Nginx Prometheus Exporter (reverse-proxy metrics) ───────────────────────
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.1.0
+    container_name: flowguard-nginx-exporter
+    restart: unless-stopped
+    networks: [monitoring, flowguard_default]
+    ports:
+      - "9113:9113"
+    command:
+      - --nginx.scrape-uri=http://nginx/nginx_status
+    depends_on:
+      - blackbox-exporter
