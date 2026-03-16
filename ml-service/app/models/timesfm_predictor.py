@@ -9,15 +9,15 @@ Repo: https://github.com/google-research/timesfm
 """
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+import structlog
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger()
 
 
 @dataclass
@@ -87,8 +87,9 @@ class TimesFMPredictor:
         except Exception as exc:
             self._load_error = str(exc)
             logger.warning(
-                "timesfm_load_failed — falling back to statistical baseline",
+                "timesfm_load_failed",
                 error=str(exc),
+                fallback="statistical_baseline",
             )
 
     def predict(

@@ -141,7 +141,10 @@ class EnsemblePredictor:
         self._race = ModelRaceEvaluator()   # online model selection
         self._load_lstm()
         self._timesfm = TimesFMPredictor()
-        self._timesfm.load()
+        try:
+            self._timesfm.load()
+        except Exception as e:
+            log.warning("timesfm_init_load_failed", error=str(e))
 
     def _load_lstm(self) -> None:
         import os
