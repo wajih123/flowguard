@@ -1,8 +1,10 @@
-# ── Secrets & environment files ───────────────────────────────────────────────
+﻿# ── Secrets & environment files ───────────────────────────────────────────────
 infra/.env.prod
 .env.local
 .env.*.local
 *.pem
+!backend/src/test/resources/publicKey.pem
+!backend/src/test/resources/privateKey.pem
 
 # ── Build outputs ─────────────────────────────────────────────────────────────
 backend/target/
