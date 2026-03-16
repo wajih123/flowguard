@@ -21,7 +21,7 @@ class SecurityHeadersTest {
         given()
             .contentType(ContentType.JSON)
         .when()
-            .get("/api/auth/me")   // any endpoint — we only care about headers
+            .get("/auth/me")   // any endpoint — we only care about headers
         .then()
             .header("Strict-Transport-Security", notNullValue())
             .header("X-Frame-Options", is("DENY"))
@@ -36,7 +36,7 @@ class SecurityHeadersTest {
         given()
             .contentType(ContentType.JSON)
         .when()
-            .get("/api/transactions")
+            .get("/transactions")
         .then()
             .header("Cache-Control", containsString("no-store"));
     }
@@ -53,7 +53,7 @@ class SecurityHeadersTest {
                 }
                 """)
         .when()
-            .post("/api/auth/login")
+            .post("/auth/login")
         .then()
             .statusCode(anyOf(is(200), is(401), is(429)));  // accepts all — just testing the call works
     }

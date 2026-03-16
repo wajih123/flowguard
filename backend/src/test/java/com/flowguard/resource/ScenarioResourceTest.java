@@ -25,7 +25,7 @@ class ScenarioResourceTest {
                 }
                 """)
         .when()
-            .post("/api/scenario")
+            .post("/scenario")
         .then()
             .statusCode(401);
     }
@@ -45,7 +45,7 @@ class ScenarioResourceTest {
                 }
                 """)
         .when()
-            .post("/api/scenario")
+            .post("/scenario")
         .then()
             .statusCode(400);
     }

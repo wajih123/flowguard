@@ -18,7 +18,7 @@ class SpendingAnalysisResourceTest {
     void analyze_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/accounts/" + ACCOUNT_ID + "/spending-analysis")
+            .get("/accounts/" + ACCOUNT_ID + "/spending-analysis")
         .then()
             .statusCode(401);
     }
@@ -31,7 +31,7 @@ class SpendingAnalysisResourceTest {
     void analyze_nonExistentAccount_shouldReturn400() {
         given()
         .when()
-            .get("/api/accounts/" + ACCOUNT_ID + "/spending-analysis")
+            .get("/accounts/" + ACCOUNT_ID + "/spending-analysis")
         .then()
             .statusCode(anyOf(is(400), is(404)));
     }
@@ -46,7 +46,7 @@ class SpendingAnalysisResourceTest {
             .queryParam("from", "2026-01-01")
             .queryParam("to", "2026-01-31")
         .when()
-            .get("/api/accounts/" + ACCOUNT_ID + "/spending-analysis")
+            .get("/accounts/" + ACCOUNT_ID + "/spending-analysis")
         .then()
             .statusCode(anyOf(is(400), is(404)));
     }

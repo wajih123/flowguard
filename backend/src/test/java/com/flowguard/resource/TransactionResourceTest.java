@@ -18,7 +18,7 @@ class TransactionResourceTest {
     void getTransactions_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/accounts/" + ACCOUNT_ID + "/transactions")
+            .get("/accounts/" + ACCOUNT_ID + "/transactions")
         .then()
             .statusCode(401);
     }
@@ -31,7 +31,7 @@ class TransactionResourceTest {
     void getTransactions_nonExistentAccount_shouldReturn400() {
         given()
         .when()
-            .get("/api/accounts/" + ACCOUNT_ID + "/transactions")
+            .get("/accounts/" + ACCOUNT_ID + "/transactions")
         .then()
             .statusCode(anyOf(is(400), is(404)));
     }
@@ -44,7 +44,7 @@ class TransactionResourceTest {
     void getRecurring_nonExistentAccount_shouldReturn400() {
         given()
         .when()
-            .get("/api/accounts/" + ACCOUNT_ID + "/transactions/recurring")
+            .get("/accounts/" + ACCOUNT_ID + "/transactions/recurring")
         .then()
             .statusCode(anyOf(is(400), is(404)));
     }

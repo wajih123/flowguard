@@ -17,7 +17,7 @@ class FlashCreditResourceTest {
     void getCredits_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/flash-credit")
+            .get("/flash-credit")
         .then()
             .statusCode(401);
     }
@@ -33,7 +33,7 @@ class FlashCreditResourceTest {
                 }
                 """)
         .when()
-            .post("/api/flash-credit")
+            .post("/flash-credit")
         .then()
             .statusCode(401);
     }
@@ -46,7 +46,7 @@ class FlashCreditResourceTest {
     void getCredits_authenticated_shouldReturnList() {
         given()
         .when()
-            .get("/api/flash-credit")
+            .get("/flash-credit")
         .then()
             .statusCode(anyOf(is(200), is(400)));
     }
@@ -66,7 +66,7 @@ class FlashCreditResourceTest {
                 }
                 """)
         .when()
-            .post("/api/flash-credit")
+            .post("/flash-credit")
         .then()
             .statusCode(400);
     }
@@ -86,7 +86,7 @@ class FlashCreditResourceTest {
                 }
                 """)
         .when()
-            .post("/api/flash-credit")
+            .post("/flash-credit")
         .then()
             .statusCode(400);
     }

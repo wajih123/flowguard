@@ -16,7 +16,7 @@ class AccountResourceTest {
     void getAccounts_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/accounts")
+            .get("/accounts")
         .then()
             .statusCode(401);
     }
@@ -29,7 +29,7 @@ class AccountResourceTest {
     void getAccounts_authenticated_shouldReturnList() {
         given()
         .when()
-            .get("/api/accounts")
+            .get("/accounts")
         .then()
             .statusCode(200)
             .body("$", is(instanceOf(java.util.List.class)));
@@ -43,7 +43,7 @@ class AccountResourceTest {
     void getAccountById_nonExistent_shouldReturn400() {
         given()
         .when()
-            .get("/api/accounts/00000000-0000-0000-0000-000000000099")
+            .get("/accounts/00000000-0000-0000-0000-000000000099")
         .then()
             .statusCode(anyOf(is(400), is(404)));
     }

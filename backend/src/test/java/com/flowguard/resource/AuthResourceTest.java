@@ -33,7 +33,7 @@ class AuthResourceTest {
                 }
                 """)
         .when()
-            .post("/api/auth/register")
+            .post("/auth/register")
         .then()
             .statusCode(201)
             .body("accessToken", notNullValue())
@@ -62,7 +62,7 @@ class AuthResourceTest {
                 }
                 """)
         .when()
-            .post("/api/auth/register")
+            .post("/auth/register")
         .then()
             .statusCode(409)
             .body("message", containsString("existe déjà"));
@@ -70,7 +70,7 @@ class AuthResourceTest {
 
     @Test
     @Order(3)
-    void login_validCredentials_shouldReturnTokens() {
+    void login_validCredentials_shouldReturnMfaChallenge() {
         given()
             .contentType(ContentType.JSON)
             .body("""
@@ -80,12 +80,12 @@ class AuthResourceTest {
                 }
                 """)
         .when()
-            .post("/api/auth/login")
+            .post("/auth/login")
         .then()
             .statusCode(200)
-            .body("accessToken", notNullValue())
-            .body("refreshToken", notNullValue())
-            .body("user.email", is("jean@test.com"));
+            .body("mfaRequired", is(true))
+            .body("sessionToken", notNullValue())
+            .body("maskedEmail", notNullValue());
     }
 
     @Test
@@ -100,7 +100,7 @@ class AuthResourceTest {
                 }
                 """)
         .when()
-            .post("/api/auth/login")
+            .post("/auth/login")
         .then()
             .statusCode(401)
             .body("message", containsString("incorrect"));
@@ -122,7 +122,7 @@ class AuthResourceTest {
                 }
                 """)
         .when()
-            .post("/api/auth/register")
+            .post("/auth/register")
         .then()
             .statusCode(400);
     }
@@ -137,7 +137,7 @@ class AuthResourceTest {
         // With test security, we simulate an authenticated user
         given()
         .when()
-            .get("/api/auth/me")
+            .get("/auth/me")
         .then()
             .statusCode(anyOf(is(200), is(500)));
             // 500 is acceptable here since the test user may not exist in DB
@@ -147,7 +147,7 @@ class AuthResourceTest {
     void me_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/auth/me")
+            .get("/auth/me")
         .then()
             .statusCode(401);
     }

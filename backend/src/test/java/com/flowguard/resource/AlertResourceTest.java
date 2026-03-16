@@ -17,7 +17,7 @@ class AlertResourceTest {
     void getAlerts_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/alerts")
+            .get("/alerts")
         .then()
             .statusCode(401);
     }
@@ -30,7 +30,7 @@ class AlertResourceTest {
     void getAlerts_authenticated_shouldReturnList() {
         given()
         .when()
-            .get("/api/alerts")
+            .get("/alerts")
         .then()
             .statusCode(200)
             .body("$", is(instanceOf(java.util.List.class)));
@@ -44,7 +44,7 @@ class AlertResourceTest {
     void getUnreadCount_authenticated_shouldReturnCount() {
         given()
         .when()
-            .get("/api/alerts/unread-count")
+            .get("/alerts/unread-count")
         .then()
             .statusCode(200)
             .body("count", greaterThanOrEqualTo(0));
@@ -58,7 +58,7 @@ class AlertResourceTest {
     void markAsRead_nonExistent_shouldReturn404() {
         given()
         .when()
-            .put("/api/alerts/00000000-0000-0000-0000-000000000099/read")
+            .put("/alerts/00000000-0000-0000-0000-000000000099/read")
         .then()
             .statusCode(anyOf(is(404), is(500)));
     }
@@ -71,7 +71,7 @@ class AlertResourceTest {
     void markAllAsRead_shouldReturn204() {
         given()
         .when()
-            .put("/api/alerts/read-all")
+            .put("/alerts/read-all")
         .then()
             .statusCode(204);
     }
@@ -87,7 +87,7 @@ class AlertResourceTest {
                 }
                 """)
         .when()
-            .post("/api/flash-credit")
+            .post("/flash-credit")
         .then()
             .statusCode(401);
     }
@@ -96,7 +96,7 @@ class AlertResourceTest {
     void treasury_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/treasury/forecast")
+            .get("/treasury/forecast")
         .then()
             .statusCode(401);
     }
@@ -113,7 +113,7 @@ class AlertResourceTest {
                 }
                 """)
         .when()
-            .post("/api/scenario")
+            .post("/scenario")
         .then()
             .statusCode(401);
     }

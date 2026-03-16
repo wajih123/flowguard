@@ -17,7 +17,7 @@ class TreasuryResourceTest {
     void getForecast_unauthenticated_shouldReturn401() {
         given()
         .when()
-            .get("/api/treasury/forecast")
+            .get("/treasury/forecast")
         .then()
             .statusCode(401);
     }
@@ -31,7 +31,7 @@ class TreasuryResourceTest {
         given()
             .queryParam("horizon", 200)
         .when()
-            .get("/api/treasury/forecast")
+            .get("/treasury/forecast")
         .then()
             .statusCode(anyOf(is(400), is(500)));
     }
