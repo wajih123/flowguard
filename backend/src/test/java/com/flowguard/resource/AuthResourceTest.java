@@ -1,10 +1,13 @@
 package com.flowguard.resource;
 
+import com.flowguard.repository.UserRepository;
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -17,9 +20,21 @@ import static org.hamcrest.Matchers.*;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class AuthResourceTest {
 
+    @Inject
+    UserRepository userRepository;
+
+    /**
+     * Simulates a completed e-mail verification without going through the OTP flow.
+     * Used in tests to put a registered user into a login-ready state.
+     */
+    @Transactional
+    void markEmailVerified(String email) {
+        userRepository.findByEmail(email).ifPresent(u -> u.setEmailVerified(true));
+    }
+
     @Test
     @Order(1)
-    void register_shouldCreateUser() {
+    void register_shouldReturnPendingVerification() {
         given()
             .contentType(ContentType.JSON)
             .body("""
@@ -35,15 +50,9 @@ class AuthResourceTest {
         .when()
             .post("/auth/register")
         .then()
-            .statusCode(201)
-            .body("accessToken", notNullValue())
-            .body("refreshToken", notNullValue())
-            .body("user.firstName", is("Jean"))
-            .body("user.lastName", is("Dupont"))
-            .body("user.email", is("jean@test.com"))
-            .body("user.companyName", is("Test SAS"))
-            .body("user.userType", is("FREELANCE"))
-            .body("user.kycStatus", is("PENDING"));
+            .statusCode(202)
+            .body("pendingVerification", is(true))
+            .body("maskedEmail", notNullValue());
     }
 
     @Test
@@ -70,7 +79,29 @@ class AuthResourceTest {
 
     @Test
     @Order(3)
-    void login_validCredentials_shouldReturnMfaChallenge() {
+    void login_unverifiedEmail_shouldReturn403() {
+        // jean@test.com was registered but has not completed e-mail verification yet
+        given()
+            .contentType(ContentType.JSON)
+            .body("""
+                {
+                    "email": "jean@test.com",
+                    "password": "SecureP@ss1"
+                }
+                """)
+        .when()
+            .post("/auth/login")
+        .then()
+            .statusCode(403)
+            .body("message", is("EMAIL_NOT_VERIFIED"));
+    }
+
+    @Test
+    @Order(4)
+    void login_verifiedUser_shouldReturnTokens() {
+        // Mark as verified (simulates completing the /verify-email OTP step)
+        markEmailVerified("jean@test.com");
+
         given()
             .contentType(ContentType.JSON)
             .body("""
@@ -83,13 +114,15 @@ class AuthResourceTest {
             .post("/auth/login")
         .then()
             .statusCode(200)
-            .body("mfaRequired", is(true))
-            .body("sessionToken", notNullValue())
-            .body("maskedEmail", notNullValue());
+            .body("accessToken", notNullValue())
+            .body("refreshToken", notNullValue())
+            .body("user.email", is("jean@test.com"))
+            .body("user.firstName", is("Jean"))
+            .body("user.emailVerified", is(true));
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     void login_invalidPassword_shouldReturn401() {
         given()
             .contentType(ContentType.JSON)
@@ -107,7 +140,7 @@ class AuthResourceTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void register_invalidEmail_shouldReturn400() {
         given()
             .contentType(ContentType.JSON)
