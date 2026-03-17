@@ -10,6 +10,11 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Treat data as fresh for 2 min — avoids redundant refetches when
+      // navigating between pages or remounting components.
+      staleTime: 2 * 60 * 1000,
+      // Keep inactive query cache for 10 min so back-navigation is instant.
+      gcTime: 10 * 60 * 1000,
     },
   },
 });

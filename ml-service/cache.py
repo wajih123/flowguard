@@ -1,14 +1,20 @@
 import redis
+from redis import ConnectionPool
 import json
 import os
 from typing import Any
 
-r = redis.Redis(
+# A single connection pool shared across all requests in this process.
+# Avoids the overhead of creating a new TCP connection on every cache call.
+_pool = ConnectionPool(
     host=os.getenv("REDIS_HOST", "localhost"),
     port=int(os.getenv("REDIS_PORT", "6379")),
-    password=os.getenv("REDIS_PASSWORD", ""),
-    decode_responses=True
+    password=os.getenv("REDIS_PASSWORD") or None,
+    decode_responses=True,
+    max_connections=10,
 )
+
+r = redis.Redis(connection_pool=_pool)
 
 def get_cached(key: str) -> Any | None:
     """Get JSON value from Redis. Returns None if missing or expired."""
