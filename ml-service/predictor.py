@@ -196,8 +196,13 @@ class TreasuryPredictor:
 
         avg_confidence = self.CONFIDENCE_BASE * math.exp(-0.005 * (horizon_days / 2))
 
+        # Current balance = last point of historical data (real or synthetic)
+        current_balance = float(historical[-1]) if len(historical) > 0 else 0.0
+
         # Compute health score, worst deficit, days until impact
-        health_score, worst_deficit, days_until_impact = self._compute_health_metrics(predictions)
+        health_score, worst_deficit, days_until_impact = self._compute_health_metrics(
+            predictions, current_balance
+        )
 
         return ForecastResult(
             predictions=predictions,
@@ -296,69 +301,86 @@ class TreasuryPredictor:
     # Private helpers
     # -----------------------------------------------------------------------
 
-    def _compute_health_metrics(self, predictions: list[ForecastPoint]) -> tuple[float, float, int]:
+    def _compute_health_metrics(
+        self,
+        predictions: list[ForecastPoint],
+        current_balance: float = 0.0,
+    ) -> tuple[float, float, int]:
         """
-        Compute:
-          - healthScore (0-100): financial health based on predicted balances
-          - worstDeficit: lowest predicted balance
-          - daysUntilImpact: first day with negative balance (0 = never)
+        Three-horizon composite health score (0-100):
+
+          A. Current balance     35 pts  — aujourd'hui (solde réel)
+          B. Short-term J+1→J+7  35 pts  — semaine prochaine
+          C. Medium-term J+8→30  20 pts  — évolution du mois
+          D. Trend + stability   10 pts  — bonus comportement
+
+        This design means:
+          - A user who is negative today but gets paid in 3 days scores "Moyen" (~50)
+          - A user who is negative today with no income coming scores "Fragile" (~15-25)
+          - A user with a healthy balance and positive outlook scores "Excellent" (80+)
         """
+        worst_deficit = 0.0
+        days_until_impact = 0
+
         if not predictions:
-            return 100.0, 0.0, 0
+            # No forecast data — derive score from current balance only
+            if current_balance >= 5000:   return 70.0, 0.0, 0
+            if current_balance >= 500:    return 55.0, 0.0, 0
+            if current_balance >= 0:      return 40.0, 0.0, 0
+            if current_balance >= -200:   return 28.0, 0.0, 0
+            if current_balance >= -1000:  return 18.0, 0.0, 0
+            return 10.0, 0.0, 0
 
         balances = [p.predicted_balance for p in predictions]
         worst_deficit = min(balances)
-        days_until_impact = 0
 
         for i, bal in enumerate(balances):
             if bal < 0:
                 days_until_impact = i + 1
                 break
 
-        # Health score components:
-        # 1. No negative balances → +40
-        # 2. Average balance level → up to +30
-        # 3. Trend (end vs start) → up to +20
-        # 4. Stability (low variance) → up to +10
-        score = 0.0
+        # ── A. Current balance (35 pts) ──────────────────────────────────────
+        if current_balance >= 5000:     score_a = 35
+        elif current_balance >= 2000:   score_a = 28
+        elif current_balance >= 500:    score_a = 21
+        elif current_balance >= 0:      score_a = 14
+        elif current_balance >= -200:   score_a = 7
+        elif current_balance >= -1000:  score_a = 3
+        else:                           score_a = 0
 
-        # Component 1: negative balance penalty
-        neg_days = sum(1 for b in balances if b < 0)
-        neg_ratio = neg_days / len(balances)
-        score += 40 * (1 - neg_ratio)
+        # ── B. Short-term J+1→J+7 average (35 pts) ───────────────────────────
+        short_pred = balances[:7] if len(balances) >= 7 else balances
+        avg_short = sum(short_pred) / len(short_pred)
+        neg_short_ratio = sum(1 for b in short_pred if b < 0) / len(short_pred)
+        if avg_short >= 5000:    score_b = 35
+        elif avg_short >= 2000:  score_b = 28
+        elif avg_short >= 500:   score_b = 21
+        elif avg_short >= 0:     score_b = int(14 * (1 - neg_short_ratio))
+        else:                    score_b = int(5 * (1 - neg_short_ratio))
 
-        # Component 2: average balance level
-        avg_bal = sum(balances) / len(balances)
-        if avg_bal >= 10000:
-            score += 30
-        elif avg_bal >= 5000:
-            score += 24
-        elif avg_bal >= 1000:
-            score += 16
-        elif avg_bal > 0:
-            score += 8
+        # ── C. Medium-term J+8→30 average (20 pts) ───────────────────────────
+        med_pred = balances[7:] if len(balances) > 7 else balances
+        avg_med = sum(med_pred) / len(med_pred)
+        neg_med_ratio = sum(1 for b in med_pred if b < 0) / len(med_pred)
+        if avg_med >= 5000:    score_c = 20
+        elif avg_med >= 1000:  score_c = 15
+        elif avg_med >= 0:     score_c = int(10 * (1 - neg_med_ratio))
+        else:                  score_c = 0
 
-        # Component 3: trend
+        # ── D. Trend + stability bonus (10 pts) ───────────────────────────────
+        score_d = 0.0
         if len(balances) >= 2:
-            trend = balances[-1] - balances[0]
-            if trend > 0:
-                score += min(20, 20 * (trend / max(abs(balances[0]), 1)) * 0.5)
-            else:
-                penalty = min(20, abs(trend) / max(abs(balances[0]), 1) * 20)
-                score += max(0, 10 - penalty)
-
-        # Component 4: stability
-        if len(balances) >= 2:
+            trend = balances[-1] - (current_balance if current_balance != 0.0 else balances[0])
+            if trend > 500:    score_d += 6
+            elif trend > 0:    score_d += 3
             mean = sum(balances) / len(balances)
-            variance = sum((b - mean) ** 2 for b in balances) / len(balances)
-            cv = (variance ** 0.5) / max(abs(mean), 1)
-            if cv < 0.1:
-                score += 10
-            elif cv < 0.3:
-                score += 7
-            elif cv < 0.6:
-                score += 4
+            if mean != 0:
+                variance = sum((b - mean) ** 2 for b in balances) / len(balances)
+                cv = (variance ** 0.5) / max(abs(mean), 1)
+                if cv < 0.2:   score_d += 4
+                elif cv < 0.5: score_d += 2
 
+        score = score_a + score_b + score_c + score_d
         return round(min(max(score, 0), 100), 1), round(worst_deficit, 2), days_until_impact
 
     def _fetch_historical_data(self, user_id: str) -> np.ndarray:

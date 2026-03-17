@@ -57,7 +57,10 @@ public class CreditScoringService {
         score += scoreRepaymentHistory(userId);
         score += scoreAccountAge(userId);
         score += scoreFlowStability(userId);
-        return Math.min(score, 100);
+        // Cap score if the current balance is negative — a negative balance is
+        // a direct signal of financial stress regardless of income history.
+        int balanceCap = computeBalanceCap(userId);
+        return Math.min(Math.min(score, 100), balanceCap);
     }
 
     /**
@@ -236,6 +239,27 @@ public class CreditScoringService {
     }
 
     // ---- Helper ----
+
+    /**
+     * Returns the maximum score allowed based on the total current balance.
+     * A negative balance caps the score regardless of other components:
+     *   >= 0       → 100 (no cap)
+     *   < 0        →  45 (Moyen)
+     *   < -200     →  40
+     *   < -1000    →  30 (Fragile)
+     *   < -5000    →  20 (Critique)
+     */
+    private int computeBalanceCap(UUID userId) {
+        BigDecimal totalBalance = accountRepository.findByUserId(userId).stream()
+                .map(a -> a.getBalance() != null ? a.getBalance() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (totalBalance.compareTo(BigDecimal.ZERO) >= 0) return 100;
+        double bal = totalBalance.doubleValue();
+        if (bal <= -5000) return 20;
+        if (bal <= -1000) return 30;
+        if (bal <= -200)  return 40;
+        return 45;
+    }
 
     private BigDecimal computeMonthlyIncome(UUID userId, int lookbackDays) {
         List<AccountEntity> accounts = accountRepository.findByUserId(userId);

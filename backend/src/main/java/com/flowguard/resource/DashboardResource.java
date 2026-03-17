@@ -108,6 +108,21 @@ public class DashboardResource {
         } catch (Exception e) {
             healthScore = 50;
         }
+
+        // Safety cap on the fallback credit score path: if the ML service is
+        // unavailable AND the current balance is negative, the credit-history-based
+        // score (which only looks at past income) must be capped.
+        // The ML path already incorporates current_balance as a first-class component.
+        if (forecastHealthScore < 0 && currentBalance.compareTo(BigDecimal.ZERO) < 0) {
+            double bal = currentBalance.doubleValue();
+            int balanceCap;
+            if (bal <= -5000)      balanceCap = 20;
+            else if (bal <= -1000) balanceCap = 30;
+            else if (bal <= -200)  balanceCap = 40;
+            else                   balanceCap = 45;
+            healthScore = Math.min(healthScore, balanceCap);
+        }
+
         if (healthScore >= 80) healthLabel = "Excellent";
         else if (healthScore >= 60) healthLabel = "Bon";
         else if (healthScore >= 40) healthLabel = "Moyen";
