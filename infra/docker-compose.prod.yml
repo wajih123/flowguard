@@ -1,3 +1,4 @@
+name: flowguard # Explicit project name so Docker networks are predictably flowguard_internal / flowguard_external
 services:
   # ── PostgreSQL ───────────────────────────────────────────────────────────────
   postgres:

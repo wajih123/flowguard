@@ -23,6 +23,8 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  letsencrypt_certs: # Let's Encrypt certificates (Certbot)
+  certbot_webroot: # ACME HTTP-01 challenge files
 
 services:
   # ── PostgreSQL 16 ──────────────────────────────────────────────────────────
@@ -133,7 +135,8 @@ services:
       BRIDGE_CLIENT_ID: ${BRIDGE_CLIENT_ID:-}
       BRIDGE_CLIENT_SECRET: ${BRIDGE_CLIENT_SECRET:-}
       FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
-      CORS_ORIGINS: ${CORS_ORIGINS:-https://app.flowguard.fr}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://157-180-43-233.sslip.io}
+      BRIDGE_REDIRECT_URL: ${BRIDGE_REDIRECT_URL:-https://157-180-43-233.sslip.io/banking/callback}
     depends_on:
       postgres:
         condition: service_healthy
@@ -195,7 +198,8 @@ services:
       - "${HTTPS_BIND:-0.0.0.0}:443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/ssl:/etc/nginx/ssl:ro # mount TLS certs here in production
+      - letsencrypt_certs:/etc/letsencrypt:ro # TLS certs provisioned by certbot
+      - certbot_webroot:/var/www/certbot:ro # ACME HTTP-01 webroot
     depends_on:
       backend:
         condition: service_healthy
@@ -210,6 +214,28 @@ services:
     logging:
       driver: json-file
       options: { max-size: "20m", max-file: "5" }
+
+  # ── Certbot — automatic Let's Encrypt certificate renewal ───────────────────
+  # Runs certbot renew every 12 hours. nginx is signalled after renewal.
+  # Initial certificate issuance is handled in infra/setup.sh (standalone mode).
+  certbot:
+    image: certbot/certbot:latest
+    container_name: flowguard-certbot
+    restart: unless-stopped
+    networks: [flowguard_default]
+    volumes:
+      - letsencrypt_certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: >
+      /bin/sh -c
+      'trap exit TERM;
+       while :; do
+         certbot renew --webroot --webroot-path /var/www/certbot --quiet;
+         sleep 12h & wait $${!};
+       done'
+    logging:
+      driver: json-file
+      options: { max-size: "5m", max-file: "2" }
 
   # ── Autoheal — restart unhealthy containers automatically ─────────────────
   # Watches containers labelled autoheal=true and restarts them when unhealthy.

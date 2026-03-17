@@ -92,6 +92,7 @@ jobs:
           push: false
           load: true
           tags: ${{ env.IMAGE_BACKEND }}:${{ github.sha }}
+          no-cache: true # always rebuild from base so apk/apt upgrade runs fresh
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -103,6 +104,7 @@ jobs:
           push: false
           load: true
           tags: ${{ env.IMAGE_ML }}:${{ github.sha }}
+          no-cache: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -114,6 +116,7 @@ jobs:
           push: false
           load: true
           tags: ${{ env.IMAGE_WEB }}:${{ github.sha }}
+          no-cache: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
 

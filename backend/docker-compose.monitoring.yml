@@ -5,17 +5,28 @@ version: "3.9"
 # Prometheus + Grafana + Alertmanager + Loki + Promtail
 # ============================================================
 # Usage:
-#   docker compose -f docker-compose.monitoring.yml up -d
+#   docker compose -f docker-compose.yml \
+#                  -f docker-compose.monitoring.yml up -d
 #
-# Grafana: http://localhost:3000  (admin/flowguard_grafana)
-# Prometheus: http://localhost:9090
-# Alertmanager: http://localhost:9093
+# Required env vars (set in .env or server environment):
+#   GRAFANA_PASSWORD        — Grafana admin password
+#   GRAFANA_ROOT_URL        — e.g. https://monitoring.flowguard.fr
+#   ALERTMANAGER_URL        — e.g. https://alertmanager.flowguard.fr
+#   DB_PASSWORD             — PostgreSQL password
+#
+# Access (via SSH tunnel or nginx reverse proxy only):
+#   Grafana:      http://127.0.0.1:3001  → expose via nginx at /grafana
+#   Prometheus:   http://127.0.0.1:9090  → internal only
+#   Alertmanager: http://127.0.0.1:9093  → internal only
+#
+# Security: exporters have NO host ports — Prometheus scrapes them
+# via the Docker bridge network directly.
 # ============================================================
 
 networks:
   monitoring:
     driver: bridge
-  flowguard_default:
+  flowguard_internal:
     external: true # connects to the main docker-compose network
 
 volumes:
@@ -29,9 +40,9 @@ services:
     image: prom/prometheus:v2.51.0
     container_name: flowguard-prometheus
     restart: unless-stopped
-    networks: [monitoring, flowguard_default]
+    networks: [monitoring, flowguard_internal]
     ports:
-      - "9090:9090"
+      - "127.0.0.1:9090:9090" # loopback only — access via SSH tunnel or nginx
     volumes:
       - prometheus_data:/prometheus
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
@@ -48,16 +59,20 @@ services:
     image: grafana/grafana:10.4.0
     container_name: flowguard-grafana
     restart: unless-stopped
-    networks: [monitoring]
+    networks: [monitoring, flowguard_internal] # flowguard_internal so nginx can proxy /grafana/
     ports:
-      - "3001:3000"
+      - "127.0.0.1:3001:3000" # loopback only — expose via nginx reverse proxy
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-flowguard_grafana}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:?GRAFANA_PASSWORD required}
       GF_SECURITY_DISABLE_GRAVATAR: "true"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_USERS_ALLOW_SIGN_UP: "false"
-      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:?GRAFANA_ROOT_URL required (e.g. https://monitoring.flowguard.fr)}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_COOKIE_SECURE: "true"
+      GF_SECURITY_STRICT_TRANSPORT_SECURITY: "true"
       GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-piechart-panel
     volumes:
       - grafana_data:/var/lib/grafana
@@ -71,15 +86,16 @@ services:
     image: prom/alertmanager:v0.27.0
     container_name: flowguard-alertmanager
     restart: unless-stopped
-    networks: [monitoring]
+    networks: [monitoring, flowguard_internal] # flowguard_internal so nginx can proxy /alertmanager/
     ports:
-      - "9093:9093"
+      - "127.0.0.1:9093:9093" # loopback only
     volumes:
       - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
     command:
       - --config.file=/etc/alertmanager/alertmanager.yml
       - --storage.path=/alertmanager
-      - --web.external-url=${ALERTMANAGER_URL:-http://localhost:9093}
+      - --web.external-url=${ALERTMANAGER_URL:?ALERTMANAGER_URL required (e.g. https://alertmanager.flowguard.fr)}
+      - --config.expand-env=true # allows ${VAR} substitution in alertmanager.yml
 
   # ── Loki (log aggregation) ──────────────────────────────────────────────────
   loki:
@@ -87,8 +103,9 @@ services:
     container_name: flowguard-loki
     restart: unless-stopped
     networks: [monitoring]
-    ports:
-      - "3100:3100"
+    # No host port — Grafana and Promtail reach Loki via Docker network
+    expose:
+      - "3100"
     volumes:
       - loki_data:/loki
       - ./monitoring/loki.yml:/etc/loki/local-config.yaml:ro
@@ -99,7 +116,7 @@ services:
     image: grafana/promtail:2.9.6
     container_name: flowguard-promtail
     restart: unless-stopped
-    networks: [monitoring, flowguard_default]
+    networks: [monitoring, flowguard_internal]
     volumes:
       - /var/log:/var/log:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -113,22 +130,21 @@ services:
     image: prometheuscommunity/postgres-exporter:v0.15.0
     container_name: flowguard-postgres-exporter
     restart: unless-stopped
-    networks: [monitoring, flowguard_default]
+    networks: [monitoring, flowguard_internal]
     environment:
-      DATA_SOURCE_NAME: "postgresql://${DB_USER:-flowguard}:${DB_PASSWORD:-flowguard}@postgres:5432/${DB_NAME:-flowguard}?sslmode=disable"
-    ports:
-      - "9187:9187"
+      DATA_SOURCE_NAME: "postgresql://${DB_USER:-flowguard}:${DB_PASSWORD:?DB_PASSWORD required}@postgres:5432/${DB_NAME:-flowguard}?sslmode=disable"
+    # No host port — Prometheus scrapes via Docker network
 
   # ── Redis Exporter ──────────────────────────────────────────────────────────
   redis-exporter:
     image: oliver006/redis_exporter:v1.58.0
     container_name: flowguard-redis-exporter
     restart: unless-stopped
-    networks: [monitoring, flowguard_default]
+    networks: [monitoring, flowguard_internal]
     environment:
       REDIS_ADDR: "redis://redis:6379"
-    ports:
-      - "9121:9121"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    # No host port — Prometheus scrapes via Docker network
 
   # ── Node Exporter (host metrics) ────────────────────────────────────────────
   node-exporter:
@@ -136,8 +152,7 @@ services:
     container_name: flowguard-node-exporter
     restart: unless-stopped
     networks: [monitoring]
-    ports:
-      - "9100:9100"
+    # No host port — Prometheus scrapes via Docker network
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
@@ -153,9 +168,8 @@ services:
     image: gcr.io/cadvisor/cadvisor:v0.49.1
     container_name: flowguard-cadvisor
     restart: unless-stopped
-    networks: [monitoring, flowguard_default]
-    ports:
-      - "8090:8080"
+    networks: [monitoring, flowguard_internal]
+    # No host port — Prometheus scrapes via Docker network
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -171,9 +185,8 @@ services:
     image: prom/blackbox-exporter:v0.25.0
     container_name: flowguard-blackbox
     restart: unless-stopped
-    networks: [monitoring, flowguard_default]
-    ports:
-      - "9115:9115"
+    networks: [monitoring, flowguard_internal]
+    # No host port — Prometheus scrapes via Docker network
     volumes:
       - ./monitoring/blackbox.yml:/etc/blackbox_exporter/config.yml:ro
 
@@ -182,9 +195,8 @@ services:
     image: nginx/nginx-prometheus-exporter:1.1.0
     container_name: flowguard-nginx-exporter
     restart: unless-stopped
-    networks: [monitoring, flowguard_default]
-    ports:
-      - "9113:9113"
+    networks: [monitoring, flowguard_internal]
+    # No host port — Prometheus scrapes via Docker network
     command:
       - --nginx.scrape-uri=http://nginx/nginx_status
     depends_on:

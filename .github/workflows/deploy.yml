@@ -20,9 +20,14 @@ jobs:
           key: ${{ secrets.SERVER_KEY }}
           port: 22
           command_timeout: 25m
+          envs: ENCRYPTION_KEY
           script: |
             set -euo pipefail
             cd /opt/flowguard
             git fetch --all
             git reset --hard origin/main
+            # Inject secrets from GitHub into .env.prod (values never stored in git)
+            sed -i "s|^ENCRYPTION_KEY=.*|ENCRYPTION_KEY=${ENCRYPTION_KEY}|" infra/.env.prod
             bash infra/deploy.sh
+        env:
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
