@@ -72,7 +72,7 @@ services:
       SMTP_USER: ${SMTP_USER}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
     volumes:
-      - jwt_keys:/app/keys:ro
+      - /opt/flowguard/keys:/app/keys:ro # bind mount — avoids Docker volume ownership warning
     depends_on:
       postgres:
         condition: service_healthy
@@ -185,11 +185,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  jwt_keys:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /opt/flowguard/keys
   certs:
   certbot_www:
