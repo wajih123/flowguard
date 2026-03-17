@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { authApi } from "@/api/auth";
-import { isMfaChallenge } from "@/domain/User";
+import { isMfaChallenge, isEmailVerificationPending } from "@/domain/User";
 import type { User, LoginRequest, RegisterRequest, Role } from "@/domain/User";
 
 // ─── Token storage — persisted in localStorage ───────────────────────────────
@@ -24,10 +24,13 @@ interface AuthState {
   isLoading: boolean;
   error: string | null;
   isAdmin: boolean;
-  // 2FA state
+  // 2FA state (per-login MFA challenge)
   mfaPending: boolean;
   sessionToken: string | null;
   maskedEmail: string | null;
+  // Email verification state (one-time, after registration)
+  emailVerificationPending: boolean;
+  pendingVerificationEmail: string | null;
 }
 
 interface AuthActions {
@@ -35,6 +38,8 @@ interface AuthActions {
   verifyOtp: (code: string) => Promise<void>;
   cancelMfa: () => void;
   register: (data: RegisterRequest) => Promise<void>;
+  verifyEmail: (code: string) => Promise<void>;
+  cancelEmailVerification: () => void;
   logout: () => void;
   hydrate: () => Promise<void>;
   refreshTokens: () => Promise<void>;
@@ -53,6 +58,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   mfaPending: false,
   sessionToken: null,
   maskedEmail: null,
+  emailVerificationPending: false,
+  pendingVerificationEmail: null,
 
   login: async (data) => {
     set({ isLoading: true, error: null });
@@ -127,13 +134,25 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const res = await authApi.register(data);
-      setTokens(res.accessToken, res.refreshToken);
-      set({
-        user: res.user,
-        isAuthenticated: true,
-        isAdmin: checkAdmin(res.user),
-        isLoading: false,
-      });
+      if (isEmailVerificationPending(res)) {
+        // Account created — waiting for email OTP verification (one-time)
+        set({
+          emailVerificationPending: true,
+          pendingVerificationEmail: data.email,
+          maskedEmail: res.maskedEmail,
+          isLoading: false,
+        });
+      } else {
+        setTokens(res.accessToken, res.refreshToken);
+        set({
+          user: res.user,
+          isAuthenticated: true,
+          isAdmin: checkAdmin(res.user),
+          emailVerificationPending: false,
+          pendingVerificationEmail: null,
+          isLoading: false,
+        });
+      }
     } catch (err: unknown) {
       const msg =
         err instanceof Error ? err.message : "Erreur lors de l'inscription.";
@@ -141,6 +160,44 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       throw err;
     }
   },
+
+  verifyEmail: async (code) => {
+    const { pendingVerificationEmail } = get();
+    if (!pendingVerificationEmail) {
+      set({
+        error: "Session expirée. Veuillez vous réinscrire.",
+        emailVerificationPending: false,
+      });
+      return;
+    }
+    set({ isLoading: true, error: null });
+    try {
+      const res = await authApi.verifyEmail(pendingVerificationEmail, code);
+      setTokens(res.accessToken, res.refreshToken);
+      set({
+        user: res.user,
+        isAuthenticated: true,
+        isAdmin: checkAdmin(res.user),
+        emailVerificationPending: false,
+        pendingVerificationEmail: null,
+        maskedEmail: null,
+        isLoading: false,
+      });
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Code incorrect ou expiré.";
+      set({ error: msg, isLoading: false });
+      throw err;
+    }
+  },
+
+  cancelEmailVerification: () =>
+    set({
+      emailVerificationPending: false,
+      pendingVerificationEmail: null,
+      maskedEmail: null,
+      error: null,
+    }),
 
   logout: () => {
     const rt = getRefreshToken() ?? "";

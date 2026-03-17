@@ -1,5 +1,13 @@
-import React, { useState, useCallback } from 'react'
-import { View, Text, ScrollView, StyleSheet, Keyboard, TouchableOpacity } from 'react-native'
+import React, { useState, useCallback, useRef, useEffect } from 'react'
+import {
+  View,
+  Text,
+  ScrollView,
+  StyleSheet,
+  Keyboard,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { z } from 'zod'
 import type { StackScreenProps } from '@react-navigation/stack'
@@ -40,6 +48,108 @@ const USER_TYPES: { key: UserType; label: string; description: string }[] = [
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
+// ── Email verification step (one-time, rendered after successful registration) ────
+export const VerifyEmailStep: React.FC = () => {
+  const { verifyEmailOtp, cancelEmailVerification, isLoading, error, clearError, maskedEmail } =
+    useAuthStore()
+  const [digits, setDigits] = useState(['', '', '', '', '', ''])
+  const inputRefs = useRef<(TextInput | null)[]>([])
+
+  useEffect(() => {
+    setTimeout(() => inputRefs.current[0]?.focus(), 200)
+  }, [])
+
+  const handleChange = useCallback(
+    (idx: number, val: string) => {
+      if (!/^\d?$/.test(val)) return
+      const next = [...digits]
+      next[idx] = val
+      setDigits(next)
+      if (val && idx < 5) inputRefs.current[idx + 1]?.focus()
+      if (next.every((d) => d !== '')) {
+        verifyEmailOtp(next.join('')).catch(() => {
+          setDigits(['', '', '', '', '', ''])
+          setTimeout(() => inputRefs.current[0]?.focus(), 50)
+        })
+      }
+    },
+    [digits, verifyEmailOtp],
+  )
+
+  const handleKeyPress = useCallback(
+    (idx: number, key: string) => {
+      if (key === 'Backspace' && !digits[idx] && idx > 0) {
+        inputRefs.current[idx - 1]?.focus()
+      }
+    },
+    [digits],
+  )
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <TouchableOpacity onPress={cancelEmailVerification} style={styles.backButton}>
+          <Text style={styles.backButtonText}>← Retour</Text>
+        </TouchableOpacity>
+
+        <View style={styles.header}>
+          <Text style={styles.logo}>📧 Vérification email</Text>
+          <Text style={styles.subtitle}>
+            Code envoyé à{' '}
+            <Text style={{ color: colors.textPrimary, fontWeight: '700' }}>{maskedEmail}</Text>
+          </Text>
+          <Text style={[styles.subtitle, { marginTop: spacing.xs }]}>
+            Ce code expire dans <Text style={{ color: colors.primary }}>15 minutes</Text>.
+          </Text>
+        </View>
+
+        {error && (
+          <View style={styles.errorBanner}>
+            <Text style={styles.errorBannerText}>{error}</Text>
+            <TouchableOpacity onPress={clearError}>
+              <Text style={[styles.errorBannerText, { marginLeft: spacing.sm }]}>×</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.otpRow}>
+          {digits.map((d, i) => (
+            <TextInput
+              key={i}
+              ref={(el) => {
+                inputRefs.current[i] = el
+              }}
+              style={[styles.otpBox, d ? styles.otpBoxFilled : null]}
+              value={d}
+              onChangeText={(v) => handleChange(i, v)}
+              onKeyPress={({ nativeEvent }) => handleKeyPress(i, nativeEvent.key)}
+              keyboardType="number-pad"
+              maxLength={1}
+              textAlign="center"
+              selectTextOnFocus
+            />
+          ))}
+        </View>
+
+        {isLoading ? (
+          <FlowGuardLoader />
+        ) : (
+          <FlowGuardButton
+            title="Activer mon compte"
+            onPress={() => verifyEmailOtp(digits.join(''))}
+            variant="primary"
+            disabled={digits.some((d) => !d)}
+          />
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  )
+}
+
 export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -50,7 +160,7 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
   const [userType, setUserType] = useState<UserType>('FREELANCE')
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const { register, isLoading, error: authError } = useAuthStore()
+  const { register, emailVerificationPending, isLoading, error: authError } = useAuthStore()
 
   const validate = useCallback((): boolean => {
     const result = registerSchema.safeParse({
@@ -91,6 +201,11 @@ export const RegisterScreen: React.FC<Props> = ({ navigation }) => {
       userType,
     })
   }, [firstName, lastName, email, password, companyName, userType, register, validate])
+
+  // Show email verification step after successful registration (all hooks above)
+  if (emailVerificationPending) {
+    return <VerifyEmailStep />
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -222,6 +337,42 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: typography.body.fontSize,
     marginBottom: spacing.lg,
+  },
+  // Email verification step styles
+  header: {
+    marginBottom: spacing.xl,
+  },
+  logo: {
+    ...typography.h1,
+    color: colors.primary,
+    marginBottom: spacing.xs,
+  },
+  backButton: {
+    marginBottom: spacing.xl,
+  },
+  backButtonText: {
+    color: colors.textSecondary,
+    fontSize: typography.body.fontSize,
+  },
+  otpRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+  otpBox: {
+    width: 48,
+    height: 56,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border ?? '#2a2a3e',
+    backgroundColor: colors.surface,
+    color: colors.textPrimary ?? colors.primary,
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  otpBoxFilled: {
+    borderColor: colors.primary,
   },
   errorBanner: {
     backgroundColor: colors.danger + '20',

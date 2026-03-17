@@ -4,6 +4,7 @@ import type {
   LoginRequest,
   LoginResult,
   RegisterRequest,
+  RegisterResult,
   User,
 } from "@/domain/User";
 
@@ -18,7 +19,12 @@ export const authApi = {
 
   register: (data: RegisterRequest) =>
     apiClient
-      .post<AuthResponse>("/api/auth/register", data)
+      .post<RegisterResult>("/api/auth/register", data)
+      .then((r) => r.data),
+
+  verifyEmail: (email: string, code: string) =>
+    apiClient
+      .post<AuthResponse>("/api/auth/verify-email", { email, code })
       .then((r) => r.data),
 
   refresh: (refreshToken: string) =>

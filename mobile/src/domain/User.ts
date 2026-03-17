@@ -14,6 +14,7 @@ export interface User {
   plan: Plan
   userType?: UserType
   createdAt?: number
+  emailVerified: boolean
 }
 
 export interface AuthResponse {
@@ -52,4 +53,15 @@ export interface MfaChallenge {
 export type LoginResult = AuthResponse | MfaChallenge
 
 export const isMfaChallenge = (r: LoginResult): r is MfaChallenge =>
-  (r as MfaChallenge).mfaRequired === true;
+  (r as MfaChallenge).mfaRequired === true
+
+// ── Email verification (one-time, after registration) ─────────────────────────
+export interface EmailVerificationPending {
+  pendingVerification: true
+  maskedEmail: string
+}
+
+export type RegisterResult = AuthResponse | EmailVerificationPending
+
+export const isEmailVerificationPending = (r: RegisterResult): r is EmailVerificationPending =>
+  (r as EmailVerificationPending).pendingVerification === true
