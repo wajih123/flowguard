@@ -63,6 +63,9 @@ jobs:
     name: Build Docker Images
     runs-on: ubuntu-latest
     needs: [backend-test, ml-lint]
+    permissions:
+      contents: read
+      security-events: write # required to upload SARIF results
     outputs:
       backend-digest: ${{ steps.build-backend.outputs.digest }}
       ml-digest: ${{ steps.build-ml.outputs.digest }}
@@ -129,6 +132,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Trivy scan — ml-service
+        if: always() # run even if backend scan found vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.IMAGE_ML }}:${{ github.sha }}
@@ -139,6 +143,7 @@ jobs:
           ignore-unfixed: true
 
       - name: Trivy scan — web
+        if: always() # run even if a previous scan found vulnerabilities
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ${{ env.IMAGE_WEB }}:${{ github.sha }}
@@ -150,7 +155,7 @@ jobs:
 
       - name: Upload Trivy SARIF results to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "."
           category: trivy-container-scan
