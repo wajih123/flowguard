@@ -9,6 +9,10 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
+# Apply OS-level security patches before installing dependencies
+RUN apt-get update && apt-get upgrade -y --no-install-recommends \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt ./
 RUN pip install --upgrade pip && pip install -r requirements.txt
 

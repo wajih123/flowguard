@@ -23,7 +23,8 @@ COPY nginx-web.conf /etc/nginx/conf.d/default.conf
 
 # Run nginx as non-root (port 8080 instead of privileged 80)
 # The container is exposed on host port 80 via docker-compose port mapping
-RUN sed -i 's/listen 80;/listen 8080;/' /etc/nginx/conf.d/default.conf \
+RUN apk update && apk upgrade --no-cache \
+    && sed -i 's/listen 80;/listen 8080;/' /etc/nginx/conf.d/default.conf \
     && addgroup -S flowguard \
     && adduser -S flowguard -G flowguard \
     # Allow nginx worker to write its pid and cache files
