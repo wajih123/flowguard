@@ -324,11 +324,16 @@ class TreasuryPredictor:
 
         if not predictions:
             # No forecast data — derive score from current balance only
-            if current_balance >= 5000:   return 70.0, 0.0, 0
-            if current_balance >= 500:    return 55.0, 0.0, 0
-            if current_balance >= 0:      return 40.0, 0.0, 0
-            if current_balance >= -200:   return 28.0, 0.0, 0
-            if current_balance >= -1000:  return 18.0, 0.0, 0
+            if current_balance >= 5000:
+                return 70.0, 0.0, 0
+            if current_balance >= 500:
+                return 55.0, 0.0, 0
+            if current_balance >= 0:
+                return 40.0, 0.0, 0
+            if current_balance >= -200:
+                return 28.0, 0.0, 0
+            if current_balance >= -1000:
+                return 18.0, 0.0, 0
             return 10.0, 0.0, 0
 
         balances = [p.predicted_balance for p in predictions]
@@ -340,45 +345,65 @@ class TreasuryPredictor:
                 break
 
         # ── A. Current balance (35 pts) ──────────────────────────────────────
-        if current_balance >= 5000:     score_a = 35
-        elif current_balance >= 2000:   score_a = 28
-        elif current_balance >= 500:    score_a = 21
-        elif current_balance >= 0:      score_a = 14
-        elif current_balance >= -200:   score_a = 7
-        elif current_balance >= -1000:  score_a = 3
-        else:                           score_a = 0
+        if current_balance >= 5000:
+            score_a = 35
+        elif current_balance >= 2000:
+            score_a = 28
+        elif current_balance >= 500:
+            score_a = 21
+        elif current_balance >= 0:
+            score_a = 14
+        elif current_balance >= -200:
+            score_a = 7
+        elif current_balance >= -1000:
+            score_a = 3
+        else:
+            score_a = 0
 
         # ── B. Short-term J+1→J+7 average (35 pts) ───────────────────────────
         short_pred = balances[:7] if len(balances) >= 7 else balances
         avg_short = sum(short_pred) / len(short_pred)
         neg_short_ratio = sum(1 for b in short_pred if b < 0) / len(short_pred)
-        if avg_short >= 5000:    score_b = 35
-        elif avg_short >= 2000:  score_b = 28
-        elif avg_short >= 500:   score_b = 21
-        elif avg_short >= 0:     score_b = int(14 * (1 - neg_short_ratio))
-        else:                    score_b = int(5 * (1 - neg_short_ratio))
+        if avg_short >= 5000:
+            score_b = 35
+        elif avg_short >= 2000:
+            score_b = 28
+        elif avg_short >= 500:
+            score_b = 21
+        elif avg_short >= 0:
+            score_b = int(14 * (1 - neg_short_ratio))
+        else:
+            score_b = int(5 * (1 - neg_short_ratio))
 
         # ── C. Medium-term J+8→30 average (20 pts) ───────────────────────────
         med_pred = balances[7:] if len(balances) > 7 else balances
         avg_med = sum(med_pred) / len(med_pred)
         neg_med_ratio = sum(1 for b in med_pred if b < 0) / len(med_pred)
-        if avg_med >= 5000:    score_c = 20
-        elif avg_med >= 1000:  score_c = 15
-        elif avg_med >= 0:     score_c = int(10 * (1 - neg_med_ratio))
-        else:                  score_c = 0
+        if avg_med >= 5000:
+            score_c = 20
+        elif avg_med >= 1000:
+            score_c = 15
+        elif avg_med >= 0:
+            score_c = int(10 * (1 - neg_med_ratio))
+        else:
+            score_c = 0
 
         # ── D. Trend + stability bonus (10 pts) ───────────────────────────────
         score_d = 0.0
         if len(balances) >= 2:
             trend = balances[-1] - (current_balance if current_balance != 0.0 else balances[0])
-            if trend > 500:    score_d += 6
-            elif trend > 0:    score_d += 3
+            if trend > 500:
+                score_d += 6
+            elif trend > 0:
+                score_d += 3
             mean = sum(balances) / len(balances)
             if mean != 0:
                 variance = sum((b - mean) ** 2 for b in balances) / len(balances)
                 cv = (variance ** 0.5) / max(abs(mean), 1)
-                if cv < 0.2:   score_d += 4
-                elif cv < 0.5: score_d += 2
+                if cv < 0.2:
+                    score_d += 4
+                elif cv < 0.5:
+                    score_d += 2
 
         score = score_a + score_b + score_c + score_d
         return round(min(max(score, 0), 100), 1), round(worst_deficit, 2), days_until_impact
