@@ -17,6 +17,7 @@ public record AuthResponse(
         String companyName,
         UserEntity.UserType userType,
         UserEntity.KycStatus kycStatus,
-        String role
+        String role,
+        boolean emailVerified
     ) {}
 }

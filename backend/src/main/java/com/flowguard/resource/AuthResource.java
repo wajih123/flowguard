@@ -31,10 +31,23 @@ public class AuthResource {
     @RunOnVirtualThread
     public Response register(@Valid RegisterRequest dto) {
         try {
-            AuthResponse response = authService.register(dto);
-            return Response.status(Response.Status.CREATED).entity(response).build();
+            EmailVerificationPendingResponse pending = authService.register(dto);
+            return Response.status(202).entity(pending).build();
         } catch (IllegalArgumentException e) {
             return Response.status(Response.Status.CONFLICT).entity(new ErrorBody(e.getMessage())).build();
+        }
+    }
+
+    @POST
+    @Path("/verify-email")
+    @PermitAll
+    @RunOnVirtualThread
+    public Response verifyEmail(@Valid VerifyEmailRequest dto) {
+        try {
+            AuthResponse response = authService.verifyEmail(dto);
+            return Response.ok(response).build();
+        } catch (SecurityException e) {
+            return Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorBody(e.getMessage())).build();
         }
     }
 
@@ -44,8 +57,12 @@ public class AuthResource {
     @RunOnVirtualThread
     public Response login(@Valid LoginRequest dto) {
         try {
-            MfaChallengeResponse challenge = authService.login(dto);
-            return Response.ok(challenge).build();
+            AuthResponse response = authService.login(dto);
+            return Response.ok(response).build();
+        } catch (AuthService.EmailNotVerifiedException e) {
+            return Response.status(Response.Status.FORBIDDEN)
+                    .entity(new ErrorBody("EMAIL_NOT_VERIFIED"))
+                    .build();
         } catch (SecurityException e) {
             return Response.status(Response.Status.UNAUTHORIZED).entity(new ErrorBody("Identifiants incorrects")).build();
         }

@@ -73,6 +73,10 @@ public class UserEntity extends PanacheEntityBase {
     @Builder.Default
     private boolean mfaEnabled = true;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean emailVerified = false;
+
     @Column
     private Instant disabledAt;
 

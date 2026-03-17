@@ -2,10 +2,12 @@ package com.flowguard.service;
 
 import com.flowguard.domain.UserEntity;
 import com.flowguard.dto.AuthResponse;
+import com.flowguard.dto.EmailVerificationPendingResponse;
 import com.flowguard.dto.LoginRequest;
 import com.flowguard.dto.MfaChallengeResponse;
 import com.flowguard.dto.RegisterRequest;
 import com.flowguard.dto.UserDto;
+import com.flowguard.dto.VerifyEmailRequest;
 import com.flowguard.dto.VerifyOtpRequest;
 import com.flowguard.repository.UserRepository;
 import com.flowguard.security.RateLimiter;
@@ -35,7 +37,7 @@ public class AuthService {
     SanctionsScreeningService sanctionsScreeningService;
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public EmailVerificationPendingResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Un compte existe déjà avec cet email");
         }
@@ -50,32 +52,45 @@ public class AuthService {
                 .companyName(request.companyName() != null ? request.companyName() : "")
                 .userType(request.userType())
                 .kycStatus(UserEntity.KycStatus.PENDING)
+                .emailVerified(false)
                 .build();
 
         userRepository.persist(user);
 
         // LCB-FT Art. L561-5 CMF — screen against EU/OFAC/UN sanctions lists.
-        // Runs after persist so the userId is available for audit logging.
-        // SanctionsHitException is a RuntimeException → transaction rolls back automatically.
         sanctionsScreeningService.screenRegistration(
                 user.getId(),
                 request.firstName(),
                 request.lastName(),
-                null   // dateOfBirth not yet collected at registration; re-check at KYC
+                null
         );
 
-        String accessToken = refreshTokenService.buildAccessToken(user);
-        String refreshToken = refreshTokenService.issueRefreshToken(user, null, "registration");
+        // Send the one-time email verification OTP
+        otpService.sendEmailVerificationOtp(user);
+
+        return new EmailVerificationPendingResponse(OtpService.maskEmail(user.getEmail()));
+    }
+
+    /**
+     * Verify the one-time e-mail confirmation OTP sent after registration.
+     * Marks the account as verified and issues the initial token pair.
+     */
+    @Transactional
+    public AuthResponse verifyEmail(VerifyEmailRequest request) {
+        UserEntity user = otpService.verifyEmailCode(request.email(), request.code());
+        user.setEmailVerified(true);
+        String accessToken  = refreshTokenService.buildAccessToken(user);
+        String refreshToken = refreshTokenService.issueRefreshToken(user, null, "email_verification");
         return buildAuthResponse(user, accessToken, refreshToken);
     }
 
     /**
-     * Step 1 — validate credentials and send an e-mail OTP.
-     *
-     * @return {@link MfaChallengeResponse} with the session token the client
-     *         must present with the 6-digit code to {@code POST /auth/verify-otp}
+     * Validate credentials and issue tokens directly.
+     * Email verification (one-time) is handled at registration via /verify-email.
+     * After the account is verified, subsequent logins require only email + password.
      */
-    public MfaChallengeResponse login(LoginRequest request) {
+    @Transactional
+    public AuthResponse login(LoginRequest request) {
         rateLimiter.checkAndRecord(request.email());
 
         UserEntity user = userRepository.findByEmail(request.email())
@@ -89,10 +104,23 @@ public class AuthService {
             throw new SecurityException("Identifiants incorrects");
         }
 
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException(OtpService.maskEmail(user.getEmail()));
+        }
+
         rateLimiter.reset(request.email());
 
-        String sessionToken = otpService.sendOtp(user);
-        return new MfaChallengeResponse(sessionToken, OtpService.maskEmail(user.getEmail()));
+        String accessToken  = refreshTokenService.buildAccessToken(user);
+        String refreshToken = refreshTokenService.issueRefreshToken(user, null, "login");
+        return buildAuthResponse(user, accessToken, refreshToken);
+    }
+
+    public static class EmailNotVerifiedException extends RuntimeException {
+        public final String maskedEmail;
+        public EmailNotVerifiedException(String maskedEmail) {
+            super("EMAIL_NOT_VERIFIED");
+            this.maskedEmail = maskedEmail;
+        }
     }
 
     /**
@@ -134,17 +162,6 @@ public class AuthService {
         return UserDto.from(user);
     }
 
-    /** Map stored role (e.g. ROLE_ADMIN) to the short Quarkus group name (e.g. admin). */
-    private static String roleToGroup(String role) {
-        if (role == null) return "user";
-        return switch (role.toUpperCase()) {
-            case "ROLE_ADMIN"        -> "admin";
-            case "ROLE_SUPER_ADMIN"  -> "super_admin";
-            case "ROLE_BUSINESS"     -> "business";
-            default                 -> "user";
-        };
-    }
-
     private AuthResponse buildAuthResponse(UserEntity user, String accessToken, String refreshToken) {
         AuthResponse.UserResponse userResponse = new AuthResponse.UserResponse(
                 user.getId(),
@@ -154,7 +171,8 @@ public class AuthService {
                 user.getCompanyName(),
                 user.getUserType(),
                 user.getKycStatus(),
-                user.getRole()
+                user.getRole(),
+                user.isEmailVerified()
         );
         return new AuthResponse(accessToken, refreshToken, userResponse);
     }
