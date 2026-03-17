@@ -47,8 +47,8 @@ export interface MlStats {
 
 export const mlApi = {
   getStats: (): Promise<MlStats> =>
-    apiClient.get("/admin/ml/stats").then((r) => r.data),
+    apiClient.get("/api/admin/ml/stats").then((r) => r.data),
 
   triggerRetrain: (): Promise<{ status: string; message: string }> =>
-    apiClient.post("/admin/ml/retrain").then((r) => r.data),
+    apiClient.post("/api/admin/ml/retrain").then((r) => r.data),
 };
