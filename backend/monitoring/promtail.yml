@@ -60,7 +60,7 @@ scrape_configs:
             container: "com.docker.compose.service"
       - match:
           selector: '{job="flowguard-backend"}'
-          pipeline_stages:
+          stages:
             - json:
                 source: output
                 expressions:
