@@ -78,6 +78,15 @@ $COMPOSE build --pull web || { echo "✗ Web build failed — aborting, running 
 echo "[3/4] Stopping all containers..."
 $COMPOSE down --remove-orphans 2>/dev/null || true
 
+# Force-remove any containers left over from a previous project name
+# (happens when the compose `name:` was changed between deploys — the old
+# containers were tracked under a different project and are invisible to
+# `compose down`, but their container_name still blocks a fresh `compose up`).
+for c in flowguard-db flowguard-redis flowguard-backend flowguard-ml \
+          flowguard-web flowguard-nginx flowguard-certbot flowguard-autoheal; do
+  docker rm -f "$c" 2>/dev/null || true
+done
+
 echo "[3/4] Starting services..."
 $COMPOSE up -d
 
