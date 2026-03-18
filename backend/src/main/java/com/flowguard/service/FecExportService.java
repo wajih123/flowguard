@@ -108,6 +108,11 @@ public class FecExportService {
         return sb.toString();
     }
 
+    /** Convenience wrapper for full calendar-year FEC export. */
+    public String exportFec(UUID userId, int year) {
+        return generateFec(userId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31));
+    }
+
     /**
      * Map transaction categories to PCG (Plan Comptable Général) account numbers.
      */

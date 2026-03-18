@@ -25,6 +25,15 @@ const BankCallbackPage = React.lazy(() => import("./pages/BankCallbackPage"));
 const ProfilePage = React.lazy(() => import("./pages/ProfilePage"));
 const SubscriptionPage = React.lazy(() => import("./pages/SubscriptionPage"));
 const TeamPage = React.lazy(() => import("./pages/TeamPage"));
+const InvoicesPage = React.lazy(() => import("./pages/InvoicesPage"));
+const BudgetPage = React.lazy(() => import("./pages/BudgetPage"));
+const TaxPage = React.lazy(() => import("./pages/TaxPage"));
+const BenchmarksPage = React.lazy(() => import("./pages/BenchmarksPage"));
+const ForecastAccuracyPage = React.lazy(
+  () => import("./pages/ForecastAccuracyPage"),
+);
+const PaymentsPage = React.lazy(() => import("./pages/PaymentsPage"));
+const AccountantPage = React.lazy(() => import("./pages/AccountantPage"));
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 const PrivateRoute: React.FC<{
@@ -190,6 +199,64 @@ const ClientApp: React.FC = () => {
           element={
             <PrivateRoute roles={["ROLE_BUSINESS"]}>
               <TeamPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Financial tools — all authenticated users */}
+        <Route
+          path="/invoices"
+          element={
+            <PrivateRoute>
+              <InvoicesPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/budget"
+          element={
+            <PrivateRoute>
+              <BudgetPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/tax"
+          element={
+            <PrivateRoute>
+              <TaxPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/benchmarks"
+          element={
+            <PrivateRoute>
+              <BenchmarksPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/forecast-accuracy"
+          element={
+            <PrivateRoute>
+              <ForecastAccuracyPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/payments"
+          element={
+            <PrivateRoute>
+              <PaymentsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/accountant"
+          element={
+            <PrivateRoute>
+              <AccountantPage />
             </PrivateRoute>
           }
         />

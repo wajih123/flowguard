@@ -26,4 +26,10 @@ public class TransactionRepository implements PanacheRepositoryBase<TransactionE
     public List<TransactionEntity> findRecurringByAccountId(UUID accountId) {
         return list("account.id = ?1 AND isRecurring = true ORDER BY date DESC", accountId);
     }
+
+    /** Aggregate across all accounts belonging to a user — for budget vs actual. */
+    public List<TransactionEntity> findByUserIdAndDateBetween(UUID userId, LocalDate from, LocalDate to) {
+        return list("account.user.id = ?1 AND date >= ?2 AND date <= ?3 ORDER BY date DESC",
+                userId, from, to);
+    }
 }

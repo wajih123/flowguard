@@ -26,11 +26,15 @@ export const Routes = {
   // Admin
   AdminOverview: 'AdminOverview',
   AdminWeb: 'AdminWeb',
+  // Finance tools
+  Invoices: 'Invoices',
+  Budget: 'Budget',
+  Tax: 'Tax',
   // Legacy
   Forecast: 'Forecast',
   Spending: 'Spending',
   Scenario: 'Scenario',
   FlashCredit: 'FlashCredit',
-} as const;
+} as const
 
 export type RouteName = (typeof Routes)[keyof typeof Routes]

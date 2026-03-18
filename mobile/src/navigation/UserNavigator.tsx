@@ -1,24 +1,27 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
-import { DashboardScreen } from '../screens/Dashboard/DashboardScreen';
-import { ForecastScreen } from '../screens/Forecast/ForecastScreen';
-import { AlertsScreen } from '../screens/Alerts/AlertsScreen';
-import { AlertDetailScreen } from '../screens/Alerts/AlertDetailScreen';
-import { BankAccountScreen } from '../screens/BankAccount/BankAccountScreen';
-import { BankConnectScreen } from '../screens/BankConnect/BankConnectScreen';
-import { ProfileScreen } from '../screens/Profile/ProfileScreen';
-import { TransactionsScreen } from '../screens/Transactions/TransactionsScreen';
-import { TransactionDetailScreen } from '../screens/Transactions/TransactionDetailScreen';
-import { ReserveScreen } from '../screens/Reserve/ReserveScreen';
-import { KycScreen } from '../screens/Kyc/KycScreen';
-import { Routes } from './routes';
-import { useAlertStore } from '../store/alertStore';
-import { colors, spacing } from '../theme';
+import React from 'react'
+import { View, Text, StyleSheet } from 'react-native'
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
+import { createStackNavigator } from '@react-navigation/stack'
+import { DashboardScreen } from '../screens/Dashboard/DashboardScreen'
+import { ForecastScreen } from '../screens/Forecast/ForecastScreen'
+import { AlertsScreen } from '../screens/Alerts/AlertsScreen'
+import { AlertDetailScreen } from '../screens/Alerts/AlertDetailScreen'
+import { BankAccountScreen } from '../screens/BankAccount/BankAccountScreen'
+import { BankConnectScreen } from '../screens/BankConnect/BankConnectScreen'
+import { ProfileScreen } from '../screens/Profile/ProfileScreen'
+import { TransactionsScreen } from '../screens/Transactions/TransactionsScreen'
+import { TransactionDetailScreen } from '../screens/Transactions/TransactionDetailScreen'
+import { ReserveScreen } from '../screens/Reserve/ReserveScreen'
+import { KycScreen } from '../screens/Kyc/KycScreen'
+import { InvoicesScreen } from '../screens/Invoices/InvoicesScreen'
+import { BudgetScreen } from '../screens/Budget/BudgetScreen'
+import { TaxScreen } from '../screens/Tax/TaxScreen'
+import { Routes } from './routes'
+import { useAlertStore } from '../store/alertStore'
+import { colors, spacing } from '../theme'
 
-const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator()
+const Stack = createStackNavigator()
 
 const TabIcon: React.FC<{ emoji: string; focused: boolean; badge?: number }> = ({
   emoji,
@@ -33,7 +36,7 @@ const TabIcon: React.FC<{ emoji: string; focused: boolean; badge?: number }> = (
       </View>
     )}
   </View>
-);
+)
 
 const DashboardStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -53,7 +56,7 @@ const DashboardStack: React.FC = () => (
       component={BankConnectScreen as React.ComponentType<object>}
     />
   </Stack.Navigator>
-);
+)
 
 const AlertsStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -65,7 +68,7 @@ const AlertsStack: React.FC = () => (
     />
     <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
-);
+)
 
 const BankStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -78,7 +81,7 @@ const BankStack: React.FC = () => (
       component={BankConnectScreen as React.ComponentType<object>}
     />
   </Stack.Navigator>
-);
+)
 
 const ProfileStack: React.FC = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -86,10 +89,21 @@ const ProfileStack: React.FC = () => (
     <Stack.Screen name={Routes.Kyc} component={KycScreen} />
     <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
   </Stack.Navigator>
-);
+)
+
+const FinanceStack: React.FC = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen
+      name={Routes.Invoices}
+      component={InvoicesScreen as React.ComponentType<object>}
+    />
+    <Stack.Screen name={Routes.Budget} component={BudgetScreen as React.ComponentType<object>} />
+    <Stack.Screen name={Routes.Tax} component={TaxScreen as React.ComponentType<object>} />
+  </Stack.Navigator>
+)
 
 export const UserNavigator: React.FC = () => {
-  const unreadCount = useAlertStore((s) => s.unreadCount);
+  const unreadCount = useAlertStore((s) => s.unreadCount)
 
   return (
     <Tab.Navigator
@@ -141,6 +155,14 @@ export const UserNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
+        name="FinanceTab"
+        component={FinanceStack}
+        options={{
+          tabBarLabel: 'Finances',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="📋" focused={focused} />,
+        }}
+      />
+      <Tab.Screen
         name="ProfileTab"
         component={ProfileStack}
         options={{
@@ -149,8 +171,8 @@ export const UserNavigator: React.FC = () => {
         }}
       />
     </Tab.Navigator>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   iconWrapper: {
@@ -182,4 +204,4 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: '700',
   },
-});
+})

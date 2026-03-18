@@ -137,6 +137,44 @@ const ForecastPage: React.FC = () => {
           )
         )}
 
+        {/* FlashCredit deficit banner */}
+        {forecast &&
+          forecast.criticalPoints.some((cp) => cp.predictedBalance < 0) && (
+            <div className="flex items-center gap-3 px-4 py-3.5 bg-danger/[0.07] border border-danger/20 rounded-xl">
+              <Zap size={16} className="text-danger flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white">
+                  Déficit de trésorerie prévu dans{" "}
+                  {Math.max(
+                    0,
+                    differenceInDays(
+                      parseISO(
+                        forecast.criticalPoints.find(
+                          (cp) => cp.predictedBalance < 0,
+                        )!.date,
+                      ),
+                      new Date(),
+                    ),
+                  )}{" "}
+                  jours
+                </p>
+                <p className="text-xs text-text-muted mt-0.5">
+                  Activez la Réserve FlashCredit pour couvrir ce déficit sans
+                  délai.
+                </p>
+              </div>
+              <Link to="/flash-credit" className="flex-shrink-0">
+                <Button
+                  variant="gradient"
+                  size="sm"
+                  leftIcon={<Zap size={13} />}
+                >
+                  Activer la Réserve
+                </Button>
+              </Link>
+            </div>
+          )}
+
         {/* PRO upsell inline */}
         {showUpsell && (
           <div className="flex items-center gap-3 px-4 py-3 bg-primary/[0.06] border border-primary/15 rounded-xl text-sm text-text-secondary">

@@ -45,6 +45,24 @@ public class SpendingAnalysisService {
         return new SpendingAnalysisDto(accountId, period, totalSpent, byCategory, insights);
     }
 
+    /**
+     * Returns spending per category for a specific year/month.
+     * Used by BudgetService for Budget vs Actual comparison.
+     */
+    public Map<String, BigDecimal> getSpendingByCategory(UUID userId, int year, int month) {
+        LocalDate from = LocalDate.of(year, month, 1);
+        LocalDate to = from.withDayOfMonth(from.lengthOfMonth());
+        // Aggregate across all user accounts
+        List<TransactionEntity> allTx = transactionRepository
+                .findByUserIdAndDateBetween(userId, from, to);
+        return allTx.stream()
+                .filter(t -> t.getType() == TransactionEntity.TransactionType.DEBIT)
+                .collect(Collectors.groupingBy(
+                        t -> t.getCategory() != null ? t.getCategory().name() : "AUTRE",
+                        Collectors.reducing(BigDecimal.ZERO, TransactionEntity::getAmount, BigDecimal::add)
+                ));
+    }
+
     private List<String> generateInsights(Map<String, BigDecimal> byCategory, BigDecimal totalSpent) {
         List<String> insights = new ArrayList<>();
 

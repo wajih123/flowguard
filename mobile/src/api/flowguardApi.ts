@@ -346,8 +346,72 @@ export const getAdminKpis = async (): Promise<Record<string, number | string>> =
   return data
 }
 
-// â”€â”€ Error class â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export { FlowGuardError } from './errors'
 export type { ErrorCode as FlowGuardErrorCode } from './errors'
+
+// ── Invoices ─────────────────────────────────────────────────────────────────
+export const getInvoices = async () => {
+  const { data } = await api.get('/api/invoices')
+  return data
+}
+
+export const createInvoice = async (payload: Record<string, unknown>) => {
+  const { data } = await api.post('/api/invoices', payload)
+  return data
+}
+
+export const sendInvoice = async (id: string) => {
+  const { data } = await api.post(`/api/invoices/${id}/send`)
+  return data
+}
+
+export const markInvoicePaid = async (id: string) => {
+  const { data } = await api.post(`/api/invoices/${id}/mark-paid`)
+  return data
+}
+
+export const cancelInvoice = async (id: string) => {
+  const { data } = await api.post(`/api/invoices/${id}/cancel`)
+  return data
+}
+
+// ── Budget ───────────────────────────────────────────────────────────────────
+export const getBudgetVsActual = async (year: number, month: number) => {
+  const { data } = await api.get(`/api/budget/vs-actual/${year}/${month}`)
+  return data
+}
+
+export const upsertBudget = async (
+  year: number,
+  month: number,
+  category: string,
+  amount: number,
+) => {
+  const { data } = await api.put(`/api/budget/${year}/${month}/${category}`, amount, {
+    headers: { 'Content-Type': 'application/json' },
+  })
+  return data
+}
+
+// ── Tax ───────────────────────────────────────────────────────────────────────
+export const getTaxEstimates = async () => {
+  const { data } = await api.get('/api/tax')
+  return data
+}
+
+export const getUpcomingTaxes = async () => {
+  const { data } = await api.get('/api/tax/upcoming')
+  return data
+}
+
+export const markTaxPaid = async (id: string) => {
+  const { data } = await api.post(`/api/tax/${id}/mark-paid`)
+  return data
+}
+
+export const regenerateTaxEstimates = async () => {
+  const { data } = await api.post('/api/tax/regenerate')
+  return data
+}
 
 export default api

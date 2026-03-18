@@ -131,6 +131,18 @@ public class PushNotificationService {
             Optional.of("flowguard://alerts/" + alertId));
     }
 
+    /**
+     * Sends an accountant portal invitation email (logged here; actual email delivery
+     * would go via an SMTP/transactional email provider integration).
+     */
+    public void sendAccountantInvite(String accountantEmail, String ownerName,
+                                      String accessToken, java.time.Instant expiresAt) {
+        LOG.infof("Accountant invite sent to %s for client %s (expires %s, token prefix: %s)",
+                accountantEmail, ownerName, expiresAt,
+                accessToken.length() > 8 ? accessToken.substring(0, 8) + "..." : "***");
+        // TODO: plug in SMTP/Mailgun/SendGrid for actual email delivery
+    }
+
     private void sendToToken(String fcmToken, String title, String body, Optional<String> deepLink) {
         try {
             Message.Builder builder = Message.builder()

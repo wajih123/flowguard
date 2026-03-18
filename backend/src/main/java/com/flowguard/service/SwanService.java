@@ -154,6 +154,54 @@ public class SwanService {
         }
     }
 
+    /**
+     * Initiate a SEPA Credit Transfer via Swan PIS GraphQL API.
+     * Returns the Swan payment ID.
+     */
+    public String initiatePayment(String creditorName, String creditorIban,
+                                   java.math.BigDecimal amount, String currency, String reference) {
+        ensureAuthenticated();
+        try {
+            String safeRef = reference != null ? reference.replace("\"", "") : "Virement FlowGuard";
+            String graphql = """
+                mutation {
+                    initiateInternationalCreditTransfer(input: {
+                        externalReference: "%s"
+                        targetAmount: { value: "%s" currency: "%s" }
+                        creditor: { name: "%s" IBAN: "%s" }
+                    }) {
+                        ... on InitiateInternationalCreditTransferResponseWithConsentSuccessPayload {
+                            payment { id statusInfo { status } }
+                        }
+                    }
+                }
+                """.formatted(safeRef, amount.toPlainString(), currency, creditorName, creditorIban);
+
+            String payload = objectMapper.writeValueAsString(new GraphqlRequest(graphql));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(apiUrl + "/partner/graphql"))
+                    .header("Content-Type", "application/json")
+                    .header("Authorization", "Bearer " + accessToken)
+                    .POST(HttpRequest.BodyPublishers.ofString(payload))
+                    .timeout(Duration.ofSeconds(30))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Swan PIS failed: " + response.statusCode());
+            }
+
+            JsonNode json = objectMapper.readTree(response.body());
+            return json.at("/data/initiateInternationalCreditTransfer/payment/id").asText("unknown");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException("Swan PIS interrupted", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Erreur initiation paiement Swan", e);
+        }
+    }
+
     private void ensureAuthenticated() {
         if (accessToken == null) {
             authenticate();
