@@ -1,9 +1,8 @@
 import React, { useState } from 'react'
 import { View, Text, ScrollView, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { FlowGuardCard } from '../../components/FlowGuardCard'
-import { FlowGuardButton } from '../../components/FlowGuardButton'
 import { FlowGuardLoader } from '../../components/FlowGuardLoader'
 import { colors, typography, spacing } from '../../theme'
 import * as flowguardApi from '../../api/flowguardApi'
@@ -32,11 +31,18 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   UNDER_BUDGET: { label: 'Sous budget', color: colors.primary },
 }
 
+interface BudgetLine {
+  category: string
+  budgeted: number
+  actual: number
+  variance: number
+  status: string
+}
+
 export const BudgetScreen: React.FC = () => {
   const now = new Date()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
-  const qc = useQueryClient()
 
   const {
     data: vsActual,
@@ -48,11 +54,14 @@ export const BudgetScreen: React.FC = () => {
     queryFn: () => flowguardApi.getBudgetVsActual(year, month),
   })
 
-  const totalBudgeted: number = (vsActual?.lines ?? []).reduce(
-    (s: number, l: any) => s + l.budgeted,
+  const totalBudgeted: number = ((vsActual?.lines ?? []) as BudgetLine[]).reduce(
+    (s, l) => s + l.budgeted,
     0,
   )
-  const totalActual: number = (vsActual?.lines ?? []).reduce((s: number, l: any) => s + l.actual, 0)
+  const totalActual: number = ((vsActual?.lines ?? []) as BudgetLine[]).reduce(
+    (s, l) => s + l.actual,
+    0,
+  )
 
   const prevMonth = () => {
     if (month === 1) {
@@ -115,7 +124,7 @@ export const BudgetScreen: React.FC = () => {
         ) : !(vsActual?.lines ?? []).length ? (
           <Text style={styles.empty}>Aucun budget défini pour cette période.</Text>
         ) : (
-          (vsActual.lines as any[]).map((line: any) => {
+          (vsActual.lines as BudgetLine[]).map((line) => {
             const cfg = STATUS_CONFIG[line.status] ?? {
               label: line.status,
               color: colors.textMuted,
@@ -134,7 +143,10 @@ export const BudgetScreen: React.FC = () => {
                   <View
                     style={[
                       styles.progressFill,
-                      { width: `${Math.round(pct * 100)}%` as any, backgroundColor: cfg.color },
+                      {
+                        width: `${Math.round(pct * 100)}%` as `${number}%`,
+                        backgroundColor: cfg.color,
+                      },
                     ]}
                   />
                 </View>

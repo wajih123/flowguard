@@ -38,6 +38,16 @@ const fmtEur = (n: number) =>
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 
+interface TaxEstimate {
+  id: string
+  taxType: string
+  periodLabel: string
+  dueDate: string
+  estimatedAmount: number
+  isPaid: boolean
+  daysUntilDue: number | null
+}
+
 export const TaxScreen: React.FC = () => {
   const [showAll, setShowAll] = useState(false)
   const qc = useQueryClient()
@@ -78,9 +88,9 @@ export const TaxScreen: React.FC = () => {
   const displayed = showAll ? allTaxes : upcoming
   const isLoading = showAll ? loadingAll : loadingUpcoming
 
-  const totalUnpaid: number = (allTaxes ?? [])
-    .filter((t: any) => !t.isPaid)
-    .reduce((s: number, t: any) => s + t.estimatedAmount, 0)
+  const totalUnpaid: number = ((allTaxes ?? []) as TaxEstimate[])
+    .filter((t) => !t.isPaid)
+    .reduce((s, t) => s + t.estimatedAmount, 0)
 
   const nextDeadline = (upcoming ?? [])[0]
 
@@ -151,7 +161,7 @@ export const TaxScreen: React.FC = () => {
             Aucune obligation fiscale.{'\n'}Appuyez sur ↻ pour recalculer depuis vos factures.
           </Text>
         ) : (
-          (displayed as any[]).map((tax: any) => {
+          (displayed as TaxEstimate[]).map((tax) => {
             const taxColor = TAX_COLORS[tax.taxType] ?? colors.primary
             const overdue = !tax.isPaid && tax.daysUntilDue != null && tax.daysUntilDue < 0
             const urgent =

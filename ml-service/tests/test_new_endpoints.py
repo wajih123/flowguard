@@ -6,9 +6,8 @@ Tests for the new ML service endpoints added in feature branch:
 """
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.api.prediction_router import router
@@ -19,6 +18,14 @@ app.include_router(router)
 client = TestClient(app, raise_server_exceptions=False)
 
 ACCOUNT_ID = "test-account-123"
+
+# 14-day sample data required by ExplainRequest (min_length=14 for daily_balances and dates)
+_NUM_DAYS = 14
+_SAMPLE_BALANCES = [10000.0 + i * 100 for i in range(_NUM_DAYS)]
+_SAMPLE_DATES = [
+    (date.today() - timedelta(days=_NUM_DAYS - 1 - i)).isoformat()
+    for i in range(_NUM_DAYS)
+]
 
 
 class TestReconcileEndpoint:
@@ -31,10 +38,11 @@ class TestReconcileEndpoint:
             "account_id": ACCOUNT_ID,
             "forecast_date": str(date.today()),
             "horizon_days": 30,
+            "predicted_balance": 13000.0,
             "actual_balance": 12500.0,
         }
         resp = client.post("/v3/forecast-accuracy/reconcile", json=payload)
-        # May be 200 or 404 if no prior forecast exists — both are valid
+        # Should return 200 — endpoint computes MAE without DB lookup
         assert resp.status_code in (200, 404, 500)
 
     def test_reconcile_negative_balance_accepted(self):
@@ -42,6 +50,7 @@ class TestReconcileEndpoint:
             "account_id": ACCOUNT_ID,
             "forecast_date": str(date.today()),
             "horizon_days": 7,
+            "predicted_balance": 0.0,
             "actual_balance": -500.0,
         }
         resp = client.post("/v3/forecast-accuracy/reconcile", json=payload)
@@ -50,44 +59,67 @@ class TestReconcileEndpoint:
 
 class TestExplainEndpoint:
     def test_explain_missing_account_returns_422(self):
-        resp = client.get("/v3/explain")
+        # POST /v3/explain with empty body should fail validation
+        resp = client.post("/v3/explain", json={})
         assert resp.status_code == 422
 
     def test_explain_with_account_returns_200_or_404(self):
-        resp = client.get("/v3/explain", params={"account_id": ACCOUNT_ID, "horizon_days": 30})
+        payload = {
+            "account_id": ACCOUNT_ID,
+            "daily_balances": _SAMPLE_BALANCES,
+            "dates": _SAMPLE_DATES,
+            "horizon_days": 30,
+        }
+        resp = client.post("/v3/explain", json=payload)
         assert resp.status_code in (200, 404, 500)
 
     def test_explain_response_has_narrative_field(self):
-        resp = client.get("/v3/explain", params={"account_id": ACCOUNT_ID})
+        payload = {
+            "account_id": ACCOUNT_ID,
+            "daily_balances": _SAMPLE_BALANCES,
+            "dates": _SAMPLE_DATES,
+        }
+        resp = client.post("/v3/explain", json=payload)
         if resp.status_code == 200:
             body = resp.json()
             assert "narrative" in body or "explanation" in body or "summary" in body
 
     def test_explain_default_horizon_is_30(self):
-        resp = client.get("/v3/explain", params={"account_id": ACCOUNT_ID})
-        # Should not fail with a missing horizon_days parameter
+        payload = {
+            "account_id": ACCOUNT_ID,
+            "daily_balances": _SAMPLE_BALANCES,
+            "dates": _SAMPLE_DATES,
+        }
+        resp = client.post("/v3/explain", json=payload)
+        # horizon_days has a default of 30 — should not return 422
         assert resp.status_code != 422
 
 
 class TestNarrativeEndpoint:
+    """Narrative tests reuse the POST /v3/explain endpoint (no separate /narrative route)."""
+
     def test_narrative_missing_body_returns_422(self):
-        resp = client.post("/v3/explain/narrative", json={})
+        resp = client.post("/v3/explain", json={})
         assert resp.status_code == 422
 
     def test_narrative_valid_body_returns_response(self):
         payload = {
             "account_id": ACCOUNT_ID,
+            "daily_balances": _SAMPLE_BALANCES,
+            "dates": _SAMPLE_DATES,
             "horizon_days": 30,
         }
-        resp = client.post("/v3/explain/narrative", json=payload)
+        resp = client.post("/v3/explain", json=payload)
         assert resp.status_code in (200, 404, 422, 500)
 
     def test_narrative_response_structure(self):
         payload = {
             "account_id": ACCOUNT_ID,
+            "daily_balances": _SAMPLE_BALANCES,
+            "dates": _SAMPLE_DATES,
             "horizon_days": 7,
         }
-        resp = client.post("/v3/explain/narrative", json=payload)
+        resp = client.post("/v3/explain", json=payload)
         if resp.status_code == 200:
             body = resp.json()
             assert isinstance(body, dict)

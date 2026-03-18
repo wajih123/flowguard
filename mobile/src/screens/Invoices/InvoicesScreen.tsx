@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState } from 'react'
 import {
   View,
   Text,
@@ -34,6 +34,15 @@ const STATUS_COLORS: Record<string, string> = {
   OVERDUE: colors.danger,
   PAID: colors.success,
   CANCELLED: colors.textMuted,
+}
+
+interface Invoice {
+  id: string
+  clientName: string
+  number: string
+  status: string
+  totalTtc: number
+  daysOverdue: number
 }
 
 export const InvoicesScreen: React.FC = () => {
@@ -82,9 +91,9 @@ export const InvoicesScreen: React.FC = () => {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['mobile-invoices'] }),
   })
 
-  const outstanding = (invoices ?? [])
-    .filter((i: any) => i.status === 'SENT' || i.status === 'OVERDUE')
-    .reduce((s: number, i: any) => s + i.totalTtc, 0)
+  const outstanding = ((invoices ?? []) as Invoice[])
+    .filter((i) => i.status === 'SENT' || i.status === 'OVERDUE')
+    .reduce((s, i) => s + i.totalTtc, 0)
 
   return (
     <SafeAreaView style={styles.container}>
@@ -154,7 +163,7 @@ export const InvoicesScreen: React.FC = () => {
         {isLoading ? (
           <FlowGuardLoader message="Chargement…" />
         ) : (
-          (invoices ?? []).map((inv: any) => (
+          ((invoices ?? []) as Invoice[]).map((inv) => (
             <FlowGuardCard key={inv.id} style={styles.invoiceCard}>
               <View style={styles.invoiceRow}>
                 <View style={styles.invoiceInfo}>
