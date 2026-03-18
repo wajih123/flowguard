@@ -135,6 +135,9 @@ services:
       FIREBASE_SERVICE_ACCOUNT_JSON: ${FIREBASE_SERVICE_ACCOUNT_JSON:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-https://157-180-43-233.sslip.io}
       BRIDGE_REDIRECT_URL: ${BRIDGE_REDIRECT_URL:-https://157-180-43-233.sslip.io/banking/callback}
+      FLOWGUARD_SWAN_API_URL: ${FLOWGUARD_SWAN_API_URL:-https://api.swan.io}
+      FLOWGUARD_SWAN_CLIENT_ID: ${FLOWGUARD_SWAN_CLIENT_ID:-}
+      FLOWGUARD_SWAN_CLIENT_SECRET: ${FLOWGUARD_SWAN_CLIENT_SECRET:-}
     depends_on:
       postgres:
         condition: service_healthy

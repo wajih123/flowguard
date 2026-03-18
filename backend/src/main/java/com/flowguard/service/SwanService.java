@@ -15,13 +15,13 @@ import java.time.Duration;
 @ApplicationScoped
 public class SwanService {
 
-    @ConfigProperty(name = "flowguard.swan.api-url")
+    @ConfigProperty(name = "flowguard.swan.api-url", defaultValue = "https://api.swan.io")
     String apiUrl;
 
-    @ConfigProperty(name = "flowguard.swan.client-id")
+    @ConfigProperty(name = "flowguard.swan.client-id", defaultValue = "")
     String clientId;
 
-    @ConfigProperty(name = "flowguard.swan.client-secret")
+    @ConfigProperty(name = "flowguard.swan.client-secret", defaultValue = "")
     String clientSecret;
 
     @Inject
