@@ -15,6 +15,7 @@ import {
   ClipboardList,
   ChevronLeft,
   Lock,
+  X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 
@@ -60,7 +61,15 @@ const superAdminNav = [
   { label: "Audit", to: "/admin/audit", icon: <ClipboardList size={18} /> },
 ];
 
-export const AdminSidebar: React.FC = () => {
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  isOpen = false,
+  onClose,
+}) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
   const isSuperAdmin = user?.role === "ROLE_SUPER_ADMIN";
@@ -71,17 +80,40 @@ export const AdminSidebar: React.FC = () => {
   };
 
   return (
-    <aside className="w-64 min-h-screen bg-surface flex flex-col border-r border-white/[0.06]">
+    <>
+      {/* Mobile overlay backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-64 bg-surface flex flex-col border-r border-white/[0.06]
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:static lg:z-auto lg:translate-x-0 lg:min-h-screen`}
+      >
       {/* Header */}
       <div className="px-6 py-6 border-b border-white/[0.06]">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple to-primary flex items-center justify-center text-white flex-shrink-0">
             <ShieldCheck size={18} />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <p className="font-bold text-white text-sm">FlowGuard Admin</p>
             <p className="text-text-muted text-xs">Backoffice</p>
           </div>
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-text-secondary hover:text-white hover:bg-white/[0.06] transition-colors lg:hidden flex-shrink-0"
+              aria-label="Fermer le menu"
+            >
+              <X size={18} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -167,5 +199,6 @@ export const AdminSidebar: React.FC = () => {
         </button>
       </div>
     </aside>
+    </>
   );
 };

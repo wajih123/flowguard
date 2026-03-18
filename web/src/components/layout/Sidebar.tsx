@@ -14,6 +14,7 @@ import {
   Star,
   Shield,
   Settings,
+  X,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAlertStore } from "@/store/alertStore";
@@ -68,7 +69,15 @@ const navItems: NavItem[] = [
   },
 ];
 
-export const Sidebar: React.FC = () => {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar: React.FC<SidebarProps> = ({
+  isOpen = false,
+  onClose,
+}) => {
   const { user, logout } = useAuthStore();
   const unreadCount = useAlertStore((s) => s.unreadCount);
   const navigate = useNavigate();
@@ -83,16 +92,28 @@ export const Sidebar: React.FC = () => {
   );
 
   return (
-    <aside
-      className="w-60 min-h-screen flex flex-col border-r"
-      style={{
-        background: "var(--color-bg-secondary)",
-        borderColor: "var(--color-border)",
-      }}
-    >
+    <>
+      {/* Mobile overlay backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 w-60 flex flex-col border-r
+          transition-transform duration-300 ease-in-out
+          ${isOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:static lg:z-auto lg:translate-x-0 lg:min-h-screen`}
+        style={{
+          background: "var(--color-bg-secondary)",
+          borderColor: "var(--color-border)",
+        }}
+      >
       {/* Logo */}
       <div
-        className="px-5 py-5 border-b"
+        className="px-5 py-5 border-b flex items-center justify-between"
         style={{ borderColor: "var(--color-border)" }}
       >
         <div className="flex items-center gap-3">
@@ -111,6 +132,15 @@ export const Sidebar: React.FC = () => {
             </p>
           </div>
         </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-text-secondary hover:text-white hover:bg-white/[0.06] transition-colors lg:hidden ml-2 flex-shrink-0"
+            aria-label="Fermer le menu"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
 
       {/* Nav */}
@@ -175,5 +205,6 @@ export const Sidebar: React.FC = () => {
         </button>
       </div>
     </aside>
+    </>
   );
 };
