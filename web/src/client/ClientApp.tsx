@@ -34,6 +34,9 @@ const ForecastAccuracyPage = React.lazy(
 );
 const PaymentsPage = React.lazy(() => import("./pages/PaymentsPage"));
 const AccountantPage = React.lazy(() => import("./pages/AccountantPage"));
+const FinancialControlCenterPage = React.lazy(
+  () => import("./pages/FinancialControlCenterPage"),
+);
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 const PrivateRoute: React.FC<{
@@ -257,6 +260,16 @@ const ClientApp: React.FC = () => {
           element={
             <PrivateRoute>
               <AccountantPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Financial Decision Engine */}
+        <Route
+          path="/control-center"
+          element={
+            <PrivateRoute>
+              <FinancialControlCenterPage />
             </PrivateRoute>
           }
         />

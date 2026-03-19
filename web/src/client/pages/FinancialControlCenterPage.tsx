@@ -1,0 +1,630 @@
+import React, { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  TrendingDown,
+  Clock,
+  Zap,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  ChevronRight,
+  Shield,
+  BarChart3,
+  FileText,
+} from "lucide-react";
+import { Layout } from "@/components/layout/Layout";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import {
+  decisionEngineApi,
+  type CashDriver,
+  type CashAction,
+  type ScenarioType,
+  type RiskLevel,
+} from "@/api/decisionEngine";
+
+// ── Risk badge ──────────────────────────────────────────────────────────────
+
+const RISK_CONFIG: Record<
+  RiskLevel,
+  {
+    label: string;
+    bg: string;
+    text: string;
+    border: string;
+    icon: React.ReactNode;
+  }
+> = {
+  LOW: {
+    label: "Faible",
+    bg: "bg-green-50",
+    text: "text-green-700",
+    border: "border-green-200",
+    icon: <Shield className="w-4 h-4" />,
+  },
+  MEDIUM: {
+    label: "Modéré",
+    bg: "bg-yellow-50",
+    text: "text-yellow-700",
+    border: "border-yellow-200",
+    icon: <BarChart3 className="w-4 h-4" />,
+  },
+  HIGH: {
+    label: "Élevé",
+    bg: "bg-orange-50",
+    text: "text-orange-700",
+    border: "border-orange-200",
+    icon: <TrendingDown className="w-4 h-4" />,
+  },
+  CRITICAL: {
+    label: "Critique",
+    bg: "bg-red-50",
+    text: "text-red-700",
+    border: "border-red-200",
+    icon: <AlertTriangle className="w-4 h-4" />,
+  },
+};
+
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  DELAY_SUPPLIER: "Reporter fournisseur",
+  SEND_REMINDERS: "Relancer client",
+  REDUCE_SPEND: "Réduire dépenses",
+  REQUEST_CREDIT: "Demander crédit",
+  ACCELERATE_RECEIVABLES: "Accélérer encaissements",
+};
+
+const DRIVER_TYPE_ICONS: Record<string, React.ReactNode> = {
+  TAX_PAYMENT: <FileText className="w-4 h-4 text-purple-500" />,
+  LATE_INVOICE: <Clock className="w-4 h-4 text-orange-500" />,
+  RECURRING_COST: <TrendingDown className="w-4 h-4 text-red-500" />,
+  SUPPLIER_PAYMENT: <TrendingDown className="w-4 h-4 text-blue-500" />,
+  REVENUE_DROP: <TrendingDown className="w-4 h-4 text-red-600" />,
+};
+
+// ── Scenario simulation panel ────────────────────────────────────────────────
+
+const SCENARIOS: { type: ScenarioType; label: string; description: string }[] =
+  [
+    {
+      type: "HIRE_EMPLOYEE",
+      label: "Embaucher un salarié",
+      description: "Impact d'une nouvelle embauche sur 12 mois",
+    },
+    {
+      type: "REVENUE_DROP",
+      label: "Baisse de CA",
+      description: "Simuler une baisse de chiffre d'affaires",
+    },
+    {
+      type: "PAYMENT_DELAY",
+      label: "Reporter un paiement",
+      description: "Décaler un paiement fournisseur",
+    },
+  ];
+
+function ScenarioPanel({
+  currentBalance,
+}: Readonly<{ currentBalance: number }>) {
+  const [selected, setSelected] = useState<ScenarioType | null>(null);
+  const [amount, setAmount] = useState("");
+  const [percentage, setPercentage] = useState("20");
+  const [daysDelay, setDaysDelay] = useState("30");
+
+  const simulateMutation = useMutation({
+    mutationFn: decisionEngineApi.simulate,
+  });
+
+  const handleSimulate = () => {
+    if (!selected) return;
+    simulateMutation.mutate({
+      scenarioType: selected,
+      amount: amount ? Number.parseFloat(amount) : undefined,
+      percentage:
+        selected === "REVENUE_DROP" ? Number.parseFloat(percentage) : undefined,
+      daysDelay:
+        selected === "PAYMENT_DELAY"
+          ? Number.parseInt(daysDelay, 10)
+          : undefined,
+    });
+  };
+
+  return (
+    <Card className="p-5">
+      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+        <Zap className="w-4 h-4 text-indigo-500" />
+        Simulateur de scénarios
+      </h3>
+      <div className="space-y-2 mb-4">
+        {SCENARIOS.map((s) => (
+          <button
+            key={s.type}
+            onClick={() => {
+              setSelected(s.type);
+              simulateMutation.reset();
+            }}
+            className={`w-full text-left p-3 rounded-lg border transition-all ${
+              selected === s.type
+                ? "border-indigo-400 bg-indigo-50"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <div className="font-medium text-sm text-gray-900">{s.label}</div>
+            <div className="text-xs text-gray-500">{s.description}</div>
+          </button>
+        ))}
+      </div>
+
+      {selected === "HIRE_EMPLOYEE" && (
+        <input
+          type="number"
+          className="w-full border rounded-lg px-3 py-2 text-sm mb-3"
+          placeholder="Salaire mensuel (€, défaut 3 500€)"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+      )}
+      {selected === "REVENUE_DROP" && (
+        <div className="mb-3">
+          <label className="text-xs text-gray-600 block mb-1">
+            Baisse de CA : {percentage}%
+          </label>
+          <input
+            type="range"
+            min="5"
+            max="80"
+            value={percentage}
+            onChange={(e) => setPercentage(e.target.value)}
+            className="w-full"
+          />
+        </div>
+      )}
+      {selected === "PAYMENT_DELAY" && (
+        <div className="flex gap-2 mb-3">
+          <input
+            type="number"
+            className="flex-1 border rounded-lg px-3 py-2 text-sm"
+            placeholder="Montant (€)"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+          <input
+            type="number"
+            className="w-24 border rounded-lg px-3 py-2 text-sm"
+            placeholder="Jours"
+            value={daysDelay}
+            onChange={(e) => setDaysDelay(e.target.value)}
+          />
+        </div>
+      )}
+
+      <Button
+        onClick={handleSimulate}
+        disabled={!selected || simulateMutation.isPending}
+        className="w-full"
+      >
+        {simulateMutation.isPending ? "Calcul…" : "Simuler"}
+      </Button>
+
+      {simulateMutation.data && (
+        <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-2">
+          <p className="text-sm font-medium text-gray-900">Résultat</p>
+          <p className="text-xs text-gray-600">
+            {simulateMutation.data.explanation}
+          </p>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <div className="text-center">
+              <div className="text-xs text-gray-500">Trésorerie actuelle</div>
+              <div className="font-semibold text-gray-900">
+                {simulateMutation.data.baseBalance.toLocaleString("fr-FR", {
+                  style: "currency",
+                  currency: "EUR",
+                })}
+              </div>
+            </div>
+            <div className="text-center">
+              <div className="text-xs text-gray-500">Après scénario</div>
+              <div
+                className={`font-semibold ${
+                  simulateMutation.data.projectedBalance <
+                  simulateMutation.data.baseBalance
+                    ? "text-red-600"
+                    : "text-green-600"
+                }`}
+              >
+                {simulateMutation.data.projectedBalance.toLocaleString(
+                  "fr-FR",
+                  { style: "currency", currency: "EUR" },
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-between text-xs text-gray-500 pt-1 border-t">
+            <span>Runway actuel : {simulateMutation.data.baseRunwayDays}j</span>
+            <span>
+              Après :{" "}
+              <span
+                className={
+                  simulateMutation.data.projectedRunwayDays <
+                  simulateMutation.data.baseRunwayDays
+                    ? "text-red-600 font-medium"
+                    : "text-green-600 font-medium"
+                }
+              >
+                {simulateMutation.data.projectedRunwayDays}j
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ── Weekly Brief panel ────────────────────────────────────────────────────────
+
+function WeeklyBriefPanel() {
+  const qc = useQueryClient();
+  const { data: brief, isLoading } = useQuery({
+    queryKey: ["weekly-brief"],
+    queryFn: decisionEngineApi.getBrief,
+    retry: false,
+  });
+
+  const generateMutation = useMutation({
+    mutationFn: decisionEngineApi.generateBrief,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["weekly-brief"] }),
+  });
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-emerald-500" />
+          Bulletin financier
+        </h3>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => generateMutation.mutate()}
+          disabled={generateMutation.isPending}
+        >
+          <RefreshCw
+            className={`w-3.5 h-3.5 mr-1 ${generateMutation.isPending ? "animate-spin" : ""}`}
+          />
+          Générer
+        </Button>
+      </div>
+      {isLoading && <div className="h-24 bg-gray-100 rounded animate-pulse" />}
+      {!isLoading && brief && (
+        <div>
+          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+            {brief.briefText}
+          </p>
+          <p className="text-xs text-gray-400 mt-3">
+            Généré le{" "}
+            {new Date(brief.generatedAt).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        </div>
+      )}
+      {!isLoading && !brief && (
+        <div className="text-center py-6 text-sm text-gray-500">
+          <p>Aucun bulletin disponible.</p>
+          <Button
+            size="sm"
+            className="mt-3"
+            onClick={() => generateMutation.mutate()}
+            disabled={generateMutation.isPending}
+          >
+            Générer maintenant
+          </Button>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+const FinancialControlCenterPage: React.FC = () => {
+  const qc = useQueryClient();
+
+  const {
+    data: summary,
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
+    queryKey: ["decision-engine-summary"],
+    queryFn: decisionEngineApi.getSummary,
+    staleTime: 5 * 60_000, // 5 min
+  });
+
+  const refreshMutation = useMutation({
+    mutationFn: decisionEngineApi.refresh,
+    onSuccess: (data) => {
+      qc.setQueryData(["decision-engine-summary"], data);
+    },
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: decisionEngineApi.applyAction,
+    onSuccess: () => refetch(),
+  });
+
+  const dismissMutation = useMutation({
+    mutationFn: decisionEngineApi.dismissAction,
+    onSuccess: () => refetch(),
+  });
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="max-w-6xl mx-auto space-y-4 animate-pulse">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-32 bg-gray-100 rounded-xl" />
+          ))}
+        </div>
+      </Layout>
+    );
+  }
+
+  if (isError || !summary) {
+    return (
+      <Layout>
+        <div className="max-w-6xl mx-auto text-center py-16">
+          <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-4" />
+          <p className="text-gray-600 mb-4">
+            Impossible de charger le moteur de décision.
+          </p>
+          <Button onClick={() => refetch()}>Réessayer</Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  const risk = RISK_CONFIG[summary.riskLevel] ?? RISK_CONFIG.LOW;
+
+  return (
+    <Layout>
+      <div className="max-w-6xl mx-auto space-y-5 animate-slide-up">
+        {/* ── Header ── */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">
+              Centre de contrôle financier
+            </h1>
+            <p className="text-sm text-gray-500">
+              Mis à jour{" "}
+              {new Date(summary.computedAt).toLocaleTimeString("fr-FR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refreshMutation.mutate()}
+            disabled={refreshMutation.isPending}
+          >
+            <RefreshCw
+              className={`w-4 h-4 mr-2 ${refreshMutation.isPending ? "animate-spin" : ""}`}
+            />
+            Actualiser
+          </Button>
+        </div>
+
+        {/* ── Top KPI strip ── */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {/* Risk level */}
+          <Card className={`p-4 border ${risk.border} ${risk.bg}`}>
+            <div
+              className={`flex items-center gap-2 ${risk.text} font-semibold text-sm mb-1`}
+            >
+              {risk.icon}
+              Risque
+            </div>
+            <div className={`text-2xl font-bold ${risk.text}`}>
+              {risk.label}
+            </div>
+          </Card>
+
+          {/* Runway */}
+          <Card className="p-4">
+            <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" /> Runway
+            </div>
+            <div className="text-2xl font-bold text-gray-900">
+              {summary.runwayDays < 180 ? `${summary.runwayDays}j` : "180j+"}
+            </div>
+            <div className="text-xs text-gray-400">trésorerie disponible</div>
+          </Card>
+
+          {/* Current balance */}
+          <Card className="p-4">
+            <div className="text-xs text-gray-500 mb-1">Solde actuel</div>
+            <div className="text-2xl font-bold text-gray-900">
+              {summary.currentBalance.toLocaleString("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            <div className="text-xs text-gray-400">tous comptes actifs</div>
+          </Card>
+
+          {/* Min projected */}
+          <Card className="p-4">
+            <div className="text-xs text-gray-500 mb-1">Minimum projeté</div>
+            <div
+              className={`text-2xl font-bold ${
+                summary.minProjectedBalance < 0
+                  ? "text-red-600"
+                  : "text-gray-900"
+              }`}
+            >
+              {summary.minProjectedBalance.toLocaleString("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+                maximumFractionDigits: 0,
+              })}
+            </div>
+            {summary.minProjectedDate && (
+              <div className="text-xs text-gray-400">
+                le{" "}
+                {new Date(summary.minProjectedDate).toLocaleDateString("fr-FR")}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        <div className="grid lg:grid-cols-3 gap-5">
+          {/* Left: drivers + actions */}
+          <div className="lg:col-span-2 space-y-5">
+            {/* ── Cash Drivers ── */}
+            <Card className="p-5">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <TrendingDown className="w-4 h-4 text-red-500" />
+                Facteurs impactant votre trésorerie
+              </h3>
+              {summary.drivers.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  Aucun facteur détecté — situation saine.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {summary.drivers.map((d: CashDriver) => (
+                    <li
+                      key={d.id}
+                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                    >
+                      <span className="mt-0.5">
+                        {DRIVER_TYPE_ICONS[d.type] ?? (
+                          <ChevronRight className="w-4 h-4" />
+                        )}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-800">{d.label}</p>
+                        {d.dueDate && (
+                          <p className="text-xs text-gray-500">
+                            Échéance :{" "}
+                            {new Date(d.dueDate).toLocaleDateString("fr-FR")}
+                          </p>
+                        )}
+                      </div>
+                      {d.amount > 0 && (
+                        <span className="text-sm font-semibold text-red-600 whitespace-nowrap">
+                          -
+                          {d.amount.toLocaleString("fr-FR", {
+                            style: "currency",
+                            currency: "EUR",
+                            maximumFractionDigits: 0,
+                          })}
+                        </span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+
+            {/* ── Recommended Actions ── */}
+            <Card className="p-5">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-indigo-500" />
+                Actions recommandées
+              </h3>
+              {summary.actions.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  Aucune action nécessaire pour le moment.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {summary.actions
+                    .filter((a: CashAction) => a.status === "PENDING")
+                    .map((action: CashAction) => (
+                      <li
+                        key={action.id}
+                        className="p-4 border border-gray-100 rounded-xl hover:border-indigo-200 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <span className="inline-block text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full mb-1.5">
+                              {ACTION_TYPE_LABELS[action.actionType] ??
+                                action.actionType}
+                            </span>
+                            <p className="text-sm text-gray-800">
+                              {action.description}
+                            </p>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-sm font-semibold text-green-600">
+                              +
+                              {action.estimatedImpact.toLocaleString("fr-FR", {
+                                style: "currency",
+                                currency: "EUR",
+                                maximumFractionDigits: 0,
+                              })}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              sous {action.horizonDays}j
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-indigo-400 rounded-full"
+                                style={{ width: `${action.confidence * 100}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {Math.round(action.confidence * 100)}% confiance
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => applyMutation.mutate(action.id)}
+                              disabled={applyMutation.isPending}
+                              className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium"
+                              title="Marquer comme appliqué"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" />
+                              Appliqué
+                            </button>
+                            <button
+                              onClick={() => dismissMutation.mutate(action.id)}
+                              disabled={dismissMutation.isPending}
+                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                              title="Ignorer"
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              Ignorer
+                            </button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </Card>
+          </div>
+
+          {/* Right: scenario + brief */}
+          <div className="space-y-5">
+            <ScenarioPanel currentBalance={summary.currentBalance} />
+            <WeeklyBriefPanel />
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default FinancialControlCenterPage;

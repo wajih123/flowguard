@@ -9,7 +9,10 @@ export interface Alert {
   id: string;
   type: AlertType;
   severity: AlertSeverity;
+  title: string;
   message: string;
+  /** Plain-language action suggested by the decision engine */
+  suggestedAction?: string;
   projectedDeficit?: number;
   triggerDate?: string;
   isRead: boolean;

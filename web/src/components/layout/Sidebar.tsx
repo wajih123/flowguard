@@ -15,6 +15,7 @@ import {
   Shield,
   Settings,
   X,
+  Target,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAlertStore } from "@/store/alertStore";
@@ -32,6 +33,11 @@ const navItems: NavItem[] = [
     label: "Tableau de bord",
     to: "/dashboard",
     icon: <LayoutDashboard size={17} />,
+  },
+  {
+    label: "Centre de contrôle",
+    to: "/control-center",
+    icon: <Target size={17} />,
   },
   { label: "Prévisions", to: "/forecast", icon: <TrendingUp size={17} /> },
   { label: "Alertes", to: "/alerts", icon: <Bell size={17} /> },
@@ -111,100 +117,100 @@ export const Sidebar: React.FC<SidebarProps> = ({
           borderColor: "var(--color-border)",
         }}
       >
-      {/* Logo */}
-      <div
-        className="px-5 py-5 border-b flex items-center justify-between"
-        style={{ borderColor: "var(--color-border)" }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center text-white shadow-glow flex-shrink-0">
-            <Zap size={18} fill="currentColor" />
+        {/* Logo */}
+        <div
+          className="px-5 py-5 border-b flex items-center justify-between"
+          style={{ borderColor: "var(--color-border)" }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-gradient-primary flex items-center justify-center text-white shadow-glow flex-shrink-0">
+              <Zap size={18} fill="currentColor" />
+            </div>
+            <div>
+              <p
+                className="font-bold text-white text-sm"
+                style={{ fontFamily: "var(--font-display)" }}
+              >
+                FlowGuard
+              </p>
+              <p className="text-text-muted text-xs">
+                {user?.role === "ROLE_BUSINESS" ? "Pro" : "Trésorerie IA"}
+              </p>
+            </div>
           </div>
-          <div>
-            <p
-              className="font-bold text-white text-sm"
-              style={{ fontFamily: "var(--font-display)" }}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-text-secondary hover:text-white hover:bg-white/[0.06] transition-colors lg:hidden ml-2 flex-shrink-0"
+              aria-label="Fermer le menu"
             >
-              FlowGuard
-            </p>
-            <p className="text-text-muted text-xs">
-              {user?.role === "ROLE_BUSINESS" ? "Pro" : "Trésorerie IA"}
-            </p>
-          </div>
+              <X size={18} />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-text-secondary hover:text-white hover:bg-white/[0.06] transition-colors lg:hidden ml-2 flex-shrink-0"
-            aria-label="Fermer le menu"
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
+          {visibleItems.map((item) => {
+            const badgeCount = item.to === "/alerts" ? unreadCount : undefined;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `nav-item ${isActive ? "active" : ""}`
+                }
+              >
+                <span className="flex-shrink-0">{item.icon}</span>
+                <span className="flex-1 text-sm">{item.label}</span>
+                {badgeCount ? (
+                  <span className="min-w-[20px] h-5 bg-danger rounded-full flex items-center justify-center text-white text-[10px] font-bold px-1">
+                    {badgeCount > 9 ? "9+" : badgeCount}
+                  </span>
+                ) : null}
+              </NavLink>
+            );
+          })}
+        </nav>
+
+        {/* User + actions */}
+        <div
+          className="px-3 py-3 border-t space-y-0.5"
+          style={{ borderColor: "var(--color-border)" }}
+        >
+          <NavLink
+            to="/profile"
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
           >
-            <X size={18} />
+            <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
+              {user?.firstName?.[0]}
+              {user?.lastName?.[0]}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-white truncate">
+                {user?.firstName} {user?.lastName}
+              </p>
+              <p className="text-xs text-text-muted truncate">{user?.email}</p>
+            </div>
+          </NavLink>
+
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+          >
+            <Settings size={17} />
+            <span className="text-sm">Paramètres</span>
+          </NavLink>
+
+          <button
+            onClick={handleLogout}
+            className="nav-item w-full text-left text-danger/60 hover:text-danger hover:bg-danger/10"
+          >
+            <LogOut size={17} />
+            <span className="text-sm">Déconnexion</span>
           </button>
-        )}
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto">
-        {visibleItems.map((item) => {
-          const badgeCount = item.to === "/alerts" ? unreadCount : undefined;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                `nav-item ${isActive ? "active" : ""}`
-              }
-            >
-              <span className="flex-shrink-0">{item.icon}</span>
-              <span className="flex-1 text-sm">{item.label}</span>
-              {badgeCount ? (
-                <span className="min-w-[20px] h-5 bg-danger rounded-full flex items-center justify-center text-white text-[10px] font-bold px-1">
-                  {badgeCount > 9 ? "9+" : badgeCount}
-                </span>
-              ) : null}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      {/* User + actions */}
-      <div
-        className="px-3 py-3 border-t space-y-0.5"
-        style={{ borderColor: "var(--color-border)" }}
-      >
-        <NavLink
-          to="/profile"
-          className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-        >
-          <div className="w-7 h-7 rounded-full bg-primary/15 border border-primary/30 flex items-center justify-center text-primary text-xs font-bold flex-shrink-0">
-            {user?.firstName?.[0]}
-            {user?.lastName?.[0]}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">
-              {user?.firstName} {user?.lastName}
-            </p>
-            <p className="text-xs text-text-muted truncate">{user?.email}</p>
-          </div>
-        </NavLink>
-
-        <NavLink
-          to="/settings"
-          className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
-        >
-          <Settings size={17} />
-          <span className="text-sm">Paramètres</span>
-        </NavLink>
-
-        <button
-          onClick={handleLogout}
-          className="nav-item w-full text-left text-danger/60 hover:text-danger hover:bg-danger/10"
-        >
-          <LogOut size={17} />
-          <span className="text-sm">Déconnexion</span>
-        </button>
-      </div>
-    </aside>
+        </div>
+      </aside>
     </>
   );
 };
