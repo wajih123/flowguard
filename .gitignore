@@ -32,3 +32,6 @@ Thumbs.db
 setup_bridge_full.py
 patch_service.py
 patch_prediction_resource.py
+
+# ── fr.flowguard WSL-only sources (not part of com.flowguard backend) ────────
+backend/src/main/java/fr/
