@@ -5,14 +5,18 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from contextlib import asynccontextmanager
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from datetime import date
 from model import TreasuryPredictor
 from database import get_training_data, get_user_series
 from cache import get_cached, set_cached
 import asyncio
+import logging
 
 log = structlog.get_logger()
+
+# Enable Starlette debug logging to see unhandled exceptions
+logging.basicConfig(level=logging.DEBUG)
 
 # ── Startup / shutdown ────────────────────────────────────
 predictor: TreasuryPredictor | None = None
@@ -58,6 +62,34 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# ── Exception handlers (register FIRST before middleware) ━━━━━━━━━━━━━━━━━
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Convert Pydantic validation errors to 422 (serializable format)."""
+    # Remove 'ctx' from errors since it contains non-serializable objects
+    errors = exc.errors()
+    for error in errors:
+        error.pop('ctx', None)
+    log.warning("validation_error", errors=errors, path=str(request.url))
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors},
+    )
+
+@app.exception_handler(ValidationError)
+async def pydantic_validation_handler(request: Request, exc: ValidationError):
+    """Convert Pydantic ValidationError to 422 (serializable format)."""
+    # Remove 'ctx' from errors since it contains non-serializable objects
+    errors = exc.errors()
+    for error in errors:
+        error.pop('ctx', None)
+    log.warning("pydantic_validation_error", errors=errors, path=str(request.url))
+    return JSONResponse(
+        status_code=422,
+        content={"detail": errors},
+    )
+
+# ── Middleware ──────────────────────────────────────────────────────────
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Nginx handles external CORS
@@ -69,6 +101,7 @@ app.add_middleware(
 class NaNHandlingMiddleware(BaseHTTPMiddleware):
     """
     Detect NaN/Infinity in JSON bodies for prediction endpoints and return 422.
+    Also catches RequestValidationError and converts to 422.
     """
     async def dispatch(self, request: Request, call_next):
         # Only check POST requests to prediction endpoints
@@ -78,9 +111,9 @@ class NaNHandlingMiddleware(BaseHTTPMiddleware):
                 if body:
                     body_str = body.decode('utf-8')
                     # Check for NaN, Infinity pattern that appears in JSON with allow_nan=True
-                    if any(x in body_str for x in ['NaN', 'Infinity', '-Infinity', 'Infinity']):
+                    if any(x in body_str for x in ['NaN', 'Infinity', '-Infinity']):
                         # NaN detected - return 422 for prediction endpoints
-                        if '/predict' in str(request.url) or '/v2/predict' in str(request.url) or '/v3/predict' in str(request.url):
+                        if '/predict' in str(request.url):
                             return JSONResponse(
                                 status_code=422,
                                 content={
@@ -96,20 +129,25 @@ class NaNHandlingMiddleware(BaseHTTPMiddleware):
             except Exception as e:
                 log.warning(f"nan_handler_error: {e}")
         
-        return await call_next(request)
+        try:
+            return await call_next(request)
+        except RequestValidationError as e:
+            # Remove 'ctx' from errors since it contains non-serializable objects
+            errors = e.errors()
+            for error in errors:
+                error.pop('ctx', None)
+            log.warning("validation_error_in_middleware", errors=errors)
+            return JSONResponse(
+                status_code=422,
+                content={"detail": errors},
+            )
+        except Exception as e:
+            log.error("middleware_error", error=str(e), exc_info=True)
+            raise
 
 app.add_middleware(NaNHandlingMiddleware)
 
-# ── Exception handler for Pydantic validation errors ──────────────────────   
-@app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc: RequestValidationError):
-    """Convert Pydantic validation errors to 422."""
-    return JSONResponse(
-        status_code=422,
-        content={"detail": exc.errors()},
-    )
-
-# ── v2 ML router (ensemble + health gate) ────────────────
+# ── Routers ────────────────────────────────────────────────────────────
 try:
     from app.api.predict import router as ml_router
     app.include_router(ml_router, prefix="/v2")
