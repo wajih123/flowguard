@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Optional;
 
 @ApplicationScoped
 public class SwanService {
@@ -18,11 +19,11 @@ public class SwanService {
     @ConfigProperty(name = "flowguard.swan.api-url", defaultValue = "https://api.swan.io")
     String apiUrl;
 
-    @ConfigProperty(name = "flowguard.swan.client-id", defaultValue = "")
-    String clientId;
+    @ConfigProperty(name = "flowguard.swan.client-id")
+    Optional<String> clientId;
 
-    @ConfigProperty(name = "flowguard.swan.client-secret", defaultValue = "")
-    String clientSecret;
+    @ConfigProperty(name = "flowguard.swan.client-secret")
+    Optional<String> clientSecret;
 
     @Inject
     ObjectMapper objectMapper;
@@ -39,8 +40,8 @@ public class SwanService {
     public String authenticate() {
         try {
             String body = "grant_type=client_credentials"
-                    + "&client_id=" + clientId
-                    + "&client_secret=" + clientSecret;
+                    + "&client_id=" + clientId.orElse("")
+                    + "&client_secret=" + clientSecret.orElse("");
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl + "/oauth2/token"))
