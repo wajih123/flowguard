@@ -1,0 +1,41 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy to Hetzner
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: 22
+          command_timeout: 15m
+          script: |
+            set -e
+            cd /root/flowguard/backend
+            bash scripts/deploy.sh all
+
+      - name: Verify deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            echo "=== Container Status ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}"
+            echo ""
+            echo "=== Backend Health ==="
+            curl -sf http://localhost:8080/health && echo "✓ Backend OK" || echo "✗ Backend FAILED"
+            echo ""
+            echo "=== Nginx Health ==="
+            curl -sf http://localhost/health && echo "✓ Nginx OK" || echo "✗ Nginx FAILED"
