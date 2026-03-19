@@ -9,6 +9,7 @@ const mockAlerts: Alert[] = [
     id: "alert-001",
     severity: "HIGH",
     type: "CASH_SHORTAGE",
+    title: "Alerte trésorerie",
     message:
       "Votre solde prévu sera de -230 € le 18 mars. URSSAF de 850 € attendue.",
     projectedDeficit: -230,
@@ -20,6 +21,7 @@ const mockAlerts: Alert[] = [
     id: "alert-002",
     severity: "MEDIUM",
     type: "PAYMENT_DUE",
+    title: "Paiement à venir",
     message: "Prélèvement de 1 200 € prévu le 25 mars.",
     isRead: false,
     createdAt: new Date().toISOString(),
