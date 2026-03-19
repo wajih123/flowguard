@@ -1,6 +1,7 @@
 package com.flowguard.resource;
 
 import com.flowguard.dto.AccountantAccessDto;
+import com.flowguard.dto.GrantAccessRequest;
 import com.flowguard.dto.InvoiceDto;
 import com.flowguard.dto.TaxEstimateDto;
 import com.flowguard.service.AccountantAccessService;
@@ -10,6 +11,7 @@ import com.flowguard.service.TaxEstimateService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -43,9 +45,9 @@ public class AccountantResource {
     @Path("/grants")
     @RolesAllowed("user")
     @RunOnVirtualThread
-    public Response grant(@QueryParam("email") String accountantEmail) {
+    public Response grant(@Valid GrantAccessRequest req) {
         AccountantAccessDto dto = accessService.grantAccess(
-                UUID.fromString(jwt.getSubject()), accountantEmail);
+                UUID.fromString(jwt.getSubject()), req.accountantEmail);
         return Response.status(Response.Status.CREATED).entity(dto).build();
     }
 
