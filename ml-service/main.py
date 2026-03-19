@@ -1,20 +1,16 @@
-import json as json_module
 import structlog
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.datastructures import MutableHeaders
 from contextlib import asynccontextmanager
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field
 from datetime import date
 from model import TreasuryPredictor
 from database import get_training_data, get_user_series
 from cache import get_cached, set_cached
 import asyncio
-import math
 
 log = structlog.get_logger()
 

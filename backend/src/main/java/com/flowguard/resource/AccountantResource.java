@@ -9,6 +9,7 @@ import com.flowguard.service.FecExportService;
 import com.flowguard.service.InvoiceService;
 import com.flowguard.service.TaxEstimateService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,6 +66,8 @@ public class AccountantResource {
 
     @GET
     @Path("/portal/invoices")
+    @Produces(MediaType.APPLICATION_JSON)
+    @PermitAll
     @RunOnVirtualThread
     public List<InvoiceDto> portalInvoices(
             @HeaderParam("X-Accountant-Token") String token) {
@@ -73,6 +77,8 @@ public class AccountantResource {
 
     @GET
     @Path("/portal/tax")
+    @Produces(MediaType.APPLICATION_JSON)
+    @PermitAll
     @RunOnVirtualThread
     public List<TaxEstimateDto> portalTax(
             @HeaderParam("X-Accountant-Token") String token) {
@@ -83,12 +89,15 @@ public class AccountantResource {
     @GET
     @Path("/portal/fec")
     @Produces("text/plain")
+    @PermitAll
     @RunOnVirtualThread
     public Response portalFec(
             @HeaderParam("X-Accountant-Token") String token,
             @QueryParam("year") int year) {
         UUID ownerId = accessService.validateToken(token);
-        String fec = fecExportService.exportFec(ownerId, year);
+        LocalDate from = LocalDate.of(year, 1, 1);
+        LocalDate to = LocalDate.of(year, 12, 31);
+        String fec = fecExportService.generateFec(ownerId, from, to);
         return Response.ok(fec)
                 .header("Content-Disposition", "attachment; filename=FEC_" + year + ".txt")
                 .build();
