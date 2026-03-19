@@ -1,13 +1,20 @@
+import json as json_module
 import structlog
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.datastructures import MutableHeaders
 from contextlib import asynccontextmanager
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from datetime import date
 from model import TreasuryPredictor
 from database import get_training_data, get_user_series
 from cache import get_cached, set_cached
 import asyncio
+import math
 
 log = structlog.get_logger()
 
@@ -61,6 +68,50 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+# ── Middleware to handle NaN in JSON and return 422 ──────────────────────
+class NaNHandlingMiddleware(BaseHTTPMiddleware):
+    """
+    Detect NaN/Infinity in JSON bodies for prediction endpoints and return 422.
+    """
+    async def dispatch(self, request: Request, call_next):
+        # Only check POST requests to prediction endpoints
+        if (request.method in ("POST", "PUT")) and "application/json" in request.headers.get("content-type", ""):
+            try:
+                body = await request.body()
+                if body:
+                    body_str = body.decode('utf-8')
+                    # Check for NaN, Infinity pattern that appears in JSON with allow_nan=True
+                    if any(x in body_str for x in ['NaN', 'Infinity', '-Infinity', 'Infinity']):
+                        # NaN detected - return 422 for prediction endpoints
+                        if '/predict' in str(request.url) or '/v2/predict' in str(request.url) or '/v3/predict' in str(request.url):
+                            return JSONResponse(
+                                status_code=422,
+                                content={
+                                    "detail": [
+                                        {
+                                            "type": "value_error",
+                                            "loc": ["body"],
+                                            "msg": "Prediction input contains NaN or Infinity values",
+                                        }
+                                    ]
+                                },
+                            )
+            except Exception as e:
+                log.warning(f"nan_handler_error: {e}")
+        
+        return await call_next(request)
+
+app.add_middleware(NaNHandlingMiddleware)
+
+# ── Exception handler for Pydantic validation errors ──────────────────────   
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Convert Pydantic validation errors to 422."""
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
 
 # ── v2 ML router (ensemble + health gate) ────────────────
 try:
