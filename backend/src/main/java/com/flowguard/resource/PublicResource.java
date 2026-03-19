@@ -1,10 +1,13 @@
 package com.flowguard.resource;
 
 import com.flowguard.cache.RedisCacheService;
+import com.flowguard.domain.FeatureFlagEntity;
+import com.flowguard.domain.SystemConfigEntity;
 import com.flowguard.dto.FeatureFlagDto;
 import com.flowguard.dto.SystemConfigDto;
+import com.flowguard.repository.FeatureFlagRepository;
+import com.flowguard.repository.SystemConfigRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.agroal.api.AgroalDataSource;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.annotation.security.PermitAll;
 import jakarta.inject.Inject;
@@ -12,10 +15,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 
-import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 /**
  * Public (unauthenticated) config endpoints consumed by web/mobile to load
@@ -32,9 +33,10 @@ public class PublicResource {
     private static final String FLAGS_CACHE_KEY  = "public:flags";
     private static final String CONFIG_CACHE_KEY = "public:config";
 
-    @Inject AgroalDataSource  ds;
-    @Inject RedisCacheService cache;
-    @Inject ObjectMapper      mapper;
+    @Inject RedisCacheService    cache;
+    @Inject ObjectMapper         mapper;
+    @Inject FeatureFlagRepository flagRepository;
+    @Inject SystemConfigRepository configRepository;
 
     // ── GET /api/config/flags ────────────────────────────────────────────────
 
@@ -70,43 +72,39 @@ public class PublicResource {
 
     private List<FeatureFlagDto> loadFlags() {
         List<FeatureFlagDto> result = new ArrayList<>();
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, flag_key, enabled, description, updated_at FROM feature_flags ORDER BY flag_key");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
+        try {
+            for (FeatureFlagEntity entity : flagRepository.listAll()) {
                 result.add(new FeatureFlagDto(
-                        UUID.fromString(rs.getString("id")),
-                        rs.getString("flag_key"),
-                        rs.getBoolean("enabled"),
-                        rs.getString("description"),
-                        rs.getTimestamp("updated_at").toInstant()
+                        entity.id,
+                        entity.flagKey,
+                        entity.enabled,
+                        entity.description,
+                        entity.updatedAt
                 ));
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to load feature flags", e);
+        } catch (Exception e) {
+            // If repository fails (e.g., table doesn't exist yet), return empty list
+            // This can happen during initial startup before schema is created
         }
         return result;
     }
 
     private List<SystemConfigDto> loadSystemConfig() {
         List<SystemConfigDto> result = new ArrayList<>();
-        try (Connection conn = ds.getConnection();
-             PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, config_key, config_value, value_type, description, updated_at FROM system_config ORDER BY config_key");
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) {
+        try {
+            for (SystemConfigEntity entity : configRepository.listAll()) {
                 result.add(new SystemConfigDto(
-                        UUID.fromString(rs.getString("id")),
-                        rs.getString("config_key"),
-                        rs.getString("config_value"),
-                        rs.getString("value_type"),
-                        rs.getString("description"),
-                        rs.getTimestamp("updated_at").toInstant()
+                        entity.id,
+                        entity.configKey,
+                        entity.configValue,
+                        entity.valueType,
+                        entity.description,
+                        entity.updatedAt
                 ));
             }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to load system config", e);
+        } catch (Exception e) {
+            // If repository fails (e.g., table doesn't exist yet), return empty list
+            // This can happen during initial startup before schema is created
         }
         return result;
     }

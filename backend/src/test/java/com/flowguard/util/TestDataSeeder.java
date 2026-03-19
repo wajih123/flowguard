@@ -33,6 +33,12 @@ public class TestDataSeeder {
     @Inject
     BudgetCategoryRepository budgetCategoryRepository;
 
+    @Inject
+    FeatureFlagRepository flagRepository;
+
+    @Inject
+    SystemConfigRepository configRepository;
+
     /**
      * Creates test user and related data for E2E tests.
      * User email is used to find existing user, which works across test sessions.
@@ -108,6 +114,61 @@ public class TestDataSeeder {
                 budgetCategory.setBudgetedAmount(new BigDecimal("5000.00"));
                 
                 budgetCategoryRepository.persistAndFlush(budgetCategory);
+            }
+        }
+
+        // Seed feature flags (will be used by /config/flags endpoint)
+        seedFeatureFlags();
+
+        // Seed system config (will be used by /config/system endpoint)
+        seedSystemConfig();
+    }
+
+    private void seedFeatureFlags() {
+        String[] flags = {
+            "TRADING_ACCOUNTS", "BUDGET_FORECASTING", "TAX_ESTIMATION",
+            "ACCOUNTANT_PORTAL", "FLASH_CREDIT", "SANCTIONS_CHECK",
+            "TRACFIN_REPORTING", "MFA_ENFORCED", "ADVANCED_ANALYTICS", "API_RATE_LIMITING"
+        };
+
+        for (String flagKey : flags) {
+            if (!flagRepository.findByKey(flagKey).isPresent()) {
+                FeatureFlagEntity flag = new FeatureFlagEntity();
+                flag.flagKey = flagKey;
+                flag.enabled = !flagKey.equals("MFA_ENFORCED"); // Most flags on, MFA off by default
+                flag.description = "Feature flag for " + flagKey;
+                flag.updatedAt = Instant.now();
+                flagRepository.persistAndFlush(flag);
+            }
+        }
+    }
+
+    private void seedSystemConfig() {
+        Object[][] configs = {
+            {"SUPPORT_EMAIL", "support@flowguard.fr", "STRING", "Support team email"},
+            {"DPO_EMAIL", "dpo@flowguard.fr", "STRING", "Data Protection Officer"},
+            {"COMPLIANCE_OFFICER_EMAIL", "compliance@flowguard.fr", "STRING", "Compliance officer"},
+            {"MAX_LOGIN_ATTEMPTS", "5", "INTEGER", "Max failed attempts"},
+            {"LOGIN_LOCKOUT_MINUTES", "15", "INTEGER", "Lockout duration"},
+            {"API_RATE_LIMIT_PER_HOUR", "1000", "INTEGER", "API rate limit"},
+            {"MIN_PASSWORD_LENGTH", "12", "INTEGER", "Minimum password length"},
+            {"SESSION_TIMEOUT_MINUTES", "30", "INTEGER", "Session timeout"},
+            {"TAX_YEAR", "2025", "INTEGER", "Current tax year"},
+            {"CURRENCY_DEFAULT", "EUR", "STRING", "Default currency"},
+            {"MAINTENANCE_MODE", "false", "BOOLEAN", "Maintenance mode"},
+            {"ALERT_EMAIL_ENABLED", "true", "BOOLEAN", "Enable email alerts"}
+        };
+
+        for (Object[] config : configs) {
+            String key = (String) config[0];
+            if (!configRepository.findByKey(key).isPresent()) {
+                SystemConfigEntity entity = new SystemConfigEntity();
+                entity.configKey = key;
+                entity.configValue = (String) config[1];
+                entity.valueType = (String) config[2];
+                entity.description = (String) config[3];
+                entity.updatedAt = Instant.now();
+                configRepository.persistAndFlush(entity);
             }
         }
     }
