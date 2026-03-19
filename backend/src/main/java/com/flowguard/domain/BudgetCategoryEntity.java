@@ -26,10 +26,10 @@ public class BudgetCategoryEntity extends PanacheEntityBase {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(nullable = false)
+    @Column(name = "period_year", nullable = false)
     private int periodYear;
 
-    @Column(nullable = false)
+    @Column(name = "period_month", nullable = false)
     private int periodMonth;
 
     @Column(nullable = false)

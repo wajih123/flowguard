@@ -27,11 +27,11 @@ public class SectorBenchmarkEntity extends PanacheEntityBase {
     private String sector;
 
     /** SOLO, SMALL, MEDIUM */
-    @Column(nullable = false)
+    @Column(name = "company_size", nullable = false)
     private String companySize;
 
     /** e.g. monthly_revenue, runway_days, burn_rate_pct */
-    @Column(nullable = false)
+    @Column(name = "metric_name", nullable = false)
     private String metricName;
 
     @Column(precision = 14, scale = 2)

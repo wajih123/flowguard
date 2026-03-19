@@ -26,7 +26,7 @@ public class AccountantAccessEntity extends PanacheEntityBase {
     @JoinColumn(name = "owner_user_id", nullable = false)
     private UserEntity owner;
 
-    @Column(nullable = false)
+    @Column(name = "accountant_email", nullable = false)
     private String accountantEmail;
 
     /**

@@ -1,11 +1,15 @@
 package com.flowguard.e2e;
 
+import com.flowguard.util.TestDataResource;
+import com.flowguard.util.TestDataSeeder;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
 import java.time.LocalDate;
@@ -50,12 +54,28 @@ import static org.assertj.core.api.Assertions.assertThat;
  *  22. GET /payments after creation → list contains item
  */
 @QuarkusTest
+@QuarkusTestResource(TestDataResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("E2E – Alerts, Flash Credit, Scenario & Payments Lifecycle")
 class AlertsCreditScenarioPaymentsE2ETest {
 
     static final String USER_ID = "00000000-0000-0000-0000-000000000002";
     static final String ADMIN_ID = "00000000-0000-0000-0000-000000000010";
+    
+    private static boolean dataSeeded = false;
+
+    @Inject
+    TestDataSeeder testDataSeeder;
+
+    @BeforeEach
+    void setupTestData() {
+        synchronized (AlertsCreditScenarioPaymentsE2ETest.class) {
+            if (!dataSeeded) {
+                testDataSeeder.seedTestData();
+                dataSeeded = true;
+            }
+        }
+    }
     static String creditId;
     static String idempotencyKey = "e2e-idem-" + System.currentTimeMillis();
 

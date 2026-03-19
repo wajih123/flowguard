@@ -1,7 +1,10 @@
 package com.flowguard.e2e;
 
 import com.flowguard.repository.UserRepository;
+import com.flowguard.util.TestDataResource;
+import com.flowguard.util.TestDataSeeder;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
@@ -50,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *  21. Revoke accountant access
  */
 @QuarkusTest
+@QuarkusTestResource(TestDataResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("E2E – Invoice, Budget, Tax & Accountant Portal Lifecycle")
 class InvoiceBudgetTaxAccountantE2ETest {
@@ -60,6 +64,21 @@ class InvoiceBudgetTaxAccountantE2ETest {
     static String budgetId;
     static String accountantToken;
     static String grantId;
+    
+    private static boolean dataSeeded = false;
+
+    @Inject
+    TestDataSeeder testDataSeeder;
+
+    @BeforeEach
+    void setupTestData() {
+        synchronized (InvoiceBudgetTaxAccountantE2ETest.class) {
+            if (!dataSeeded) {
+                testDataSeeder.seedTestData();
+                dataSeeded = true;
+            }
+        }
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // INVOICE LIFECYCLE

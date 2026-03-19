@@ -1,7 +1,10 @@
 package com.flowguard.e2e;
 
 import com.flowguard.repository.UserRepository;
+import com.flowguard.util.TestDataResource;
+import com.flowguard.util.TestDataSeeder;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
@@ -28,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *  10. GET /config/system returns system config (public)
  */
 @QuarkusTest
+@QuarkusTestResource(TestDataResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("E2E – User Registration & Auth Lifecycle")
 class UserRegistrationAndAuthE2ETest {
@@ -36,9 +40,24 @@ class UserRegistrationAndAuthE2ETest {
     static final String PASSWORD = "E2eSecure@2026";
     static String accessToken;
     static String refreshToken;
+    
+    private static boolean dataSeeded = false;
 
     @Inject
     UserRepository userRepository;
+
+    @Inject
+    TestDataSeeder testDataSeeder;
+
+    @BeforeEach
+    void setupTestData() {
+        synchronized (UserRegistrationAndAuthE2ETest.class) {
+            if (!dataSeeded) {
+                testDataSeeder.seedTestData();
+                dataSeeded = true;
+            }
+        }
+    }
 
     @Transactional
     void markEmailVerified(String email) {

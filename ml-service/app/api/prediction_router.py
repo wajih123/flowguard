@@ -134,7 +134,8 @@ async def predict_cash_flow(request: PredictionRequest) -> PredictionResponse:
             horizon_days=request.horizon_days,
         )
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+        # Return 422 for validation errors (to match v2 and test expectations)
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
     except Exception as exc:
         log.error("prediction_failed", account_id=request.account_id, error=str(exc))
         raise HTTPException(

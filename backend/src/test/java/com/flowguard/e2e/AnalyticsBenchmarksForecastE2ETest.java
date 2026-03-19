@@ -1,10 +1,14 @@
 package com.flowguard.e2e;
 
+import com.flowguard.util.TestDataResource;
+import com.flowguard.util.TestDataSeeder;
 import io.quarkus.test.junit.QuarkusTest;
+import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.security.TestSecurity;
 import io.quarkus.test.security.jwt.Claim;
 import io.quarkus.test.security.jwt.JwtSecurity;
 import io.restassured.http.ContentType;
+import jakarta.inject.Inject;
 import org.junit.jupiter.api.*;
 
 import static io.restassured.RestAssured.given;
@@ -65,12 +69,28 @@ import static org.hamcrest.Matchers.*;
  *  30.  GET /config/system → 200
  */
 @QuarkusTest
+@QuarkusTestResource(TestDataResource.class)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("E2E – Analytics: Benchmarks, KPIs, Forecast Accuracy, Treasury, Spending")
 class AnalyticsBenchmarksForecastE2ETest {
 
     static final String USER_ID = "00000000-0000-0000-0000-000000000004";
     static final String FAKE_ACCOUNT_ID = "00000000-0000-0000-0000-000000000098";
+    
+    private static boolean dataSeeded = false;
+
+    @Inject
+    TestDataSeeder testDataSeeder;
+
+    @BeforeEach
+    void setupTestData() {
+        synchronized (AnalyticsBenchmarksForecastE2ETest.class) {
+            if (!dataSeeded) {
+                testDataSeeder.seedTestData();
+                dataSeeded = true;
+            }
+        }
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // BENCHMARKS
