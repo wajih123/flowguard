@@ -40,8 +40,13 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     );
   }
 
-  const { currentBalance, predictedBalance30d, balanceTrend, account, accountCount } =
-    dashboard;
+  const {
+    currentBalance,
+    predictedBalance30d,
+    balanceTrend,
+    account,
+    accountCount,
+  } = dashboard;
 
   const isMultiAccount = accountCount !== undefined && accountCount > 1;
 
