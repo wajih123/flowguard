@@ -495,13 +495,13 @@ const FinancialControlCenterPage: React.FC = () => {
                 <TrendingDown className="w-4 h-4 text-red-500" />
                 Facteurs impactant votre trésorerie
               </h3>
-              {summary.drivers.length === 0 ? (
+              {(summary.drivers?.length ?? 0) === 0 ? (
                 <p className="text-sm text-gray-500">
                   Aucun facteur détecté — situation saine.
                 </p>
               ) : (
                 <ul className="space-y-3">
-                  {summary.drivers.map((d: CashDriver) => (
+                  {(summary.drivers ?? []).map((d: CashDriver) => (
                     <li
                       key={d.id}
                       className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
@@ -542,13 +542,13 @@ const FinancialControlCenterPage: React.FC = () => {
                 <Zap className="w-4 h-4 text-indigo-500" />
                 Actions recommandées
               </h3>
-              {summary.actions.length === 0 ? (
+              {(summary.actions?.length ?? 0) === 0 ? (
                 <p className="text-sm text-gray-500">
                   Aucune action nécessaire pour le moment.
                 </p>
               ) : (
                 <ul className="space-y-3">
-                  {summary.actions
+                  {(summary.actions ?? [])
                     .filter((a: CashAction) => a.status === "PENDING")
                     .map((action: CashAction) => (
                       <li
@@ -587,11 +587,14 @@ const FinancialControlCenterPage: React.FC = () => {
                             <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
                               <div
                                 className="h-full bg-indigo-400 rounded-full"
-                                style={{ width: `${action.confidence * 100}%` }}
+                                style={{
+                                  width: `${(action.confidence ?? 0) * 100}%`,
+                                }}
                               />
                             </div>
                             <span className="text-xs text-gray-500">
-                              {Math.round(action.confidence * 100)}% confiance
+                              {Math.round((action.confidence ?? 0) * 100)}%
+                              confiance
                             </span>
                           </div>
                           <div className="flex gap-2">
