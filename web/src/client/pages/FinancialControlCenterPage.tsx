@@ -82,6 +82,39 @@ const DRIVER_TYPE_ICONS: Record<string, React.ReactNode> = {
   REVENUE_DROP: <TrendingDown className="w-4 h-4 text-red-600" />,
 };
 
+// ── Help tooltip ──────────────────────────────────────────────────────────────
+
+function HelpTooltip({ text }: Readonly<{ text: string }>) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-flex shrink-0">
+      <button
+        type="button"
+        aria-label="En savoir plus"
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onBlur={() => setOpen(false)}
+        className="w-[14px] h-[14px] rounded-full bg-white/[0.08] text-text-muted border border-white/[0.14] inline-flex items-center justify-center text-[9px] font-bold cursor-help hover:bg-white/[0.18] hover:text-white transition-colors leading-none"
+      >
+        ?
+      </button>
+      {open && (
+        <span
+          role="tooltip"
+          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 z-50 rounded-lg bg-gray-900 border border-white/[0.14] p-2.5 text-[11px] text-gray-300 shadow-2xl leading-relaxed pointer-events-none"
+        >
+          {text}
+          <span className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900" />
+        </span>
+      )}
+    </span>
+  );
+}
+
 // ── Scenario simulation panel ────────────────────────────────────────────────
 
 const SCENARIOS: { type: ScenarioType; label: string; description: string }[] =
@@ -134,6 +167,7 @@ function ScenarioPanel({
       <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
         <Zap className="w-4 h-4 text-primary" />
         Simulateur de scénarios
+        <HelpTooltip text="Testez l'impact financier de vos décisions (embauche, baisse de CA, report de paiement…) sur votre trésorerie avant de vous engager." />
       </h3>
       <div className="space-y-2 mb-4">
         {SCENARIOS.map((s) => (
@@ -287,6 +321,7 @@ function WeeklyBriefPanel() {
         <h3 className="font-semibold text-white flex items-center gap-2">
           <FileText className="w-4 h-4 text-emerald-400" />
           Bulletin financier
+          <HelpTooltip text="Synthèse de votre santé financière générée par le moteur de décision. Obtenez un bilan clair avec les actions prioritaires à mener." />
         </h3>
         <Button
           size="sm"
@@ -435,6 +470,7 @@ const FinancialControlCenterPage: React.FC = () => {
             >
               {risk.icon}
               Risque
+              <HelpTooltip text="Niveau de risque global calculé à partir de votre runway, de vos échéances à venir et de la volatilité de votre trésorerie." />
             </div>
             <div className={`text-2xl font-bold ${risk.text}`}>
               {risk.label}
@@ -445,6 +481,7 @@ const FinancialControlCenterPage: React.FC = () => {
           <Card className="p-4">
             <div className="text-xs text-text-secondary mb-1 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" /> Runway
+              <HelpTooltip text="Nombre de jours pendant lesquels votre trésorerie peut couvrir vos dépenses au rythme actuel, sans nouvel encaissement." />
             </div>
             <div className="text-2xl font-bold text-white">
               {summary.runwayDays < 180 ? `${summary.runwayDays}j` : "180j+"}
@@ -454,7 +491,10 @@ const FinancialControlCenterPage: React.FC = () => {
 
           {/* Current balance */}
           <Card className="p-4">
-            <div className="text-xs text-text-secondary mb-1">Solde actuel</div>
+            <div className="text-xs text-text-secondary mb-1 flex items-center gap-1">
+              Solde actuel
+              <HelpTooltip text="Somme des soldes de tous vos comptes bancaires actifs, synchronisés en temps réel via open banking." />
+            </div>
             <div className="text-2xl font-bold text-white">
               {(summary.currentBalance ?? 0).toLocaleString("fr-FR", {
                 style: "currency",
@@ -467,8 +507,9 @@ const FinancialControlCenterPage: React.FC = () => {
 
           {/* Min projected */}
           <Card className="p-4">
-            <div className="text-xs text-text-secondary mb-1">
+            <div className="text-xs text-text-secondary mb-1 flex items-center gap-1">
               Minimum projeté
+              <HelpTooltip text="Solde le plus bas prévu dans les 30 prochains jours, tenant compte de vos dépenses récurrentes et charges connues." />
             </div>
             <div
               className={`text-2xl font-bold ${
@@ -500,6 +541,7 @@ const FinancialControlCenterPage: React.FC = () => {
               <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-danger" />
                 Facteurs impactant votre trésorerie
+                <HelpTooltip text="Événements détectés qui pèsent sur votre trésorerie : factures impayées, échéances fiscales, charges récurrentes…" />
               </h3>
               {(summary.drivers?.length ?? 0) === 0 ? (
                 <p className="text-sm text-text-secondary">
@@ -547,6 +589,7 @@ const FinancialControlCenterPage: React.FC = () => {
               <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-primary" />
                 Actions recommandées
+                <HelpTooltip text="Suggestions concrètes générées par le moteur de décision pour améliorer votre situation. Marquez-les comme appliquées ou ignorez-les." />
               </h3>
               {(summary.actions?.length ?? 0) === 0 ? (
                 <p className="text-sm text-gray-500">
