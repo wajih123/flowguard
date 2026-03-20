@@ -216,23 +216,26 @@ function ScenarioPanel({
             <div className="text-center">
               <div className="text-xs text-gray-500">Trésorerie actuelle</div>
               <div className="font-semibold text-gray-900">
-                {simulateMutation.data.baseBalance.toLocaleString("fr-FR", {
-                  style: "currency",
-                  currency: "EUR",
-                })}
+                {(simulateMutation.data.baseBalance ?? 0).toLocaleString(
+                  "fr-FR",
+                  {
+                    style: "currency",
+                    currency: "EUR",
+                  },
+                )}
               </div>
             </div>
             <div className="text-center">
               <div className="text-xs text-gray-500">Après scénario</div>
               <div
                 className={`font-semibold ${
-                  simulateMutation.data.projectedBalance <
-                  simulateMutation.data.baseBalance
+                  (simulateMutation.data.projectedBalance ?? 0) <
+                  (simulateMutation.data.baseBalance ?? 0)
                     ? "text-red-600"
                     : "text-green-600"
                 }`}
               >
-                {simulateMutation.data.projectedBalance.toLocaleString(
+                {(simulateMutation.data.projectedBalance ?? 0).toLocaleString(
                   "fr-FR",
                   { style: "currency", currency: "EUR" },
                 )}
@@ -449,7 +452,7 @@ const FinancialControlCenterPage: React.FC = () => {
           <Card className="p-4">
             <div className="text-xs text-gray-500 mb-1">Solde actuel</div>
             <div className="text-2xl font-bold text-gray-900">
-              {summary.currentBalance.toLocaleString("fr-FR", {
+              {(summary.currentBalance ?? 0).toLocaleString("fr-FR", {
                 style: "currency",
                 currency: "EUR",
                 maximumFractionDigits: 0,
@@ -463,12 +466,12 @@ const FinancialControlCenterPage: React.FC = () => {
             <div className="text-xs text-gray-500 mb-1">Minimum projeté</div>
             <div
               className={`text-2xl font-bold ${
-                summary.minProjectedBalance < 0
+                (summary.minProjectedBalance ?? 0) < 0
                   ? "text-red-600"
                   : "text-gray-900"
               }`}
             >
-              {summary.minProjectedBalance.toLocaleString("fr-FR", {
+              {(summary.minProjectedBalance ?? 0).toLocaleString("fr-FR", {
                 style: "currency",
                 currency: "EUR",
                 maximumFractionDigits: 0,
@@ -517,10 +520,10 @@ const FinancialControlCenterPage: React.FC = () => {
                           </p>
                         )}
                       </div>
-                      {d.amount > 0 && (
+                      {(d.amount ?? 0) > 0 && (
                         <span className="text-sm font-semibold text-red-600 whitespace-nowrap">
                           -
-                          {d.amount.toLocaleString("fr-FR", {
+                          {(d.amount ?? 0).toLocaleString("fr-FR", {
                             style: "currency",
                             currency: "EUR",
                             maximumFractionDigits: 0,
@@ -565,11 +568,14 @@ const FinancialControlCenterPage: React.FC = () => {
                           <div className="text-right shrink-0">
                             <div className="text-sm font-semibold text-green-600">
                               +
-                              {action.estimatedImpact.toLocaleString("fr-FR", {
-                                style: "currency",
-                                currency: "EUR",
-                                maximumFractionDigits: 0,
-                              })}
+                              {(action.estimatedImpact ?? 0).toLocaleString(
+                                "fr-FR",
+                                {
+                                  style: "currency",
+                                  currency: "EUR",
+                                  maximumFractionDigits: 0,
+                                },
+                              )}
                             </div>
                             <div className="text-xs text-gray-400">
                               sous {action.horizonDays}j
