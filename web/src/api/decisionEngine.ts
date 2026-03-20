@@ -90,27 +90,31 @@ export const decisionEngineApi = {
   /** Full summary: risk, drivers, actions (10-min cache on backend) */
   getSummary: () =>
     apiClient
-      .get<DecisionSummary>("/decision-engine/summary")
+      .get<DecisionSummary>("/api/decision-engine/summary")
       .then((r) => r.data),
 
   /** Force recompute, bypasses cache */
   refresh: () =>
     apiClient
-      .post<DecisionSummary>("/decision-engine/refresh")
+      .post<DecisionSummary>("/api/decision-engine/refresh")
       .then((r) => r.data),
 
   /** Top cash flow drivers only */
   getDrivers: () =>
-    apiClient.get<CashDriver[]>("/decision-engine/drivers").then((r) => r.data),
+    apiClient
+      .get<CashDriver[]>("/api/decision-engine/drivers")
+      .then((r) => r.data),
 
   /** Pending recommendations */
   getActions: () =>
-    apiClient.get<CashAction[]>("/decision-engine/actions").then((r) => r.data),
+    apiClient
+      .get<CashAction[]>("/api/decision-engine/actions")
+      .then((r) => r.data),
 
   /** Scenario simulation */
   simulate: (req: SimulateRequest) =>
     apiClient
-      .post<SimulateResult>("/decision-engine/simulate", req)
+      .post<SimulateResult>("/api/decision-engine/simulate", req)
       .then((r) => r.data),
 
   /** Mark action as applied */
@@ -119,7 +123,7 @@ export const decisionEngineApi = {
       .post<{
         id: string;
         status: ActionStatus;
-      }>(`/decision-engine/actions/${id}/apply`)
+      }>(`/api/decision-engine/actions/${id}/apply`)
       .then((r) => r.data),
 
   /** Dismiss action */
@@ -128,16 +132,18 @@ export const decisionEngineApi = {
       .post<{
         id: string;
         status: ActionStatus;
-      }>(`/decision-engine/actions/${id}/dismiss`)
+      }>(`/api/decision-engine/actions/${id}/dismiss`)
       .then((r) => r.data),
 
   /** Latest weekly brief */
   getBrief: () =>
-    apiClient.get<WeeklyBrief>("/decision-engine/brief").then((r) => r.data),
+    apiClient
+      .get<WeeklyBrief>("/api/decision-engine/brief")
+      .then((r) => r.data),
 
   /** Generate brief on demand */
   generateBrief: () =>
     apiClient
-      .post<WeeklyBrief>("/decision-engine/brief/generate")
+      .post<WeeklyBrief>("/api/decision-engine/brief/generate")
       .then((r) => r.data),
 };

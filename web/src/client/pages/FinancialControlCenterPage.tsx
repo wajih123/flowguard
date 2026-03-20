@@ -214,7 +214,9 @@ function ScenarioPanel({
           </p>
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div className="text-center">
-              <div className="text-xs text-text-secondary">Trésorerie actuelle</div>
+              <div className="text-xs text-text-secondary">
+                Trésorerie actuelle
+              </div>
               <div className="font-semibold text-white">
                 {(simulateMutation.data.baseBalance ?? 0).toLocaleString(
                   "fr-FR",
@@ -298,7 +300,9 @@ function WeeklyBriefPanel() {
           Générer
         </Button>
       </div>
-      {isLoading && <div className="h-24 bg-white/[0.06] rounded animate-pulse" />}
+      {isLoading && (
+        <div className="h-24 bg-white/[0.06] rounded animate-pulse" />
+      )}
       {!isLoading && brief && (
         <div>
           <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">
@@ -463,7 +467,9 @@ const FinancialControlCenterPage: React.FC = () => {
 
           {/* Min projected */}
           <Card className="p-4">
-            <div className="text-xs text-text-secondary mb-1">Minimum projeté</div>
+            <div className="text-xs text-text-secondary mb-1">
+              Minimum projeté
+            </div>
             <div
               className={`text-2xl font-bold ${
                 (summary.minProjectedBalance ?? 0) < 0
