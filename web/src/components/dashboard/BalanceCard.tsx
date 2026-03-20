@@ -40,8 +40,10 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
     );
   }
 
-  const { currentBalance, predictedBalance30d, balanceTrend, account } =
+  const { currentBalance, predictedBalance30d, balanceTrend, account, accountCount } =
     dashboard;
+
+  const isMultiAccount = accountCount !== undefined && accountCount > 1;
 
   const balanceState =
     currentBalance <= 200
@@ -62,10 +64,12 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
           </div>
           <div>
             <p className="text-white text-xs font-medium leading-tight">
-              {account.bankName}
+              {isMultiAccount ? "Tous comptes actifs" : account.bankName}
             </p>
             <p className="text-text-muted text-2xs font-numeric">
-              {account.ibanMasked}
+              {isMultiAccount
+                ? `${accountCount} comptes agrégés`
+                : account.ibanMasked}
             </p>
           </div>
         </div>

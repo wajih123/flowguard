@@ -20,7 +20,6 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.*;
 
@@ -56,18 +55,29 @@ public class DashboardResource {
     public Response getSummary() {
         UUID userId = UUID.fromString(jwt.getSubject());
 
-        // 1. Pick the primary account (first OK, or first available)
-        List<AccountEntity> accounts = accountRepository.findByUserId(userId);
-        if (accounts.isEmpty()) {
-            return Response.ok(emptyDashboard()).build();
+        // 1. Aggregate balance across ALL active accounts — aligned with DecisionEngineService
+        //    so both pages show the same number for the same user.
+        List<AccountEntity> activeAccounts = accountRepository.findActiveByUserId(userId);
+        if (activeAccounts.isEmpty()) {
+            // Fallback: user just connected, accounts may still be PENDING/SYNCING
+            List<AccountEntity> allAccounts = accountRepository.findByUserId(userId);
+            if (allAccounts.isEmpty()) {
+                return Response.ok(emptyDashboard()).build();
+            }
+            activeAccounts = allAccounts;
         }
-        AccountEntity primary = accounts.stream()
+
+        // Primary account is used only for display (bank name, masked IBAN)
+        AccountEntity primary = activeAccounts.stream()
                 .filter(a -> a.getSyncStatus() == AccountEntity.SyncStatus.OK)
                 .findFirst()
-                .orElse(accounts.get(0));
+                .orElse(activeAccounts.get(0));
 
-        BigDecimal currentBalance = primary.getBalance() != null
-                ? primary.getBalance() : BigDecimal.ZERO;
+        // Aggregate balance — same formula as DecisionEngineService.computeSnapshot()
+        BigDecimal currentBalance = activeAccounts.stream()
+                .map(a -> a.getBalance() != null ? a.getBalance() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        int accountCount = activeAccounts.size();
 
         // 2. Forecast (best-effort — ML service may not have enough data yet)
         BigDecimal predictedBalance30d = currentBalance;
@@ -89,14 +99,9 @@ public class DashboardResource {
             LOG.debugf("Forecast unavailable for user %s: %s", userId, e.getMessage());
         }
 
-        // 3. Balance trend (percentage change over 30 days)
-        double balanceTrend = 0;
-        if (currentBalance.compareTo(BigDecimal.ZERO) != 0) {
-            balanceTrend = predictedBalance30d.subtract(currentBalance)
-                    .divide(currentBalance.abs(), 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100))
-                    .doubleValue();
-        }
+        // 3. Balance trend — absolute delta (predictedBalance30d − currentBalance)
+        //    The frontend displays this with a € sign via AmountDisplay, not as a %.
+        BigDecimal balanceTrend = predictedBalance30d.subtract(currentBalance);
 
         // 4. Health score — prefer ML forecast, fall back to credit scoring
         int healthScore;
@@ -179,6 +184,7 @@ public class DashboardResource {
         body.put("highAlertMessage", highAlertMessage);
         body.put("highAlertAmount", highAlertAmount);
         body.put("highAlertDate", highAlertDate);
+        body.put("accountCount", accountCount);
 
         return Response.ok(body).build();
     }

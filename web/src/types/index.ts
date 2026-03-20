@@ -29,6 +29,8 @@ export interface DashboardData {
   highAlertMessage?: string;
   highAlertAmount?: number;
   highAlertDate?: string;
+  /** Number of active accounts aggregated — used to show multi-account label */
+  accountCount?: number;
 }
 
 export interface Transaction {

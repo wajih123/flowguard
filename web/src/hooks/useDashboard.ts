@@ -28,6 +28,7 @@ const mockDashboard: DashboardData = {
     "Votre solde prévu sera de -230 € le 18 mars. URSSAF de 850 € attendue.",
   highAlertAmount: -230,
   highAlertDate: format(addDays(_today, 5), "yyyy-MM-dd"),
+  accountCount: 1,
 };
 
 const mockTransactions: Transaction[] = [
