@@ -205,7 +205,7 @@ const ForecastPage: React.FC = () => {
             title={`Évolution du solde — ${horizon} jours`}
             subtitle="Zone bleue = intervalle de confiance · Ligne rouge = seuil critique"
             icon={<TrendingUp size={18} />}
-            action={
+            helpTooltip={
               <HelpTooltip text="Projection de votre solde sur l'horizon choisi. La zone colorée représente la fourchette de confiance du modèle IA." />
             }
           />
@@ -234,7 +234,7 @@ const ForecastPage: React.FC = () => {
               title="Points de vigilance"
               subtitle="Dates où votre solde pourrait être insuffisant"
               icon={<AlertTriangle size={18} />}
-              action={
+              helpTooltip={
                 <HelpTooltip text="Dates critiques prévisionnelles où votre trésorerie pourrait passer sous zéro. Agissez à l'avance pour les éviter." />
               }
             />

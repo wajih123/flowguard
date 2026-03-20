@@ -210,7 +210,7 @@ const BudgetPage: React.FC = () => {
               <Card>
                 <CardHeader
                   title="Budget vs Réel par catégorie"
-                  action={
+                  helpTooltip={
                     <HelpTooltip text="Comparaison graphique des montants budgétés et des dépenses réelles par catégorie." />
                   }
                 />
@@ -257,18 +257,18 @@ const BudgetPage: React.FC = () => {
             <Card>
               <CardHeader
                 title="Détail par catégorie"
+                helpTooltip={
+                  <HelpTooltip text="Suivi ligne par ligne des dépenses par catégorie avec statuts : dépassé, dans le budget ou sous le budget." />
+                }
                 action={
-                  <div className="flex items-center gap-2">
-                    <HelpTooltip text="Suivi ligne par ligne des dépenses par catégorie avec statuts : dépassé, dans le budget ou sous le budget." />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="gap-1"
-                      onClick={() => setEditCategory("NEW")}
-                    >
-                      <Target size={14} /> Ajouter
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => setEditCategory("NEW")}
+                  >
+                    <Target size={14} /> Ajouter
+                  </Button>
                 }
               />
               {!vsActual?.lines.length ? (

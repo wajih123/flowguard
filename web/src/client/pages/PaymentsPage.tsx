@@ -145,7 +145,7 @@ const PaymentForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     <Card>
       <CardHeader
         title="Initier un virement SEPA"
-        action={
+        helpTooltip={
           <HelpTooltip text="Virement exécuté via Open Banking DSP2. Délai d'exécution : 1 jour ouvré dans la zone SEPA." />
         }
       />
@@ -306,7 +306,7 @@ const PaymentsPage: React.FC = () => {
         <Card>
           <CardHeader
             title="Historique des virements"
-            action={
+            helpTooltip={
               <HelpTooltip text="Liste de tous vos paiements SEPA avec statuts en temps réel. Les virements rejetés ne sont pas débités." />
             }
           />

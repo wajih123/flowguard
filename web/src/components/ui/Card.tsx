@@ -49,6 +49,7 @@ interface CardHeaderProps {
   subtitle?: string;
   action?: React.ReactNode;
   icon?: React.ReactNode;
+  helpTooltip?: React.ReactNode;
 }
 
 export const CardHeader: React.FC<CardHeaderProps> = ({
@@ -56,6 +57,7 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
   subtitle,
   action,
   icon,
+  helpTooltip,
 }) => (
   <div className="flex items-start justify-between mb-4">
     <div className="flex items-center gap-3">
@@ -66,10 +68,11 @@ export const CardHeader: React.FC<CardHeaderProps> = ({
       )}
       <div>
         <h3
-          className="font-semibold text-white"
+          className="font-semibold text-white flex items-center gap-1.5"
           style={{ fontFamily: "var(--font-display)" }}
         >
           {title}
+          {helpTooltip}
         </h3>
         {subtitle && (
           <p className="text-text-secondary text-sm mt-0.5">{subtitle}</p>

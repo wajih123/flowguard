@@ -61,7 +61,12 @@ const StepProposition: React.FC<{
       </div>
 
       <Card>
-        <CardHeader title="Configurer votre Réserve" action={<HelpTooltip text="Définissez le montant et l'objet de votre financement instantané. Réponse automatique en moins de 5 minutes." />} />
+        <CardHeader
+          title="Configurer votre Réserve"
+          helpTooltip={
+            <HelpTooltip text="Définissez le montant et l'objet de votre financement instantané. Réponse automatique en moins de 5 minutes." />
+          }
+        />
         <div className="mt-5 space-y-6">
           {/* Amount slider */}
           <div>
@@ -130,7 +135,10 @@ const StepProposition: React.FC<{
               </span>
             </div>
             <div className="flex justify-between border-t border-white/10 pt-2 font-semibold">
-              <span className="text-white flex items-center gap-1">Total à rembourser <HelpTooltip text="Montant emprunté + commission, à rembourser à l'échéance indiquée dans le contrat." /></span>
+              <span className="text-white flex items-center gap-1">
+                Total à rembourser{" "}
+                <HelpTooltip text="Montant emprunté + commission, à rembourser à l'échéance indiquée dans le contrat." />
+              </span>
               <span className="font-numeric text-primary">{fmt(total)}</span>
             </div>
           </div>
@@ -168,7 +176,12 @@ const StepConfirm: React.FC<{
 }> = ({ amount, purpose, fee, isLoading, onConfirm, onBack }) => (
   <div className="max-w-md mx-auto space-y-6 animate-slide-up">
     <Card className="text-center">
-      <CardHeader title="Confirmer votre demande" action={<HelpTooltip text="Récapitulatif de votre demande avant envoi. Confirmez avec votre empreinte ou un double-clic sur le bouton." />} />
+      <CardHeader
+        title="Confirmer votre demande"
+        action={
+          <HelpTooltip text="Récapitulatif de votre demande avant envoi. Confirmez avec votre empreinte ou un double-clic sur le bouton." />
+        }
+      />
       <div className="mt-6 space-y-4">
         <div className="grid grid-cols-2 gap-3 text-left">
           <div className="bg-white/[0.03] rounded-xl p-3">
@@ -410,7 +423,12 @@ const FlashCreditPage: React.FC = () => {
 
         {/* Credits list */}
         <Card>
-          <CardHeader title="Mes financements" action={<HelpTooltip text="Historique de vos réserves de trésorerie FlowGuard actives et passées avec statut et options de rétractation." />} />
+          <CardHeader
+            title="Mes financements"
+            helpTooltip={
+              <HelpTooltip text="Historique de vos réserves de trésorerie FlowGuard actives et passées avec statut et options de rétractation." />
+            }
+          />
           {isLoading ? (
             <Loader />
           ) : !credits?.length ? (

@@ -221,7 +221,7 @@ const BenchmarksPage: React.FC = () => {
           <Card>
             <CardHeader
               title={`${comparison.length} indicateurs — ${SECTOR_LABELS[sector] ?? sector} · ${SIZE_LABELS[companySize]}`}
-              action={
+              helpTooltip={
                 <HelpTooltip text="Positionnez vos indicateurs financiers clés par rapport aux entreprises de votre secteur et de votre taille." />
               }
             />

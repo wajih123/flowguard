@@ -109,7 +109,7 @@ const ScenarioPage: React.FC = () => {
             <CardHeader
               title="Configurer le scénario"
               icon={<GitBranch size={18} />}
-              action={
+              helpTooltip={
                 <HelpTooltip text="Simulez l'impact financier d'un événement futur sans engagement — montant et délai paramétrables, calcul en temps réel." />
               }
             />
@@ -323,7 +323,7 @@ const ScenarioPage: React.FC = () => {
                     <CardHeader
                       title="Impact visuel"
                       subtitle="Bleu = trajectoire de base · Violet = avec scénario"
-                      action={
+                      helpTooltip={
                         <HelpTooltip text="Comparaison graphique de votre trajectoire de trésorerie de base vs la trajectoire avec le scénario simulé." />
                       }
                     />

@@ -160,7 +160,7 @@ const CreateForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     <Card>
       <CardHeader
         title="Nouvelle facture"
-        action={
+        helpTooltip={
           <HelpTooltip text="Créez une facture client avec calcul TVA automatique. Elle apparaît dans votre suivi des créances." />
         }
       />
@@ -376,7 +376,7 @@ const InvoicesPage: React.FC = () => {
         <Card>
           <CardHeader
             title="Toutes les factures"
-            action={
+            helpTooltip={
               <HelpTooltip text="Liste de toutes vos factures avec statuts, montants TTC et actions disponibles (envoyer, marquer payée, annuler)." />
             }
           />

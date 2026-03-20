@@ -67,7 +67,12 @@ const AccountantPage: React.FC = () => {
 
         {/* FEC Export */}
         <Card>
-          <CardHeader title="Export FEC" action={<HelpTooltip text="Fichier des Écritures Comptables au format légal (art. L47 A LPF). Obligatoire en cas de contrôle fiscal." />} />
+          <CardHeader
+            title="Export FEC"
+            helpTooltip={
+              <HelpTooltip text="Fichier des Écritures Comptables au format légal (art. L47 A LPF). Obligatoire en cas de contrôle fiscal." />
+            }
+          />
           <p className="text-text-muted text-sm mt-3">
             Le Fichier des Écritures Comptables (FEC) est requis en cas de
             contrôle fiscal (art. L47 A LPF). Téléchargez les écritures d'une
@@ -101,7 +106,12 @@ const AccountantPage: React.FC = () => {
 
         {/* Grant Access Form */}
         <Card>
-          <CardHeader title="Inviter un comptable" action={<HelpTooltip text="Donnez un accès en lecture seule, sécurisé et temporaire (∞90 jours), à votre comptable sans partager vos identifiants." />} />
+          <CardHeader
+            title="Inviter un comptable"
+            helpTooltip={
+              <HelpTooltip text="Donnez un accès en lecture seule, sécurisé et temporaire (∞90 jours), à votre comptable sans partager vos identifiants." />
+            }
+          />
           <p className="text-text-muted text-sm mt-2 mb-4">
             Votre comptable recevra un lien sécurisé (valide 90 jours) lui
             donnant accès en lecture seule à vos factures, obligations fiscales
@@ -131,7 +141,12 @@ const AccountantPage: React.FC = () => {
 
         {/* Active Grants */}
         <Card>
-          <CardHeader title="Accès actifs" action={<HelpTooltip text="Liste des comptables et collaborateurs ayant un accès actif à votre espace FlowGuard. Révoquez à tout moment." />} />
+          <CardHeader
+            title="Accès actifs"
+            helpTooltip={
+              <HelpTooltip text="Liste des comptables et collaborateurs ayant un accès actif à votre espace FlowGuard. Révoquez à tout moment." />
+            }
+          />
           {isLoading ? (
             <Loader text="Chargement…" />
           ) : !grants?.length ? (

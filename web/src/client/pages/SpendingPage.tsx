@@ -76,7 +76,7 @@ const SpendingPage: React.FC = () => {
                 <CardHeader
                   title="Répartition par catégorie"
                   icon={<PieChart size={18} />}
-                  action={
+                  helpTooltip={
                     <HelpTooltip text="Visualisation de vos dépenses réparties par catégorie sous forme de donut. Les catégories sont détectées automatiquement." />
                   }
                 />
@@ -88,7 +88,7 @@ const SpendingPage: React.FC = () => {
             <Card>
               <CardHeader
                 title="Détail par catégorie"
-                action={
+                helpTooltip={
                   <HelpTooltip text="Détail chiffré de vos dépenses avec barres de progression pour visualiser le poids de chaque catégorie." />
                 }
               />
@@ -137,7 +137,7 @@ const SpendingPage: React.FC = () => {
                   title="Recommandations IA"
                   subtitle="Analyse automatique de vos dépenses"
                   icon={<Lightbulb size={18} />}
-                  action={
+                  helpTooltip={
                     <HelpTooltip text="Insights générés par le moteur IA de FlowGuard pour optimiser vos dépenses et améliorer votre santé financière." />
                   }
                 />
