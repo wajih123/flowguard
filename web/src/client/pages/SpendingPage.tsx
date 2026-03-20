@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { PieChart, Lightbulb } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { SpendingDonut } from "@/components/charts/SpendingDonut";
 import { useSpending } from "@/hooks/useSpending";
@@ -60,8 +61,9 @@ const SpendingPage: React.FC = () => {
             {/* Total */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               <Card className="stat-card">
-                <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-                  Total dépensé
+                <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                  Total dépensé{" "}
+                  <HelpTooltip text="Somme de toutes les sorties d'argent détectées sur vos comptes Open Banking sur la période sélectionnée." />
                 </p>
                 <p className="text-3xl font-bold text-white">
                   {fmt(spending.totalSpent)}
@@ -74,6 +76,9 @@ const SpendingPage: React.FC = () => {
                 <CardHeader
                   title="Répartition par catégorie"
                   icon={<PieChart size={18} />}
+                  action={
+                    <HelpTooltip text="Visualisation de vos dépenses réparties par catégorie sous forme de donut. Les catégories sont détectées automatiquement." />
+                  }
                 />
                 <SpendingDonut data={spending} height={300} />
               </Card>
@@ -81,7 +86,12 @@ const SpendingPage: React.FC = () => {
 
             {/* Category breakdown */}
             <Card>
-              <CardHeader title="Détail par catégorie" />
+              <CardHeader
+                title="Détail par catégorie"
+                action={
+                  <HelpTooltip text="Détail chiffré de vos dépenses avec barres de progression pour visualiser le poids de chaque catégorie." />
+                }
+              />
               <div className="space-y-2">
                 {Object.entries(spending.byCategory)
                   .filter(([, v]) => v && v > 0)
@@ -127,6 +137,9 @@ const SpendingPage: React.FC = () => {
                   title="Recommandations IA"
                   subtitle="Analyse automatique de vos dépenses"
                   icon={<Lightbulb size={18} />}
+                  action={
+                    <HelpTooltip text="Insights générés par le moteur IA de FlowGuard pour optimiser vos dépenses et améliorer votre santé financière." />
+                  }
                 />
                 <div className="space-y-3">
                   {spending.insights.map((insight, i) => (

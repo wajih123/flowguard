@@ -19,6 +19,7 @@ import {
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { budgetApi } from "@/api/budget";
@@ -169,24 +170,27 @@ const BudgetPage: React.FC = () => {
         {/* KPIs */}
         <div className="grid grid-cols-3 gap-4">
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Budget total
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Budget total{" "}
+              <HelpTooltip text="Somme des montants budgétés sur toutes les catégories du mois sélectionné." />
             </p>
             <p className="text-2xl font-bold font-numeric text-white">
               {fmt(totalBudgeted)}
             </p>
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Dépenses réelles
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Dépenses réelles{" "}
+              <HelpTooltip text="Total des dépenses effectivement constatées sur vos comptes bancaires pour la période." />
             </p>
             <p className="text-2xl font-bold font-numeric text-white">
               {fmt(totalActual)}
             </p>
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Écart
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Écart{" "}
+              <HelpTooltip text="Différence entre dépenses réelles et budget. Positif (rouge) = dépassement, négatif (bleu) = économie." />
             </p>
             <p
               className={`text-2xl font-bold font-numeric ${totalVariance > 0 ? "text-danger" : totalVariance < 0 ? "text-primary" : "text-success"}`}
@@ -204,7 +208,12 @@ const BudgetPage: React.FC = () => {
             {/* Chart */}
             {chartData.length > 0 && (
               <Card>
-                <CardHeader title="Budget vs Réel par catégorie" />
+                <CardHeader
+                  title="Budget vs Réel par catégorie"
+                  action={
+                    <HelpTooltip text="Comparaison graphique des montants budgétés et des dépenses réelles par catégorie." />
+                  }
+                />
                 <div className="mt-4 h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} barGap={4}>
@@ -249,14 +258,17 @@ const BudgetPage: React.FC = () => {
               <CardHeader
                 title="Détail par catégorie"
                 action={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => setEditCategory("NEW")}
-                  >
-                    <Target size={14} /> Ajouter
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <HelpTooltip text="Suivi ligne par ligne des dépenses par catégorie avec statuts : dépassé, dans le budget ou sous le budget." />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => setEditCategory("NEW")}
+                    >
+                      <Target size={14} /> Ajouter
+                    </Button>
+                  </div>
                 }
               />
               {!vsActual?.lines.length ? (

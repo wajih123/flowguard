@@ -9,6 +9,7 @@ import {
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taxApi } from "@/api/tax";
@@ -180,16 +181,16 @@ const TaxPage: React.FC = () => {
         {/* KPIs */}
         <div className="grid grid-cols-3 gap-4">
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              À payer
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              À payer <HelpTooltip text="Cumul de toutes vos obligations fiscales non encore réglées (TVA, URSSAF, IS, etc.)." />
             </p>
             <p className="text-2xl font-bold font-numeric text-warning">
               {fmt(totalUnpaid)}
             </p>
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Prochaine échéance
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Prochaine échéance <HelpTooltip text="Date limite de la prochaine obligation fiscale à payer. Agissez avant pour éviter les pénalités." />
             </p>
             {nextDeadline ? (
               <>
@@ -212,8 +213,8 @@ const TaxPage: React.FC = () => {
             )}
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Obligations totales
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Obligations totales <HelpTooltip text="Nombre total d'obligations fiscales recalculées sur l'exercice depuis vos factures." />
             </p>
             <p className="text-2xl font-bold font-numeric text-white">
               {allTaxes?.length ?? 0}
@@ -230,12 +231,15 @@ const TaxPage: React.FC = () => {
                 showAll ? "Toutes les obligations" : "Prochaines échéances"
               }
               action={
-                <button
-                  className="text-xs text-primary hover:underline"
-                  onClick={() => setShowAll(!showAll)}
-                >
-                  {showAll ? "Afficher les prochaines" : "Tout afficher"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <HelpTooltip text="Obligations recalculées depuis vos transactions. Utilisez le bouton Recalculer en haut pour une mise à jour." />
+                  <button
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => setShowAll(!showAll)}
+                  >
+                    {showAll ? "Afficher les prochaines" : "Tout afficher"}
+                  </button>
+                </div>
               }
             />
             {!displayed?.length ? (

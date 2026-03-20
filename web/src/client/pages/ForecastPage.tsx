@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader, CardSkeleton } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { ForecastChart } from "@/components/charts/ForecastChart";
 import { ConfidenceBadge } from "@/components/ui/ConfidenceBadge";
@@ -73,8 +74,9 @@ const ForecastPage: React.FC = () => {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Health score */}
               <Card padding="sm">
-                <p className="text-text-secondary text-xs uppercase tracking-wider font-medium mb-2">
-                  Score santé
+                <p className="text-text-secondary text-xs uppercase tracking-wider font-medium mb-2 flex items-center gap-1">
+                  Score santé{" "}
+                  <HelpTooltip text="Score global de santé financière de 0 à 100, basé sur le solde, les tendances et les échéances à venir." />
                 </p>
                 <p
                   className={`text-2xl font-bold font-numeric ${
@@ -91,8 +93,9 @@ const ForecastPage: React.FC = () => {
               </Card>
               {/* Confidence */}
               <Card padding="sm">
-                <p className="text-text-secondary text-xs uppercase tracking-wider font-medium mb-2">
-                  Fiabilité IA
+                <p className="text-text-secondary text-xs uppercase tracking-wider font-medium mb-2 flex items-center gap-1">
+                  Fiabilité IA{" "}
+                  <HelpTooltip text="Pourcentage de confiance du modèle de prévision, recalculé quotidiennement à partir de vos transactions réelles." />
                 </p>
                 <p
                   className={`text-2xl font-bold font-numeric ${
@@ -109,8 +112,9 @@ const ForecastPage: React.FC = () => {
               </Card>
               {/* Critical points */}
               <Card padding="sm">
-                <p className="text-text-secondary text-xs uppercase tracking-wider font-medium mb-2">
-                  Vigilances
+                <p className="text-text-secondary text-xs uppercase tracking-wider font-medium mb-2 flex items-center gap-1">
+                  Vigilances{" "}
+                  <HelpTooltip text="Nombre de dates où votre solde prévu pourrait être insuffisant ou négatif dans la période analysée." />
                 </p>
                 <p
                   className={`text-2xl font-bold font-numeric ${
@@ -201,6 +205,9 @@ const ForecastPage: React.FC = () => {
             title={`Évolution du solde — ${horizon} jours`}
             subtitle="Zone bleue = intervalle de confiance · Ligne rouge = seuil critique"
             icon={<TrendingUp size={18} />}
+            action={
+              <HelpTooltip text="Projection de votre solde sur l'horizon choisi. La zone colorée représente la fourchette de confiance du modèle IA." />
+            }
           />
           {isLoading ? (
             <Loader text="Calcul des prévisions…" />
@@ -227,6 +234,9 @@ const ForecastPage: React.FC = () => {
               title="Points de vigilance"
               subtitle="Dates où votre solde pourrait être insuffisant"
               icon={<AlertTriangle size={18} />}
+              action={
+                <HelpTooltip text="Dates critiques prévisionnelles où votre trésorerie pourrait passer sous zéro. Agissez à l'avance pour les éviter." />
+              }
             />
             <div className="space-y-3 mt-2">
               {forecast.criticalPoints.map((cp, i) => {

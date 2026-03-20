@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { useScenario } from "@/hooks/useScenario";
 import {
   ComposedChart,
@@ -108,6 +109,9 @@ const ScenarioPage: React.FC = () => {
             <CardHeader
               title="Configurer le scénario"
               icon={<GitBranch size={18} />}
+              action={
+                <HelpTooltip text="Simulez l'impact financier d'un événement futur sans engagement — montant et délai paramétrables, calcul en temps réel." />
+              }
             />
             <div className="mt-5 space-y-5">
               {/* Scenario type */}
@@ -289,8 +293,20 @@ const ScenarioPage: React.FC = () => {
                     },
                   ].map((kpi) => (
                     <Card key={kpi.label} padding="sm">
-                      <p className="text-text-muted text-xs mb-1">
+                      <p className="text-text-muted text-xs mb-1 flex items-center gap-1">
                         {kpi.label}
+                        {kpi.label === "Impact maximal" && (
+                          <HelpTooltip text="Montant maximum que ce scénario pourrait coûter à votre trésorerie." />
+                        )}
+                        {kpi.label === "Solde minimum prévu" && (
+                          <HelpTooltip text="Point bas de votre trésorerie si ce scénario se réalise — un solde négatif = déficit." />
+                        )}
+                        {kpi.label === "Pire déficit" && (
+                          <HelpTooltip text="Valeur du solde le plus négatif dans la simulation. Activez la Réserve pour le couvrir." />
+                        )}
+                        {kpi.label === "Jours avant impact" && (
+                          <HelpTooltip text="Dans combien de jours la trésorerie commence à être négativement affectée par ce scénario." />
+                        )}
                       </p>
                       <p
                         className={`font-numeric font-bold text-lg ${kpi.color}`}
@@ -307,6 +323,9 @@ const ScenarioPage: React.FC = () => {
                     <CardHeader
                       title="Impact visuel"
                       subtitle="Bleu = trajectoire de base · Violet = avec scénario"
+                      action={
+                        <HelpTooltip text="Comparaison graphique de votre trajectoire de trésorerie de base vs la trajectoire avec le scénario simulé." />
+                      }
                     />
                     <div className="mt-3" style={{ height: 220 }}>
                       <ResponsiveContainer width="100%" height="100%">

@@ -11,6 +11,7 @@ import {
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import {
   useBankAccounts,
   useStartConnect,
@@ -170,7 +171,10 @@ const BankConnectPage: React.FC = () => {
 
         {/* How it works */}
         <Card>
-          <p className="text-white font-semibold mb-4">Comment ça marche ?</p>
+          <p className="text-white font-semibold mb-4 flex items-center gap-1.5">
+            Comment ça marche ?
+            <HelpTooltip text="Connexion sécurisée en 4 étapes via les APIs Open Banking DSP2. FlowGuard n'a jamais accès à vos identifiants bancaires." />
+          </p>
           <div className="space-y-4">
             {[
               {

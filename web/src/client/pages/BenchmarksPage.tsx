@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { BarChart2, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { useQuery } from "@tanstack/react-query";
 import { benchmarksApi } from "@/api/benchmarks";
@@ -178,24 +179,27 @@ const BenchmarksPage: React.FC = () => {
         {comparison && (
           <div className="grid grid-cols-3 gap-4">
             <Card padding="sm">
-              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-                Secteur
+              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                Secteur{" "}
+                <HelpTooltip text="Secteur d'activité sélectionné comme référence pour la comparaison. Changez-le dans le menu du haut." />
               </p>
               <p className="text-white font-semibold">
                 {SECTOR_LABELS[sector] ?? sector}
               </p>
             </Card>
             <Card padding="sm">
-              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-                Métriques au-dessus médiane
+              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                Métriques au-dessus médiane{" "}
+                <HelpTooltip text="Nombre d'indicateurs où vos performances surpassent la médiane des entreprises du même secteur." />
               </p>
               <p className="text-2xl font-bold font-numeric text-success">
                 {topCount} / {total}
               </p>
             </Card>
             <Card padding="sm">
-              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-                Taille d'entreprise
+              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                Taille d'entreprise{" "}
+                <HelpTooltip text="Segment de taille utilisé pour sélectionner les entreprises références dans la comparaison." />
               </p>
               <p className="text-white font-semibold">
                 {SIZE_LABELS[companySize] ?? companySize}
@@ -217,6 +221,9 @@ const BenchmarksPage: React.FC = () => {
           <Card>
             <CardHeader
               title={`${comparison.length} indicateurs — ${SECTOR_LABELS[sector] ?? sector} · ${SIZE_LABELS[companySize]}`}
+              action={
+                <HelpTooltip text="Positionnez vos indicateurs financiers clés par rapport aux entreprises de votre secteur et de votre taille." />
+              }
             />
             <div className="mt-5 space-y-3">
               {comparison.map((b, i) => (

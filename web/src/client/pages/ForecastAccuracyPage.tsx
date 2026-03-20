@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { useQuery } from "@tanstack/react-query";
 import { forecastAccuracyApi } from "@/api/forecastAccuracy";
@@ -111,8 +112,8 @@ const ForecastAccuracyPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-3 gap-4">
             <Card padding="sm">
-              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-                Précision moyenne
+              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                Précision moyenne <HelpTooltip text="Écart moyen entre les prévisions FlowGuard et les valeurs réelles constatées sur les périodes réconciliées." />
               </p>
               <p
                 className={`text-2xl font-bold font-numeric ${
@@ -129,8 +130,8 @@ const ForecastAccuracyPage: React.FC = () => {
               </p>
             </Card>
             <Card padding="sm">
-              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-                Prévisions réconciliées
+              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                Prévisions réconciliées <HelpTooltip text="Nombre de prévisions passées comparées aux données réelles disponibles via Open Banking." />
               </p>
               <p className="text-2xl font-bold font-numeric text-white">
                 {summary?.reconciled ?? 0}
@@ -140,8 +141,8 @@ const ForecastAccuracyPage: React.FC = () => {
               </p>
             </Card>
             <Card padding="sm">
-              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-                Statut modèle
+              <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+                Statut modèle <HelpTooltip text="Évaluation qualitative de la précision actuelle du modèle IA : Précis (≥85%), Correct (≥70%) ou amélioration requise." />
               </p>
               <div className="flex items-center gap-2">
                 {avgAcc == null ? (
@@ -181,7 +182,7 @@ const ForecastAccuracyPage: React.FC = () => {
           <>
             {/* Predicted vs Actual chart */}
             <Card>
-              <CardHeader title={`Prévu vs Réel — Horizon ${horizonDays}j`} />
+              <CardHeader title={`Prévu vs Réel — Horizon ${horizonDays}j`} action={<HelpTooltip text="Comparaison graphique des prévisions IA (pointillé) avec les soldes réels observés (ligne continue verte)." />} />
               <div className="mt-4 h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData}>
@@ -228,7 +229,7 @@ const ForecastAccuracyPage: React.FC = () => {
 
             {/* Accuracy % over time */}
             <Card>
-              <CardHeader title="Évolution de la précision (%)" />
+              <CardHeader title="Évolution de la précision (%)" action={<HelpTooltip text="Tendance de la précision du modèle au fil du temps. La ligne verte à 85% est le seuil de qualité cible." />} />
               <div className="mt-4 h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={chartData}>

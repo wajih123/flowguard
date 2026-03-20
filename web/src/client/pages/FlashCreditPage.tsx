@@ -6,11 +6,11 @@ import {
   Fingerprint,
   Zap,
   ChevronRight,
-  Info,
 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Loader } from "@/components/ui/Loader";
 import {
@@ -61,7 +61,7 @@ const StepProposition: React.FC<{
       </div>
 
       <Card>
-        <CardHeader title="Configurer votre Réserve" />
+        <CardHeader title="Configurer votre Réserve" action={<HelpTooltip text="Définissez le montant et l'objet de votre financement instantané. Réponse automatique en moins de 5 minutes." />} />
         <div className="mt-5 space-y-6">
           {/* Amount slider */}
           <div>
@@ -122,12 +122,7 @@ const StepProposition: React.FC<{
             <div className="flex justify-between items-center">
               <span className="text-text-secondary flex items-center gap-1.5">
                 Commission
-                <span
-                  className="w-3.5 h-3.5 rounded-full border border-text-muted flex items-center justify-center text-text-muted cursor-help"
-                  title="Commission fixe, calculée sur le montant emprunté"
-                >
-                  <Info size={8} />
-                </span>
+                <HelpTooltip text="Frais de service FlowGuard : 1,5% du montant emprunté, prélevés à l'octroi. Toujours affichés en euros." />
               </span>
               {/* ABSOLUTE RULE: always in €, never as % */}
               <span className="font-numeric text-warning font-medium">
@@ -135,7 +130,7 @@ const StepProposition: React.FC<{
               </span>
             </div>
             <div className="flex justify-between border-t border-white/10 pt-2 font-semibold">
-              <span className="text-white">Total à rembourser</span>
+              <span className="text-white flex items-center gap-1">Total à rembourser <HelpTooltip text="Montant emprunté + commission, à rembourser à l'échéance indiquée dans le contrat." /></span>
               <span className="font-numeric text-primary">{fmt(total)}</span>
             </div>
           </div>
@@ -173,7 +168,7 @@ const StepConfirm: React.FC<{
 }> = ({ amount, purpose, fee, isLoading, onConfirm, onBack }) => (
   <div className="max-w-md mx-auto space-y-6 animate-slide-up">
     <Card className="text-center">
-      <CardHeader title="Confirmer votre demande" />
+      <CardHeader title="Confirmer votre demande" action={<HelpTooltip text="Récapitulatif de votre demande avant envoi. Confirmez avec votre empreinte ou un double-clic sur le bouton." />} />
       <div className="mt-6 space-y-4">
         <div className="grid grid-cols-2 gap-3 text-left">
           <div className="bg-white/[0.03] rounded-xl p-3">
@@ -415,7 +410,7 @@ const FlashCreditPage: React.FC = () => {
 
         {/* Credits list */}
         <Card>
-          <CardHeader title="Mes financements" />
+          <CardHeader title="Mes financements" action={<HelpTooltip text="Historique de vos réserves de trésorerie FlowGuard actives et passées avec statut et options de rétractation." />} />
           {isLoading ? (
             <Loader />
           ) : !credits?.length ? (

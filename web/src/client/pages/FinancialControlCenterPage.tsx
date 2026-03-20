@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -16,6 +16,7 @@ import {
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import {
   decisionEngineApi,
   type CashDriver,
@@ -81,39 +82,6 @@ const DRIVER_TYPE_ICONS: Record<string, React.ReactNode> = {
   SUPPLIER_PAYMENT: <TrendingDown className="w-4 h-4 text-blue-500" />,
   REVENUE_DROP: <TrendingDown className="w-4 h-4 text-red-600" />,
 };
-
-// ── Help tooltip ──────────────────────────────────────────────────────────────
-
-function HelpTooltip({ text }: Readonly<{ text: string }>) {
-  const [open, setOpen] = useState(false);
-  return (
-    <span className="relative inline-flex shrink-0">
-      <button
-        type="button"
-        aria-label="En savoir plus"
-        onClick={(e) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onBlur={() => setOpen(false)}
-        className="w-[14px] h-[14px] rounded-full bg-white/[0.08] text-text-muted border border-white/[0.14] inline-flex items-center justify-center text-[9px] font-bold cursor-help hover:bg-white/[0.18] hover:text-white transition-colors leading-none"
-      >
-        ?
-      </button>
-      {open && (
-        <span
-          role="tooltip"
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 z-50 rounded-lg bg-gray-900 border border-white/[0.14] p-2.5 text-[11px] text-gray-300 shadow-2xl leading-relaxed pointer-events-none"
-        >
-          {text}
-          <span className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900" />
-        </span>
-      )}
-    </span>
-  );
-}
 
 // ── Scenario simulation panel ────────────────────────────────────────────────
 

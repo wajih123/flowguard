@@ -3,6 +3,7 @@ import { Send, XCircle, Clock, CheckCircle, AlertTriangle } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { paymentsApi } from "@/api/payments";
@@ -142,7 +143,12 @@ const PaymentForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   return (
     <Card>
-      <CardHeader title="Initier un virement SEPA" />
+      <CardHeader
+        title="Initier un virement SEPA"
+        action={
+          <HelpTooltip text="Virement exécuté via Open Banking DSP2. Délai d'exécution : 1 jour ouvré dans la zone SEPA." />
+        }
+      />
       <div className="mt-5 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -266,16 +272,18 @@ const PaymentsPage: React.FC = () => {
         {/* KPIs */}
         <div className="grid grid-cols-3 gap-4">
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Total exécuté
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Total exécuté{" "}
+              <HelpTooltip text="Montant cumulé de tous les virements SEPA ayant été exécutés avec succès." />
             </p>
             <p className="text-2xl font-bold font-numeric text-white">
               {fmt(totalExecuted)}
             </p>
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              En attente
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              En attente{" "}
+              <HelpTooltip text="Nombre de virements soumis mais pas encore exécutés par la banque." />
             </p>
             <p
               className={`text-2xl font-bold font-numeric ${pending > 0 ? "text-warning" : "text-success"}`}
@@ -284,8 +292,9 @@ const PaymentsPage: React.FC = () => {
             </p>
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Total virements
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Total virements{" "}
+              <HelpTooltip text="Nombre total de virements SEPA initialisés via FlowGuard, tous statuts confondus." />
             </p>
             <p className="text-2xl font-bold font-numeric text-white">
               {payments?.length ?? 0}
@@ -295,7 +304,12 @@ const PaymentsPage: React.FC = () => {
 
         {/* History */}
         <Card>
-          <CardHeader title="Historique des virements" />
+          <CardHeader
+            title="Historique des virements"
+            action={
+              <HelpTooltip text="Liste de tous vos paiements SEPA avec statuts en temps réel. Les virements rejetés ne sont pas débités." />
+            }
+          />
           {isLoading ? (
             <Loader text="Chargement…" />
           ) : !payments?.length ? (

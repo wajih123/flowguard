@@ -12,6 +12,7 @@ import {
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoicesApi } from "@/api/invoices";
@@ -157,7 +158,12 @@ const CreateForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 
   return (
     <Card>
-      <CardHeader title="Nouvelle facture" />
+      <CardHeader
+        title="Nouvelle facture"
+        action={
+          <HelpTooltip text="Créez une facture client avec calcul TVA automatique. Elle apparaît dans votre suivi des créances." />
+        }
+      />
       <div className="mt-5 space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -336,16 +342,18 @@ const InvoicesPage: React.FC = () => {
         {/* KPI row */}
         <div className="grid grid-cols-3 gap-4">
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              En attente
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              En attente{" "}
+              <HelpTooltip text="Montant total des factures envoyées non encore encaissées (statuts : envoyée ou en retard)." />
             </p>
             <p className="text-2xl font-bold font-numeric text-primary">
               {fmt(outstanding)}
             </p>
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              En retard
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              En retard{" "}
+              <HelpTooltip text="Nombre de factures dont la date d'échéance est dépassée. Envoyez une relance pour accélérer l'encaissement." />
             </p>
             <p
               className={`text-2xl font-bold font-numeric ${overdue > 0 ? "text-danger" : "text-success"}`}
@@ -354,8 +362,9 @@ const InvoicesPage: React.FC = () => {
             </p>
           </Card>
           <Card padding="sm">
-            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2">
-              Total émises
+            <p className="text-text-secondary text-xs uppercase tracking-wider mb-2 flex items-center gap-1">
+              Total émises{" "}
+              <HelpTooltip text="Nombre total de factures créées, tous statuts confondus." />
             </p>
             <p className="text-2xl font-bold font-numeric text-white">
               {invoices?.length ?? 0}
@@ -365,7 +374,12 @@ const InvoicesPage: React.FC = () => {
 
         {/* Invoice list */}
         <Card>
-          <CardHeader title="Toutes les factures" />
+          <CardHeader
+            title="Toutes les factures"
+            action={
+              <HelpTooltip text="Liste de toutes vos factures avec statuts, montants TTC et actions disponibles (envoyer, marquer payée, annuler)." />
+            }
+          />
           {isLoading ? (
             <Loader text="Chargement…" />
           ) : !invoices?.length ? (

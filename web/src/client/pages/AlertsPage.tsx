@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Loader } from "@/components/ui/Loader";
 import {
@@ -98,8 +99,9 @@ const AlertRow: React.FC<{
           </div>
           <p className="text-white text-sm leading-relaxed">{alert.message}</p>
           {alert.projectedDeficit && (
-            <p className="font-numeric text-danger text-xs mt-1 font-medium">
+            <p className="font-numeric text-danger text-xs mt-1 font-medium flex items-center gap-1">
               Déficit prévu : {fmtEuro(alert.projectedDeficit)}
+              <HelpTooltip text="Montant du déficit de trésorerie estimé par le modèle IA à la date d'impact prévue." />
             </p>
           )}
           <p className="text-text-muted text-xs mt-1.5">
@@ -204,8 +206,9 @@ const AlertsPage: React.FC = () => {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="page-title">Alertes</h1>
-            <p className="page-subtitle">
+            <p className="page-subtitle flex items-center gap-1.5">
               Notifications et alertes de trésorerie
+              <HelpTooltip text="Alertes générées automatiquement par le moteur IA sur votre trésorerie : déficits prévus, dépenses inhabituelles, échéances critiques." />
             </p>
           </div>
           {unreadCount > 0 && (
