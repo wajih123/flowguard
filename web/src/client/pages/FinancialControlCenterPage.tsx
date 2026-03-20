@@ -38,30 +38,30 @@ const RISK_CONFIG: Record<
 > = {
   LOW: {
     label: "Faible",
-    bg: "bg-green-50",
-    text: "text-green-700",
-    border: "border-green-200",
+    bg: "bg-success/10",
+    text: "text-success",
+    border: "border-success/30",
     icon: <Shield className="w-4 h-4" />,
   },
   MEDIUM: {
     label: "Modéré",
-    bg: "bg-yellow-50",
-    text: "text-yellow-700",
-    border: "border-yellow-200",
+    bg: "bg-warning/10",
+    text: "text-warning",
+    border: "border-warning/30",
     icon: <BarChart3 className="w-4 h-4" />,
   },
   HIGH: {
     label: "Élevé",
-    bg: "bg-orange-50",
-    text: "text-orange-700",
-    border: "border-orange-200",
+    bg: "bg-orange-900/20",
+    text: "text-orange-400",
+    border: "border-orange-500/30",
     icon: <TrendingDown className="w-4 h-4" />,
   },
   CRITICAL: {
     label: "Critique",
-    bg: "bg-red-50",
-    text: "text-red-700",
-    border: "border-red-200",
+    bg: "bg-danger/10",
+    text: "text-danger",
+    border: "border-danger/30",
     icon: <AlertTriangle className="w-4 h-4" />,
   },
 };
@@ -131,8 +131,8 @@ function ScenarioPanel({
 
   return (
     <Card className="p-5">
-      <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <Zap className="w-4 h-4 text-indigo-500" />
+      <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+        <Zap className="w-4 h-4 text-primary" />
         Simulateur de scénarios
       </h3>
       <div className="space-y-2 mb-4">
@@ -145,12 +145,12 @@ function ScenarioPanel({
             }}
             className={`w-full text-left p-3 rounded-lg border transition-all ${
               selected === s.type
-                ? "border-indigo-400 bg-indigo-50"
-                : "border-gray-200 hover:border-gray-300"
+                ? "border-primary bg-primary/10"
+                : "border-white/[0.08] hover:border-white/[0.16] bg-white/[0.02]"
             }`}
           >
-            <div className="font-medium text-sm text-gray-900">{s.label}</div>
-            <div className="text-xs text-gray-500">{s.description}</div>
+            <div className="font-medium text-sm text-white">{s.label}</div>
+            <div className="text-xs text-text-secondary">{s.description}</div>
           </button>
         ))}
       </div>
@@ -158,7 +158,7 @@ function ScenarioPanel({
       {selected === "HIRE_EMPLOYEE" && (
         <input
           type="number"
-          className="w-full border rounded-lg px-3 py-2 text-sm mb-3"
+          className="w-full border border-white/[0.12] rounded-lg px-3 py-2 text-sm mb-3 bg-white/[0.04] text-white placeholder:text-text-muted focus:outline-none focus:border-primary"
           placeholder="Salaire mensuel (€, défaut 3 500€)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
@@ -166,7 +166,7 @@ function ScenarioPanel({
       )}
       {selected === "REVENUE_DROP" && (
         <div className="mb-3">
-          <label className="text-xs text-gray-600 block mb-1">
+          <label className="text-xs text-text-secondary block mb-1">
             Baisse de CA : {percentage}%
           </label>
           <input
@@ -175,7 +175,7 @@ function ScenarioPanel({
             max="80"
             value={percentage}
             onChange={(e) => setPercentage(e.target.value)}
-            className="w-full"
+            className="w-full accent-primary"
           />
         </div>
       )}
@@ -183,14 +183,14 @@ function ScenarioPanel({
         <div className="flex gap-2 mb-3">
           <input
             type="number"
-            className="flex-1 border rounded-lg px-3 py-2 text-sm"
+            className="flex-1 border border-white/[0.12] rounded-lg px-3 py-2 text-sm bg-white/[0.04] text-white placeholder:text-text-muted focus:outline-none focus:border-primary"
             placeholder="Montant (€)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
           <input
             type="number"
-            className="w-24 border rounded-lg px-3 py-2 text-sm"
+            className="w-24 border border-white/[0.12] rounded-lg px-3 py-2 text-sm bg-white/[0.04] text-white placeholder:text-text-muted focus:outline-none focus:border-primary"
             placeholder="Jours"
             value={daysDelay}
             onChange={(e) => setDaysDelay(e.target.value)}
@@ -207,15 +207,15 @@ function ScenarioPanel({
       </Button>
 
       {simulateMutation.data && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg space-y-2">
-          <p className="text-sm font-medium text-gray-900">Résultat</p>
-          <p className="text-xs text-gray-600">
+        <div className="mt-4 p-4 bg-white/[0.04] border border-white/[0.08] rounded-xl space-y-2">
+          <p className="text-sm font-medium text-white">Résultat</p>
+          <p className="text-xs text-text-secondary">
             {simulateMutation.data.explanation}
           </p>
           <div className="grid grid-cols-2 gap-3 mt-2">
             <div className="text-center">
-              <div className="text-xs text-gray-500">Trésorerie actuelle</div>
-              <div className="font-semibold text-gray-900">
+              <div className="text-xs text-text-secondary">Trésorerie actuelle</div>
+              <div className="font-semibold text-white">
                 {(simulateMutation.data.baseBalance ?? 0).toLocaleString(
                   "fr-FR",
                   {
@@ -226,13 +226,13 @@ function ScenarioPanel({
               </div>
             </div>
             <div className="text-center">
-              <div className="text-xs text-gray-500">Après scénario</div>
+              <div className="text-xs text-text-secondary">Après scénario</div>
               <div
                 className={`font-semibold ${
                   (simulateMutation.data.projectedBalance ?? 0) <
                   (simulateMutation.data.baseBalance ?? 0)
-                    ? "text-red-600"
-                    : "text-green-600"
+                    ? "text-danger"
+                    : "text-success"
                 }`}
               >
                 {(simulateMutation.data.projectedBalance ?? 0).toLocaleString(
@@ -242,7 +242,7 @@ function ScenarioPanel({
               </div>
             </div>
           </div>
-          <div className="flex justify-between text-xs text-gray-500 pt-1 border-t">
+          <div className="flex justify-between text-xs text-text-secondary pt-1 border-t border-white/[0.08]">
             <span>Runway actuel : {simulateMutation.data.baseRunwayDays}j</span>
             <span>
               Après :{" "}
@@ -250,8 +250,8 @@ function ScenarioPanel({
                 className={
                   simulateMutation.data.projectedRunwayDays <
                   simulateMutation.data.baseRunwayDays
-                    ? "text-red-600 font-medium"
-                    : "text-green-600 font-medium"
+                    ? "text-danger font-medium"
+                    : "text-success font-medium"
                 }
               >
                 {simulateMutation.data.projectedRunwayDays}j
@@ -282,8 +282,8 @@ function WeeklyBriefPanel() {
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-          <FileText className="w-4 h-4 text-emerald-500" />
+        <h3 className="font-semibold text-white flex items-center gap-2">
+          <FileText className="w-4 h-4 text-emerald-400" />
           Bulletin financier
         </h3>
         <Button
@@ -298,13 +298,13 @@ function WeeklyBriefPanel() {
           Générer
         </Button>
       </div>
-      {isLoading && <div className="h-24 bg-gray-100 rounded animate-pulse" />}
+      {isLoading && <div className="h-24 bg-white/[0.06] rounded animate-pulse" />}
       {!isLoading && brief && (
         <div>
-          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+          <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line">
             {brief.briefText}
           </p>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-text-muted mt-3">
             Généré le{" "}
             {new Date(brief.generatedAt).toLocaleDateString("fr-FR", {
               day: "numeric",
@@ -315,7 +315,7 @@ function WeeklyBriefPanel() {
         </div>
       )}
       {!isLoading && !brief && (
-        <div className="text-center py-6 text-sm text-gray-500">
+        <div className="text-center py-6 text-sm text-text-secondary">
           <p>Aucun bulletin disponible.</p>
           <Button
             size="sm"
@@ -369,7 +369,7 @@ const FinancialControlCenterPage: React.FC = () => {
       <Layout>
         <div className="max-w-6xl mx-auto space-y-4 animate-pulse">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 bg-gray-100 rounded-xl" />
+            <div key={i} className="h-32 bg-white/[0.06] rounded-xl" />
           ))}
         </div>
       </Layout>
@@ -398,10 +398,10 @@ const FinancialControlCenterPage: React.FC = () => {
         {/* ── Header ── */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-xl font-bold text-white">
               Centre de contrôle financier
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-text-secondary">
               Mis à jour{" "}
               {new Date(summary.computedAt).toLocaleTimeString("fr-FR", {
                 hour: "2-digit",
@@ -439,36 +439,36 @@ const FinancialControlCenterPage: React.FC = () => {
 
           {/* Runway */}
           <Card className="p-4">
-            <div className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+            <div className="text-xs text-text-secondary mb-1 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" /> Runway
             </div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-2xl font-bold text-white">
               {summary.runwayDays < 180 ? `${summary.runwayDays}j` : "180j+"}
             </div>
-            <div className="text-xs text-gray-400">trésorerie disponible</div>
+            <div className="text-xs text-text-muted">trésorerie disponible</div>
           </Card>
 
           {/* Current balance */}
           <Card className="p-4">
-            <div className="text-xs text-gray-500 mb-1">Solde actuel</div>
-            <div className="text-2xl font-bold text-gray-900">
+            <div className="text-xs text-text-secondary mb-1">Solde actuel</div>
+            <div className="text-2xl font-bold text-white">
               {(summary.currentBalance ?? 0).toLocaleString("fr-FR", {
                 style: "currency",
                 currency: "EUR",
                 maximumFractionDigits: 0,
               })}
             </div>
-            <div className="text-xs text-gray-400">tous comptes actifs</div>
+            <div className="text-xs text-text-muted">tous comptes actifs</div>
           </Card>
 
           {/* Min projected */}
           <Card className="p-4">
-            <div className="text-xs text-gray-500 mb-1">Minimum projeté</div>
+            <div className="text-xs text-text-secondary mb-1">Minimum projeté</div>
             <div
               className={`text-2xl font-bold ${
                 (summary.minProjectedBalance ?? 0) < 0
-                  ? "text-red-600"
-                  : "text-gray-900"
+                  ? "text-danger"
+                  : "text-white"
               }`}
             >
               {(summary.minProjectedBalance ?? 0).toLocaleString("fr-FR", {
@@ -478,7 +478,7 @@ const FinancialControlCenterPage: React.FC = () => {
               })}
             </div>
             {summary.minProjectedDate && (
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-text-muted">
                 le{" "}
                 {new Date(summary.minProjectedDate).toLocaleDateString("fr-FR")}
               </div>
@@ -491,12 +491,12 @@ const FinancialControlCenterPage: React.FC = () => {
           <div className="lg:col-span-2 space-y-5">
             {/* ── Cash Drivers ── */}
             <Card className="p-5">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <TrendingDown className="w-4 h-4 text-red-500" />
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <TrendingDown className="w-4 h-4 text-danger" />
                 Facteurs impactant votre trésorerie
               </h3>
               {(summary.drivers?.length ?? 0) === 0 ? (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-text-secondary">
                   Aucun facteur détecté — situation saine.
                 </p>
               ) : (
@@ -504,7 +504,7 @@ const FinancialControlCenterPage: React.FC = () => {
                   {(summary.drivers ?? []).map((d: CashDriver) => (
                     <li
                       key={d.id}
-                      className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
+                      className="flex items-start gap-3 p-3 bg-white/[0.04] rounded-lg"
                     >
                       <span className="mt-0.5">
                         {DRIVER_TYPE_ICONS[d.type] ?? (
@@ -512,16 +512,16 @@ const FinancialControlCenterPage: React.FC = () => {
                         )}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm text-gray-800">{d.label}</p>
+                        <p className="text-sm text-white">{d.label}</p>
                         {d.dueDate && (
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-text-secondary">
                             Échéance :{" "}
                             {new Date(d.dueDate).toLocaleDateString("fr-FR")}
                           </p>
                         )}
                       </div>
                       {(d.amount ?? 0) > 0 && (
-                        <span className="text-sm font-semibold text-red-600 whitespace-nowrap">
+                        <span className="text-sm font-semibold text-danger whitespace-nowrap">
                           -
                           {(d.amount ?? 0).toLocaleString("fr-FR", {
                             style: "currency",
@@ -538,8 +538,8 @@ const FinancialControlCenterPage: React.FC = () => {
 
             {/* ── Recommended Actions ── */}
             <Card className="p-5">
-              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-indigo-500" />
+              <h3 className="font-semibold text-white mb-4 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-primary" />
                 Actions recommandées
               </h3>
               {(summary.actions?.length ?? 0) === 0 ? (
@@ -553,20 +553,20 @@ const FinancialControlCenterPage: React.FC = () => {
                     .map((action: CashAction) => (
                       <li
                         key={action.id}
-                        className="p-4 border border-gray-100 rounded-xl hover:border-indigo-200 transition-colors"
+                        className="p-4 border border-white/[0.08] rounded-xl hover:border-primary/30 transition-colors"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="flex-1 min-w-0">
-                            <span className="inline-block text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full mb-1.5">
+                            <span className="inline-block text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full mb-1.5">
                               {ACTION_TYPE_LABELS[action.actionType] ??
                                 action.actionType}
                             </span>
-                            <p className="text-sm text-gray-800">
+                            <p className="text-sm text-text-secondary">
                               {action.description}
                             </p>
                           </div>
                           <div className="text-right shrink-0">
-                            <div className="text-sm font-semibold text-green-600">
+                            <div className="text-sm font-semibold text-success">
                               +
                               {(action.estimatedImpact ?? 0).toLocaleString(
                                 "fr-FR",
@@ -577,22 +577,22 @@ const FinancialControlCenterPage: React.FC = () => {
                                 },
                               )}
                             </div>
-                            <div className="text-xs text-gray-400">
+                            <div className="text-xs text-text-muted">
                               sous {action.horizonDays}j
                             </div>
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-3">
                           <div className="flex items-center gap-1.5">
-                            <div className="h-1.5 w-20 bg-gray-100 rounded-full overflow-hidden">
+                            <div className="h-1.5 w-20 bg-white/[0.10] rounded-full overflow-hidden">
                               <div
-                                className="h-full bg-indigo-400 rounded-full"
+                                className="h-full bg-primary rounded-full"
                                 style={{
                                   width: `${(action.confidence ?? 0) * 100}%`,
                                 }}
                               />
                             </div>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-text-secondary">
                               {Math.round((action.confidence ?? 0) * 100)}%
                               confiance
                             </span>
@@ -601,7 +601,7 @@ const FinancialControlCenterPage: React.FC = () => {
                             <button
                               onClick={() => applyMutation.mutate(action.id)}
                               disabled={applyMutation.isPending}
-                              className="flex items-center gap-1 text-xs text-green-600 hover:text-green-700 font-medium"
+                              className="flex items-center gap-1 text-xs text-success hover:text-success font-medium"
                               title="Marquer comme appliqué"
                             >
                               <CheckCircle className="w-3.5 h-3.5" />
@@ -610,7 +610,7 @@ const FinancialControlCenterPage: React.FC = () => {
                             <button
                               onClick={() => dismissMutation.mutate(action.id)}
                               disabled={dismissMutation.isPending}
-                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600"
+                              className="flex items-center gap-1 text-xs text-text-muted hover:text-text-secondary"
                               title="Ignorer"
                             >
                               <XCircle className="w-3.5 h-3.5" />
