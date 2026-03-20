@@ -25,11 +25,11 @@ public class PaymentInitiationEntity extends PanacheEntityBase {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(nullable = false)
+    @Column(name = "creditor_name", nullable = false)
     private String creditorName;
 
     /** Validated IBAN — basic format check done in service */
-    @Column(nullable = false)
+    @Column(name = "creditor_iban", nullable = false)
     private String creditorIban;
 
     @Column(nullable = false, precision = 12, scale = 2)
@@ -49,14 +49,14 @@ public class PaymentInitiationEntity extends PanacheEntityBase {
     private PaymentStatus status = PaymentStatus.PENDING;
 
     /** Swan payment ID returned after submission */
-    @Column
+    @Column(name = "swan_payment_id")
     private String swanPaymentId;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "initiated_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant initiatedAt = Instant.now();
 
-    @Column
+    @Column(name = "executed_at")
     private Instant executedAt;
 
     @Column(length = 36, unique = true)

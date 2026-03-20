@@ -30,23 +30,23 @@ public class TaxEstimateEntity extends PanacheEntityBase {
      * TVA, URSSAF, IS (impôt sociétés), IR (impôt revenu), CFE
      */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "tax_type", nullable = false)
     private TaxType taxType;
 
     /** e.g. "2026-T1", "2026-07" */
-    @Column(nullable = false)
+    @Column(name = "period_label", nullable = false)
     private String periodLabel;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "estimated_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal estimatedAmount;
 
-    @Column(nullable = false)
+    @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 
-    @Column
+    @Column(name = "paid_at")
     private Instant paidAt;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 

@@ -40,24 +40,24 @@ public class AccountEntity extends PanacheEntityBase {
     @Builder.Default
     private String currency = "EUR";
 
-    @Column
+    @Column(name = "bank_name")
     private String bankName;
 
-    @Column
+    @Column(name = "account_name")
     private String accountName;
 
-    @Column
+    @Column(name = "account_type")
     private String accountType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "sync_status", nullable = false)
     @Builder.Default
     private SyncStatus syncStatus = SyncStatus.OK;
 
-    @Column
+    @Column(name = "last_sync_at")
     private Instant lastSyncAt;
 
-    @Column(unique = true)
+    @Column(name = "external_account_id", unique = true)
     private String externalAccountId;
 
     /** Bridge OAuth access token — stored AES-256-GCM encrypted at rest. */
@@ -78,14 +78,14 @@ public class AccountEntity extends PanacheEntityBase {
     @Builder.Default
     private AccountStatus status = AccountStatus.ACTIVE;
 
-    @Column
+    @Column(name = "last_sync_date")
     private LocalDate lastSyncDate;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
 

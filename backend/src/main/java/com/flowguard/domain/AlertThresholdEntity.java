@@ -35,7 +35,7 @@ public class AlertThresholdEntity extends PanacheEntityBase {
     private AlertEntity.AlertType alertType;
 
     /** Minimum absolute amount to trigger the alert (e.g. ignore deficits < 500€). */
-    @Column(precision = 15, scale = 2)
+    @Column(name = "min_amount", precision = 15, scale = 2)
     @Builder.Default
     private BigDecimal minAmount = BigDecimal.ZERO;
 
@@ -46,15 +46,15 @@ public class AlertThresholdEntity extends PanacheEntityBase {
 
     /** Minimum severity to notify (e.g. only HIGH and above). */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "min_severity", nullable = false)
     @Builder.Default
     private AlertEntity.Severity minSeverity = AlertEntity.Severity.LOW;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
 

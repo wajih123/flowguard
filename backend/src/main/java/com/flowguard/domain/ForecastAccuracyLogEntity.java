@@ -26,22 +26,22 @@ public class ForecastAccuracyLogEntity extends PanacheEntityBase {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(nullable = false)
+    @Column(name = "forecast_date", nullable = false)
     private LocalDate forecastDate;
 
-    @Column(nullable = false)
+    @Column(name = "horizon_days", nullable = false)
     private int horizonDays;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "predicted_balance", nullable = false, precision = 12, scale = 2)
     private BigDecimal predictedBalance;
 
-    @Column(precision = 12, scale = 2)
+    @Column(name = "actual_balance", precision = 12, scale = 2)
     private BigDecimal actualBalance;
 
     @Column(precision = 12, scale = 2)
     private BigDecimal mae;
 
-    @Column(nullable = false)
+    @Column(name = "recorded_at", nullable = false)
     @Builder.Default
     private Instant recordedAt = Instant.now();
 }

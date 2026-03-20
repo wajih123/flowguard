@@ -42,14 +42,14 @@ public class TransactionEntity extends PanacheEntityBase {
     @Column(nullable = false)
     private LocalDate date;
 
-    @Column(nullable = false)
+    @Column(name = "is_recurring", nullable = false)
     @Builder.Default
     private boolean isRecurring = false;
 
-    @Column
+    @Column(name = "external_transaction_id")
     private String externalTransactionId;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 

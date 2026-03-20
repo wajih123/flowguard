@@ -19,46 +19,46 @@ public class UserEntity extends PanacheEntityBase {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(nullable = true)
+    @Column(name = "company_name", nullable = true)
     private String companyName;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "user_type", nullable = false)
     private UserType userType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "kyc_status", nullable = false)
     @Builder.Default
     private KycStatus kycStatus = KycStatus.PENDING;
 
-    @Column
+    @Column(name = "swan_onboarding_id")
     private String swanOnboardingId;
 
-    @Column
+    @Column(name = "swan_account_id")
     private String swanAccountId;
 
-    @Column
+    @Column(name = "nordigen_requisition_id")
     private String nordigenRequisitionId;
 
-    @Column
+    @Column(name = "bridge_user_uuid")
     private String bridgeUserUuid;
 
-    @Column
+    @Column(name = "gdpr_consent_at")
     private Instant gdprConsentAt;
 
-    @Column
+    @Column(name = "data_deletion_requested_at")
     private Instant dataDeletionRequestedAt;
 
     @Column(nullable = false)
@@ -69,25 +69,25 @@ public class UserEntity extends PanacheEntityBase {
     @Builder.Default
     private boolean disabled = false;
 
-    @Column(nullable = false)
+    @Column(name = "mfa_enabled", nullable = false)
     @Builder.Default
     private boolean mfaEnabled = true;
 
-    @Column(nullable = false)
+    @Column(name = "email_verified", nullable = false)
     @Builder.Default
     private boolean emailVerified = false;
 
-    @Column
+    @Column(name = "disabled_at")
     private Instant disabledAt;
 
-    @Column(length = 500)
+    @Column(name = "disabled_reason", length = 500)
     private String disabledReason;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
 

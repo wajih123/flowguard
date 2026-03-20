@@ -36,17 +36,17 @@ public class AlertEntity extends PanacheEntityBase {
     @Column(nullable = false, length = 1000)
     private String message;
 
-    @Column(precision = 15, scale = 2)
+    @Column(name = "projected_deficit", precision = 15, scale = 2)
     private BigDecimal projectedDeficit;
 
-    @Column
+    @Column(name = "trigger_date")
     private LocalDate triggerDate;
 
-    @Column(nullable = false)
+    @Column(name = "is_read", nullable = false)
     @Builder.Default
     private boolean isRead = false;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 

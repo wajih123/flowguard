@@ -26,26 +26,26 @@ public class InvoiceEntity extends PanacheEntityBase {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(nullable = false)
+    @Column(name = "client_name", nullable = false)
     private String clientName;
 
-    @Column
+    @Column(name = "client_email")
     private String clientEmail;
 
     @Column(nullable = false)
     private String number;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "amount_ht", nullable = false, precision = 12, scale = 2)
     private BigDecimal amountHt;
 
-    @Column(nullable = false, precision = 5, scale = 2)
+    @Column(name = "vat_rate", nullable = false, precision = 5, scale = 2)
     @Builder.Default
     private BigDecimal vatRate = new BigDecimal("20.0");
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "vat_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal vatAmount;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "total_ttc", nullable = false, precision = 12, scale = 2)
     private BigDecimal totalTtc;
 
     @Column(nullable = false, length = 3)
@@ -57,23 +57,23 @@ public class InvoiceEntity extends PanacheEntityBase {
     @Builder.Default
     private InvoiceStatus status = InvoiceStatus.DRAFT;
 
-    @Column(nullable = false)
+    @Column(name = "issue_date", nullable = false)
     private LocalDate issueDate;
 
-    @Column(nullable = false)
+    @Column(name = "due_date", nullable = false)
     private LocalDate dueDate;
 
-    @Column
+    @Column(name = "paid_at")
     private Instant paidAt;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
 

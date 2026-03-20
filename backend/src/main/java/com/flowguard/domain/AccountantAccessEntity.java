@@ -36,10 +36,10 @@ public class AccountantAccessEntity extends PanacheEntityBase {
     @Column(nullable = false, unique = true)
     private String accessToken;
 
-    @Column(nullable = false)
+    @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 

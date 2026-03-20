@@ -35,10 +35,10 @@ public class BudgetCategoryEntity extends PanacheEntityBase {
     @Column(nullable = false)
     private String category;
 
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "budgeted_amount", nullable = false, precision = 12, scale = 2)
     private BigDecimal budgetedAmount;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 }

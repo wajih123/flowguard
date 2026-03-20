@@ -30,7 +30,7 @@ public class FlashCreditEntity extends PanacheEntityBase {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal fee;
 
-    @Column(nullable = false, precision = 10, scale = 2)
+    @Column(name = "total_repayment", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalRepayment;
 
     @Column(nullable = false)
@@ -41,22 +41,22 @@ public class FlashCreditEntity extends PanacheEntityBase {
     @Builder.Default
     private CreditStatus status = CreditStatus.PENDING;
 
-    @Column
+    @Column(name = "disbursed_at")
     private Instant disbursedAt;
 
-    @Column
+    @Column(name = "repaid_at")
     private Instant repaidAt;
 
-    @Column(nullable = false)
+    @Column(name = "due_date", nullable = false)
     private Instant dueDate;
 
-    @Column(precision = 6, scale = 2)
+    @Column(name = "taeg_percent", precision = 6, scale = 2)
     private BigDecimal taegPercent;
 
-    @Column
+    @Column(name = "retraction_deadline")
     private Instant retractionDeadline;
 
-    @Column
+    @Column(name = "retraction_exercised")
     @Builder.Default
     private boolean retractionExercised = false;
 
@@ -68,11 +68,11 @@ public class FlashCreditEntity extends PanacheEntityBase {
     @Column(name = "idempotency_key", length = 36, unique = true)
     private String idempotencyKey;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private Instant createdAt = Instant.now();
 
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     @Builder.Default
     private Instant updatedAt = Instant.now();
 
