@@ -250,7 +250,9 @@ public class CreditScoringService {
      *   < -5000    →  20 (Critique)
      */
     private int computeBalanceCap(UUID userId) {
-        BigDecimal totalBalance = accountRepository.findByUserId(userId).stream()
+        // Use only ACTIVE accounts — closed/disconnected accounts should not
+        // penalise the score with their historical negative balance.
+        BigDecimal totalBalance = accountRepository.findActiveByUserId(userId).stream()
                 .map(a -> a.getBalance() != null ? a.getBalance() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (totalBalance.compareTo(BigDecimal.ZERO) >= 0) return 100;

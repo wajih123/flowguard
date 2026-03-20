@@ -161,11 +161,13 @@ public class DashboardResource {
         }
 
         // 7. Build account sub-object (matches frontend BankAccount interface)
+        //    currentBalance here reflects the AGGREGATED balance (same as top-level)
+        //    so that any frontend code reading account.currentBalance stays consistent.
         Map<String, Object> account = new LinkedHashMap<>();
         account.put("id", primary.getId().toString());
         account.put("bankName", primary.getBankName() != null ? primary.getBankName() : "");
         account.put("ibanMasked", maskIban(primary.getIban()));
-        account.put("currentBalance", currentBalance);
+        account.put("currentBalance", currentBalance); // aggregated, not primary-only
         account.put("currency", primary.getCurrency() != null ? primary.getCurrency() : "EUR");
         account.put("lastSyncAt", primary.getLastSyncAt() != null
                 ? primary.getLastSyncAt().toString() : null);

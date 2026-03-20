@@ -54,27 +54,36 @@ public class TreasuryService {
             .build();
 
     /**
-     * Fetches a cash-flow forecast for the user's primary account by:
-     * 1. Loading the last 6 months of transactions from the DB
-     * 2. POSTing them to ML /v2/predict (Model Race)
+     * Fetches a cash-flow forecast for the user by aggregating ALL active accounts:
+     * 1. Loading the last 6 months of transactions from ALL active accounts
+     * 2. POSTing them to ML /v2/predict (Model Race) with aggregated starting balance
      * 3. Mapping the response to TreasuryForecastDto
+     *
+     * Using the aggregated balance ensures the forecast baseline matches what
+     * DashboardResource and DecisionEngineService both display as "currentBalance".
      */
     public TreasuryForecastDto getForecast(UUID userId, int horizonDays) {
-        // ── 1. Find primary account ───────────────────────────────────────────
+        // ── 1. Load all active accounts ───────────────────────────────────────
         var accounts = accountRepository.findActiveByUserId(userId);
         if (accounts.isEmpty()) {
             return emptyForecast();
         }
+
+        // Primary account is used only as identifier for the ML model cache.
+        // Balance and transactions are always aggregated across all active accounts.
         var primary = accounts.stream()
                 .filter(a -> a.getSyncStatus() != null
                         && a.getSyncStatus().name().equals("OK"))
                 .findFirst()
                 .orElse(accounts.get(0));
 
-        // ── 2. Load last 6 months of transactions ─────────────────────────────
+        // ── 2. Load last 6 months of transactions from ALL active accounts ────
         LocalDate since = LocalDate.now().minusMonths(6);
-        List<TransactionEntity> txs = transactionRepository
-                .findByAccountIdAndDateBetween(primary.getId(), since, LocalDate.now());
+        List<TransactionEntity> txs = new ArrayList<>();
+        for (var account : accounts) {
+            txs.addAll(transactionRepository
+                    .findByAccountIdAndDateBetween(account.getId(), since, LocalDate.now()));
+        }
 
         if (txs.size() < 5) {
             LOG.infof("Not enough transactions for ML forecast (userId=%s, count=%d)", userId, txs.size());
@@ -83,13 +92,14 @@ public class TreasuryService {
 
         // ── 3. Build JSON payload ─────────────────────────────────────────────
         try {
-            // Ensure ascending sort by date before computing running balance
+            // Sort ascending by date before computing running balance
             txs.sort(java.util.Comparator.comparing(TransactionEntity::getDate));
 
             // Compute running balance per transaction (no balance column in DB).
-            // Strategy: walk backwards from current account balance.
-            double currentBal = primary.getBalance() != null
-                    ? primary.getBalance().doubleValue() : 0.0;
+            // Strategy: walk backwards from aggregated current balance across all accounts.
+            double currentBal = accounts.stream()
+                    .mapToDouble(a -> a.getBalance() != null ? a.getBalance().doubleValue() : 0.0)
+                    .sum();
             double[] runningBalances = new double[txs.size()];
             runningBalances[txs.size() - 1] = currentBal;
             for (int i = txs.size() - 2; i >= 0; i--) {
