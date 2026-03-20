@@ -1,7 +1,15 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Deploy to Production
+#
+# ONLY triggers when ci.yml ("CI") completes successfully on main.
+# Never on direct push — that would deploy stale images before CI builds new ones.
+# ─────────────────────────────────────────────────────────────────────────────
 name: Deploy to Production
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
 
 jobs:
@@ -9,36 +17,139 @@ jobs:
     name: Deploy to Hetzner
     runs-on: ubuntu-latest
     environment: production
+    # Only deploy when the full CI pipeline (tests + builds) passed
+    if: github.event.workflow_run.conclusion == 'success'
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── Single SSH session does everything: write .env, pull, restart, verify ──
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          CORS_ORIGINS: ${{ secrets.CORS_ORIGINS }}
+          BRIDGE_CLIENT_ID: ${{ secrets.BRIDGE_CLIENT_ID }}
+          BRIDGE_CLIENT_SECRET: ${{ secrets.BRIDGE_CLIENT_SECRET }}
+          BRIDGE_REDIRECT_URL: ${{ secrets.BRIDGE_REDIRECT_URL }}
+          BRIDGE_WEBHOOK_SECRET: ${{ secrets.BRIDGE_WEBHOOK_SECRET }}
+          FLOWGUARD_ALERT_CRON: ${{ secrets.FLOWGUARD_ALERT_CRON }}
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          FLOWGUARD_SWAN_CLIENT_ID: ${{ secrets.FLOWGUARD_SWAN_CLIENT_ID }}
+          FLOWGUARD_SWAN_CLIENT_SECRET: ${{ secrets.FLOWGUARD_SWAN_CLIENT_SECRET }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         with:
           host: ${{ secrets.SERVER_HOST }}
-          username: root
+          username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
           port: 22
-          command_timeout: 15m
+          command_timeout: 20m
+          # Secrets are injected as env vars into the remote shell via envs:
+          envs: DOCKER_USERNAME,DOCKER_PASSWORD,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,REDIS_PASSWORD,ENCRYPTION_KEY,CORS_ORIGINS,BRIDGE_CLIENT_ID,BRIDGE_CLIENT_SECRET,BRIDGE_REDIRECT_URL,BRIDGE_WEBHOOK_SECRET,FLOWGUARD_ALERT_CRON,FIREBASE_SERVICE_ACCOUNT_JSON,FLOWGUARD_SWAN_CLIENT_ID,FLOWGUARD_SWAN_CLIENT_SECRET,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASSWORD
           script: |
-            set -e
-            cd /opt/flowguard
-            git pull origin main
-            bash infra/deploy.sh all
+            set -euo pipefail
+            DEPLOY_DIR="/opt/flowguard"
+            cd "$DEPLOY_DIR"
 
-      - name: Verify deployment
+            echo "[deploy] Pulling latest code..."
+            git pull origin main
+
+            echo "[deploy] Writing .env from secrets..."
+            # printf avoids heredoc issues with special chars ($, !, etc.) in secret values
+            {
+              printf 'DOCKER_REGISTRY=docker.io\n'
+              printf 'DOCKER_ORG=nevyo\n'
+              printf 'DOCKER_TAG=latest\n'
+              printf 'POSTGRES_DB=%s\n'                   "${POSTGRES_DB}"
+              printf 'POSTGRES_USER=%s\n'                 "${POSTGRES_USER}"
+              printf 'POSTGRES_PASSWORD=%s\n'             "${POSTGRES_PASSWORD}"
+              printf 'REDIS_PASSWORD=%s\n'                "${REDIS_PASSWORD}"
+              printf 'ENCRYPTION_KEY=%s\n'                "${ENCRYPTION_KEY}"
+              printf 'CORS_ORIGINS=%s\n'                  "${CORS_ORIGINS:-https://157-180-43-233.sslip.io}"
+              printf 'BRIDGE_CLIENT_ID=%s\n'              "${BRIDGE_CLIENT_ID:-}"
+              printf 'BRIDGE_CLIENT_SECRET=%s\n'          "${BRIDGE_CLIENT_SECRET:-}"
+              printf 'BRIDGE_REDIRECT_URL=%s\n'           "${BRIDGE_REDIRECT_URL:-}"
+              printf 'BRIDGE_WEBHOOK_SECRET=%s\n'         "${BRIDGE_WEBHOOK_SECRET:-}"
+              printf 'FLOWGUARD_ALERT_CRON=%s\n'          "${FLOWGUARD_ALERT_CRON:-0 0/5 * * * ?}"
+              printf 'FIREBASE_SERVICE_ACCOUNT_JSON=%s\n' "${FIREBASE_SERVICE_ACCOUNT_JSON:-{}}"
+              printf 'FLOWGUARD_SWAN_CLIENT_ID=%s\n'      "${FLOWGUARD_SWAN_CLIENT_ID:-}"
+              printf 'FLOWGUARD_SWAN_CLIENT_SECRET=%s\n'  "${FLOWGUARD_SWAN_CLIENT_SECRET:-}"
+              printf 'SMTP_HOST=%s\n'                     "${SMTP_HOST:-localhost}"
+              printf 'SMTP_PORT=%s\n'                     "${SMTP_PORT:-587}"
+              printf 'SMTP_USER=%s\n'                     "${SMTP_USER:-}"
+              printf 'SMTP_PASSWORD=%s\n'                 "${SMTP_PASSWORD:-}"
+            } > .env
+            chmod 600 .env
+
+            echo "[deploy] Docker Hub login..."
+            echo "${DOCKER_PASSWORD}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
+
+            echo "[deploy] Pulling images..."
+            docker pull docker.io/nevyo/flowguard-backend:latest
+            docker pull docker.io/nevyo/flowguard-web:latest
+            docker pull docker.io/nevyo/flowguard-ml:latest
+
+            COMPOSE="docker compose -f ${DEPLOY_DIR}/infra/docker-compose.prod.yml --env-file ${DEPLOY_DIR}/.env"
+
+            echo "[deploy] Rolling update (no downtime)..."
+            $COMPOSE up -d --no-build backend ml-service web
+
+            echo "[deploy] Waiting for backend health (up to 90s)..."
+            for i in $(seq 1 30); do
+              if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+                echo "[deploy] Backend healthy (attempt ${i})"
+                break
+              fi
+              if [[ $i -eq 30 ]]; then
+                echo "[deploy] ERROR: backend unhealthy after 30 attempts — rolling back"
+                # Rollback: find the previous image tag (second most recent main-* tag)
+                PREV_TAG=$(docker images docker.io/nevyo/flowguard-backend \
+                  --format '{{.Tag}}' | grep '^main-' | sed -n '2p')
+                if [[ -n "$PREV_TAG" ]]; then
+                  echo "[deploy] Rolling back backend to: $PREV_TAG"
+                  DOCKER_TAG="$PREV_TAG" $COMPOSE up -d --no-build backend
+                fi
+                docker logs --tail 80 flowguard-backend
+                exit 1
+              fi
+              sleep 3
+            done
+
+            echo "[deploy] Pruning stale images (>48h)..."
+            docker image prune -af --filter "until=48h"
+            docker logout
+
+            echo "[deploy] --- Deployment summary ---"
+            docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}" \
+              | grep -E '^flowguard|^NAMES'
+            echo ""
+            curl -s -o /dev/null -w "Backend health: HTTP %{http_code}\n" http://localhost:8080/health
+            curl -s -o /dev/null -w "Nginx health:   HTTP %{http_code}\n" http://localhost/health-check
+            echo "[deploy] Done."
+
+      # ── On failure: grab logs without opening another SSH connection ───────────
+      - name: Dump logs on failure
+        if: failure()
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.SERVER_HOST }}
-          username: root
+          username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_KEY }}
           port: 22
-          command_timeout: 2m
+          command_timeout: 1m
           script: |
-            echo "=== Container Status ==="
-            docker ps --format "table {{.Names}}\t{{.Status}}" | grep flowguard
-            echo ""
-            echo "=== Backend Health ==="
-            curl -sf http://localhost:8080/health && echo "OK" || echo "FAILED"
-            echo ""
-            echo "=== Nginx ==="
-            curl -sf http://localhost/health-check && echo "OK" || echo "FAILED"
+            echo "=== DEPLOYMENT FAILED ==="
+            echo "--- Backend (last 50 lines) ---"
+            docker logs --tail 50 flowguard-backend 2>&1
+            echo "--- Container status ---"
+            docker ps -a | grep flowguard

@@ -65,10 +65,7 @@ services:
 
   # ── Quarkus Backend ───────────────────────────────────────────────────────────
   backend:
-    build:
-      context: ../backend
-      dockerfile: Dockerfile
-    image: flowguard-backend:latest
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_ORG:-nevyo}/flowguard-backend:${DOCKER_TAG:-latest}
     container_name: flowguard-backend
     environment:
       # Database
@@ -144,10 +141,7 @@ services:
 
   # ── FastAPI ML Service ────────────────────────────────────────────────────────
   ml-service:
-    build:
-      context: ../ml-service
-      dockerfile: Dockerfile
-    image: flowguard-ml:latest
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_ORG:-nevyo}/flowguard-ml:${DOCKER_TAG:-latest}
     container_name: flowguard-ml
     environment:
       DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
@@ -172,12 +166,7 @@ services:
 
   # ── React Web Frontend ───────────────────────────────────────────────────────
   web:
-    build:
-      context: ../web
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ""
-    image: flowguard-web:latest
+    image: ${DOCKER_REGISTRY:-docker.io}/${DOCKER_ORG:-nevyo}/flowguard-web:${DOCKER_TAG:-latest}
     container_name: flowguard-web
     restart: unless-stopped
     networks: [internal]
