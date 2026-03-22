@@ -44,6 +44,9 @@ const TaxVaultPage = React.lazy(() => import("./pages/TaxVaultPage"));
 const CashCalendarPage = React.lazy(() => import("./pages/CashCalendarPage"));
 const ClientStatsPage = React.lazy(() => import("./pages/ClientStatsPage"));
 const CashGoalPage = React.lazy(() => import("./pages/CashGoalPage"));
+const TaxDeclarationPage = React.lazy(
+  () => import("./pages/TaxDeclarationPage"),
+);
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 const PrivateRoute: React.FC<{
@@ -321,6 +324,14 @@ const ClientApp: React.FC = () => {
           element={
             <PrivateRoute>
               <CashGoalPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/tax-declaration"
+          element={
+            <PrivateRoute>
+              <TaxDeclarationPage />
             </PrivateRoute>
           }
         />

@@ -19,6 +19,7 @@ import {
   Receipt,
   ShieldCheck,
   CalendarDays,
+  ClipboardList,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAlertStore } from "@/store/alertStore";
@@ -74,6 +75,11 @@ const navItems: NavItem[] = [
     label: "Objectif épargne",
     to: "/cash-goal",
     icon: <Target size={17} />,
+  },
+  {
+    label: "Déclaration impôts",
+    to: "/tax-declaration",
+    icon: <ClipboardList size={17} />,
   },
   {
     label: "Scénarios",
