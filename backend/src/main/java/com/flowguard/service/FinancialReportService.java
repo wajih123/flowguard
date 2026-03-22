@@ -40,6 +40,7 @@ public class FinancialReportService {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DeviceRgb ACCENT = new DeviceRgb(0x6C, 0x63, 0xFF);
     private static final DeviceRgb HEADER_BG = new DeviceRgb(0x1E, 0x1E, 0x2E);
+    private static final DeviceRgb WHITE_BG = new DeviceRgb(0xFF, 0xFF, 0xFF);
     private static final DeviceRgb ROW_ALT = new DeviceRgb(0xF5, 0xF5, 0xF8);
 
     @Inject UserRepository userRepository;
@@ -57,7 +58,7 @@ public class FinancialReportService {
 
         List<AccountEntity> accounts = accountRepository.findActiveByUserId(userId);
         BigDecimal totalBalance = accounts.stream()
-                .map(AccountEntity::getCurrentBalance)
+                .map(AccountEntity::getBalance)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         LocalDate from = LocalDate.now().minusMonths(3);
@@ -196,7 +197,7 @@ public class FinancialReportService {
     }
 
     private void addTableRow(Table table, String label, String value, boolean alt) {
-        DeviceRgb bg = alt ? ROW_ALT : ColorConstants.WHITE;
+        DeviceRgb bg = alt ? ROW_ALT : WHITE_BG;
         table.addCell(new Cell().add(new Paragraph(label)).setBackgroundColor(bg));
         table.addCell(new Cell().add(new Paragraph(value).setTextAlignment(TextAlignment.RIGHT)).setBackgroundColor(bg));
     }
