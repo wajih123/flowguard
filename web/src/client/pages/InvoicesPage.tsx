@@ -102,7 +102,11 @@ const InvoiceRow: React.FC<{
         {(inv.status === "SENT" || inv.status === "OVERDUE") && (
           <button
             onClick={onToggleReminder}
-            title={inv.reminderEnabled ? "Désactiver les rappels automatiques" : "Activer les rappels automatiques"}
+            title={
+              inv.reminderEnabled
+                ? "Désactiver les rappels automatiques"
+                : "Activer les rappels automatiques"
+            }
             className={`p-1.5 rounded-lg transition ${
               inv.reminderEnabled
                 ? "text-primary bg-primary/10 hover:bg-primary/20"

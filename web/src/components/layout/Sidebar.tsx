@@ -17,6 +17,8 @@ import {
   X,
   Target,
   Receipt,
+  ShieldCheck,
+  CalendarDays,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAlertStore } from "@/store/alertStore";
@@ -52,6 +54,26 @@ const navItems: NavItem[] = [
     label: "Abonnements",
     to: "/subscriptions",
     icon: <Receipt size={17} />,
+  },
+  {
+    label: "Coffre fiscal",
+    to: "/tax-vault",
+    icon: <ShieldCheck size={17} />,
+  },
+  {
+    label: "Calendrier flux",
+    to: "/cash-calendar",
+    icon: <CalendarDays size={17} />,
+  },
+  {
+    label: "Clients",
+    to: "/clients",
+    icon: <Users size={17} />,
+  },
+  {
+    label: "Objectif épargne",
+    to: "/cash-goal",
+    icon: <Target size={17} />,
   },
   {
     label: "Scénarios",

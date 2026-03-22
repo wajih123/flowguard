@@ -7,6 +7,7 @@ import {
   PieChart,
   Building2,
   FileDown,
+  AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -24,6 +25,8 @@ import { AlertsList } from "@/components/dashboard/AlertsList";
 import { useDashboard, useDashboardTransactions } from "@/hooks/useDashboard";
 import { usePredictions } from "@/hooks/usePredictions";
 import { useAuthStore } from "@/store/authStore";
+import { useQuery } from "@tanstack/react-query";
+import { clientStatsApi } from "@/api/clientStats";
 import apiClient from "@/api/client";
 
 const DashboardPage: React.FC = () => {
@@ -36,8 +39,18 @@ const DashboardPage: React.FC = () => {
   );
 
   const [alertDismissed, setAlertDismissed] = useState(false);
+  const [concentrationDismissed, setConcentrationDismissed] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  const { data: clientStats } = useQuery({
+    queryKey: ["client-stats"],
+    queryFn: clientStatsApi.list,
+    staleTime: 10 * 60 * 1000,
+  });
+  const concentrationRiskClient = clientStats?.find(
+    (c) => c.isConcentrationRisk,
+  );
 
   const downloadReport = async () => {
     setPdfLoading(true);
@@ -81,6 +94,44 @@ const DashboardPage: React.FC = () => {
             onCta={() => setReserveOpen(true)}
             onDismiss={() => setAlertDismissed(true)}
           />
+        )}
+
+        {/* ── CONCENTRATION RISK BANNER ───────────────────────────────── */}
+        {!concentrationDismissed && concentrationRiskClient && (
+          <div className="flex items-start justify-between gap-3 p-4 rounded-xl border border-warning/25 bg-warning/10">
+            <div className="flex items-start gap-3">
+              <AlertTriangle
+                size={18}
+                className="text-warning mt-0.5 shrink-0"
+              />
+              <div>
+                <p className="text-white text-sm font-semibold">
+                  Risque de concentration client
+                </p>
+                <p className="text-text-secondary text-xs mt-0.5">
+                  <strong>{concentrationRiskClient.clientName}</strong>{" "}
+                  représente {Math.round(concentrationRiskClient.revenueShare)}%
+                  de votre CA. Diversifiez votre portefeuille pour réduire ce
+                  risque.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                to="/clients"
+                className="text-xs text-warning font-medium hover:text-white transition"
+              >
+                Voir l’analyse
+              </Link>
+              <button
+                onClick={() => setConcentrationDismissed(true)}
+                className="text-text-muted hover:text-white text-sm p-1 rounded transition"
+                aria-label="Fermer"
+              >
+                ×
+              </button>
+            </div>
+          </div>
         )}
 
         {/* ── 2. HEADER ────────────────────────────────────────────────── */}

@@ -40,6 +40,10 @@ const FinancialControlCenterPage = React.lazy(
 const SubscriptionsAuditPage = React.lazy(
   () => import("./pages/SubscriptionsPage"),
 );
+const TaxVaultPage = React.lazy(() => import("./pages/TaxVaultPage"));
+const CashCalendarPage = React.lazy(() => import("./pages/CashCalendarPage"));
+const ClientStatsPage = React.lazy(() => import("./pages/ClientStatsPage"));
+const CashGoalPage = React.lazy(() => import("./pages/CashGoalPage"));
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 const PrivateRoute: React.FC<{
@@ -283,6 +287,40 @@ const ClientApp: React.FC = () => {
           element={
             <PrivateRoute>
               <SubscriptionsAuditPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Sprint 2 — motivation features */}
+        <Route
+          path="/tax-vault"
+          element={
+            <PrivateRoute>
+              <TaxVaultPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cash-calendar"
+          element={
+            <PrivateRoute>
+              <CashCalendarPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/clients"
+          element={
+            <PrivateRoute>
+              <ClientStatsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/cash-goal"
+          element={
+            <PrivateRoute>
+              <CashGoalPage />
             </PrivateRoute>
           }
         />
