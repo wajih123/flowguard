@@ -6,6 +6,7 @@ import {
   ArrowRightLeft,
   PieChart,
   Building2,
+  FileDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -23,6 +24,7 @@ import { AlertsList } from "@/components/dashboard/AlertsList";
 import { useDashboard, useDashboardTransactions } from "@/hooks/useDashboard";
 import { usePredictions } from "@/hooks/usePredictions";
 import { useAuthStore } from "@/store/authStore";
+import apiClient from "@/api/client";
 
 const DashboardPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -35,6 +37,24 @@ const DashboardPage: React.FC = () => {
 
   const [alertDismissed, setAlertDismissed] = useState(false);
   const [reserveOpen, setReserveOpen] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
+
+  const downloadReport = async () => {
+    setPdfLoading(true);
+    try {
+      const response = await apiClient.get("/api/reports/financial", {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `rapport-financier-${new Date().toISOString().split("T")[0]}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const greeting = () => {
     const h = new Date().getHours();
@@ -82,6 +102,16 @@ const DashboardPage: React.FC = () => {
               </span>
             )}
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={downloadReport}
+            disabled={pdfLoading}
+            className="gap-1.5 text-text-muted hover:text-white"
+          >
+            <FileDown size={15} />
+            {pdfLoading ? "Génération…" : "Rapport PDF"}
+          </Button>
         </div>
 
         {/* ── 3. TOP ROW: Balance | Health | Next Event ────────────────── */}

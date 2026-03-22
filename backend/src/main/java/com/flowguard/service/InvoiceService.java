@@ -97,6 +97,13 @@ public class InvoiceService {
         return invoiceRepository.sumOutstandingByUserId(userId);
     }
 
+    @Transactional
+    public InvoiceDto toggleReminder(UUID userId, UUID invoiceId) {
+        InvoiceEntity inv = findOwned(userId, invoiceId);
+        inv.setReminderEnabled(!inv.isReminderEnabled());
+        return InvoiceDto.from(inv);
+    }
+
     // ── private helpers ───────────────────────────────────────────────────────
 
     private void markOverdue(UUID userId) {

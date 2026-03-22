@@ -37,6 +37,9 @@ const AccountantPage = React.lazy(() => import("./pages/AccountantPage"));
 const FinancialControlCenterPage = React.lazy(
   () => import("./pages/FinancialControlCenterPage"),
 );
+const SubscriptionsAuditPage = React.lazy(
+  () => import("./pages/SubscriptionsPage"),
+);
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 const PrivateRoute: React.FC<{
@@ -270,6 +273,16 @@ const ClientApp: React.FC = () => {
           element={
             <PrivateRoute>
               <FinancialControlCenterPage />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Subscription audit */}
+        <Route
+          path="/subscriptions"
+          element={
+            <PrivateRoute>
+              <SubscriptionsAuditPage />
             </PrivateRoute>
           }
         />

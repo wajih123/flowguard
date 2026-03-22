@@ -64,4 +64,11 @@ public class InvoiceResource {
     public InvoiceDto cancel(@PathParam("id") UUID id) {
         return invoiceService.cancel(UUID.fromString(jwt.getSubject()), id);
     }
+
+    @POST
+    @Path("/{id}/toggle-reminder")
+    @RunOnVirtualThread
+    public InvoiceDto toggleReminder(@PathParam("id") UUID id) {
+        return invoiceService.toggleReminder(UUID.fromString(jwt.getSubject()), id);
+    }
 }

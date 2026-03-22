@@ -32,4 +32,9 @@ public class InvoiceRepository implements PanacheRepositoryBase<InvoiceEntity, U
                 .setParameter("uid", userId)
                 .getSingleResult();
     }
+
+    /** All SENT or OVERDUE invoices that have reminder notifications enabled. */
+    public List<InvoiceEntity> findPendingReminders() {
+        return list("(status = 'SENT' OR status = 'OVERDUE') AND reminderEnabled = true");
+    }
 }

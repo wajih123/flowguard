@@ -17,6 +17,7 @@ export interface Invoice {
   notes: string | null;
   createdAt: string;
   daysOverdue: number | null;
+  reminderEnabled: boolean;
 }
 
 export interface CreateInvoiceRequest {
@@ -50,4 +51,9 @@ export const invoicesApi = {
 
   cancel: (id: string) =>
     apiClient.post<Invoice>(`/api/invoices/${id}/cancel`).then((r) => r.data),
+
+  toggleReminder: (id: string) =>
+    apiClient
+      .post<Invoice>(`/api/invoices/${id}/toggle-reminder`)
+      .then((r) => r.data),
 };

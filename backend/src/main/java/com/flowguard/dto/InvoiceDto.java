@@ -25,7 +25,8 @@ public record InvoiceDto(
         String notes,
         Instant createdAt,
         /** Days overdue (positive) or days until due (negative). Null if paid/cancelled. */
-        Integer daysOverdue
+        Integer daysOverdue,
+        boolean reminderEnabled
 ) {
     public static InvoiceDto from(InvoiceEntity e) {
         Integer daysOverdue = null;
@@ -36,7 +37,8 @@ public record InvoiceDto(
                 e.getId(), e.getClientName(), e.getClientEmail(), e.getNumber(),
                 e.getAmountHt(), e.getVatRate(), e.getVatAmount(), e.getTotalTtc(),
                 e.getCurrency(), e.getStatus(), e.getIssueDate(), e.getDueDate(),
-                e.getPaidAt(), e.getNotes(), e.getCreatedAt(), daysOverdue
+                e.getPaidAt(), e.getNotes(), e.getCreatedAt(), daysOverdue,
+                e.isReminderEnabled()
         );
     }
 }

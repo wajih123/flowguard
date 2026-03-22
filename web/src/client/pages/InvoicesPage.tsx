@@ -8,6 +8,8 @@ import {
   Clock,
   AlertTriangle,
   Euro,
+  Bell,
+  BellOff,
 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -64,7 +66,8 @@ const InvoiceRow: React.FC<{
   onSend: () => void;
   onMarkPaid: () => void;
   onCancel: () => void;
-}> = ({ inv, onSend, onMarkPaid, onCancel }) => {
+  onToggleReminder: () => void;
+}> = ({ inv, onSend, onMarkPaid, onCancel, onToggleReminder }) => {
   const cfg = STATUS_CONFIG[inv.status];
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3.5 bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.06] rounded-xl transition">
@@ -96,6 +99,19 @@ const InvoiceRow: React.FC<{
         <p className="text-text-muted text-xs">TTC · TVA {inv.vatRate}%</p>
       </div>
       <div className="flex gap-2 shrink-0">
+        {(inv.status === "SENT" || inv.status === "OVERDUE") && (
+          <button
+            onClick={onToggleReminder}
+            title={inv.reminderEnabled ? "Désactiver les rappels automatiques" : "Activer les rappels automatiques"}
+            className={`p-1.5 rounded-lg transition ${
+              inv.reminderEnabled
+                ? "text-primary bg-primary/10 hover:bg-primary/20"
+                : "text-text-muted hover:text-white hover:bg-white/[0.05]"
+            }`}
+          >
+            {inv.reminderEnabled ? <Bell size={14} /> : <BellOff size={14} />}
+          </button>
+        )}
         {inv.status === "DRAFT" && (
           <Button variant="ghost" size="sm" onClick={onSend}>
             Envoyer
@@ -315,6 +331,10 @@ const InvoicesPage: React.FC = () => {
     mutationFn: invoicesApi.cancel,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
   });
+  const reminderMut = useMutation({
+    mutationFn: invoicesApi.toggleReminder,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["invoices"] }),
+  });
 
   const outstanding =
     invoices
@@ -396,6 +416,7 @@ const InvoicesPage: React.FC = () => {
                   onSend={() => sendMut.mutate(inv.id)}
                   onMarkPaid={() => paidMut.mutate(inv.id)}
                   onCancel={() => cancelMut.mutate(inv.id)}
+                  onToggleReminder={() => reminderMut.mutate(inv.id)}
                 />
               ))}
             </div>

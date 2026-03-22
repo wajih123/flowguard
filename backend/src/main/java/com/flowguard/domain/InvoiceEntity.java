@@ -66,8 +66,12 @@ public class InvoiceEntity extends PanacheEntityBase {
     @Column(name = "paid_at")
     private Instant paidAt;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(name = "notes", columnDefinition = "TEXT")
     private String notes;
+
+    @Column(name = "reminder_enabled", nullable = false)
+    @Builder.Default
+    private boolean reminderEnabled = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default

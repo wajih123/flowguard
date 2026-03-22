@@ -16,6 +16,7 @@ import {
   Settings,
   X,
   Target,
+  Receipt,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAlertStore } from "@/store/alertStore";
@@ -47,6 +48,11 @@ const navItems: NavItem[] = [
     icon: <ArrowRightLeft size={17} />,
   },
   { label: "Analyses", to: "/spending", icon: <PieChart size={17} /> },
+  {
+    label: "Abonnements",
+    to: "/subscriptions",
+    icon: <Receipt size={17} />,
+  },
   {
     label: "Scénarios",
     to: "/scenarios",
