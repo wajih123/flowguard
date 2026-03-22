@@ -188,11 +188,11 @@ const ClientApp: React.FC = () => {
           }
         />
 
-        {/* ROLE_USER only */}
+        {/* ROLE_USER + ROLE_BUSINESS */}
         <Route
           path="/flash-credit"
           element={
-            <PrivateRoute roles={["ROLE_USER"]}>
+            <PrivateRoute roles={["ROLE_USER", "ROLE_BUSINESS"]}>
               <FlashCreditPage />
             </PrivateRoute>
           }
@@ -314,7 +314,9 @@ const ClientApp: React.FC = () => {
         <Route
           path="/clients"
           element={
-            <PrivateRoute>
+            <PrivateRoute
+              roles={["ROLE_BUSINESS", "ROLE_ADMIN", "ROLE_SUPER_ADMIN"]}
+            >
               <ClientStatsPage />
             </PrivateRoute>
           }

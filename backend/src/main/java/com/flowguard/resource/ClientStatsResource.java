@@ -3,6 +3,7 @@ package com.flowguard.resource;
 import com.flowguard.domain.InvoiceEntity;
 import com.flowguard.dto.ClientStatsDto;
 import com.flowguard.repository.InvoiceRepository;
+import com.flowguard.security.Roles;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 
 @Path("/client-stats")
 @Produces(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed({Roles.BUSINESS, Roles.ADMIN, Roles.SUPER_ADMIN})
 public class ClientStatsResource {
 
     private static final double CONCENTRATION_THRESHOLD = 40.0;

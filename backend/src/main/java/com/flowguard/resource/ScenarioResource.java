@@ -2,6 +2,7 @@ package com.flowguard.resource;
 
 import com.flowguard.dto.ScenarioRequest;
 import com.flowguard.dto.ScenarioResponse;
+import com.flowguard.security.Roles;
 import com.flowguard.service.ScenarioService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.annotation.security.RolesAllowed;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @Path("/scenario")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed({Roles.BUSINESS, Roles.ADMIN, Roles.SUPER_ADMIN})
 public class ScenarioResource {
 
     @Inject

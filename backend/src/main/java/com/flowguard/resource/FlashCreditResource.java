@@ -2,6 +2,7 @@ package com.flowguard.resource;
 
 import com.flowguard.dto.FlashCreditDto;
 import com.flowguard.dto.FlashCreditRequest;
+import com.flowguard.security.Roles;
 import com.flowguard.service.FlashCreditService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.annotation.security.RolesAllowed;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @Path("/flash-credit")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RolesAllowed("user")
+@RolesAllowed({Roles.USER, Roles.BUSINESS, Roles.ADMIN, Roles.SUPER_ADMIN})
 public class FlashCreditResource {
 
     @Inject

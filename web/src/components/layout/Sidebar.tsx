@@ -70,6 +70,7 @@ const navItems: NavItem[] = [
     label: "Clients",
     to: "/clients",
     icon: <Users size={17} />,
+    roles: ["ROLE_BUSINESS"],
   },
   {
     label: "Objectif épargne",
@@ -91,7 +92,7 @@ const navItems: NavItem[] = [
     label: "Réserve",
     to: "/flash-credit",
     icon: <Zap size={17} />,
-    roles: ["ROLE_USER"],
+    roles: ["ROLE_USER", "ROLE_BUSINESS"],
   },
   { label: "Banque", to: "/bank-connect", icon: <Building2 size={17} /> },
   {

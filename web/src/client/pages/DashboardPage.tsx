@@ -47,6 +47,7 @@ const DashboardPage: React.FC = () => {
     queryKey: ["client-stats"],
     queryFn: clientStatsApi.list,
     staleTime: 10 * 60 * 1000,
+    enabled: user?.role === "ROLE_BUSINESS",
   });
   const concentrationRiskClient = clientStats?.find(
     (c) => c.isConcentrationRisk,
@@ -206,56 +207,72 @@ const DashboardPage: React.FC = () => {
 
         {/* ── 7. QUICK ACTIONS ─────────────────────────────────────────── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            {
-              label: "Réserve",
-              desc: "Financement instantané",
-              to: "/flash-credit",
-              icon: <Zap size={20} />,
-              color: "text-primary",
-            },
-            {
-              label: "Analyses",
-              desc: "Répartition dépenses",
-              to: "/spending",
-              icon: <PieChart size={20} />,
-              color: "text-purple",
-            },
-            {
-              label: "Scénarios",
-              desc: "Simuler un impact",
-              to: "/scenarios",
-              icon: <Activity size={20} />,
-              color: "text-warning",
-            },
-            {
-              label: "Transactions",
-              desc: "Historique complet",
-              to: "/transactions",
-              icon: <ArrowRightLeft size={20} />,
-              color: "text-success",
-            },
-            {
-              label: "Ma banque",
-              desc: "Gérer la connexion",
-              to: "/bank-connect",
-              icon: <Building2 size={20} />,
-              color: "text-cyan-400",
-            },
-          ].map((action) => (
-            <Link key={action.to} to={action.to}>
-              <Card hover padding="md" className="h-full">
-                <div className={`mb-3 ${action.color}`}>{action.icon}</div>
-                <p
-                  className="text-white font-medium text-sm"
-                  style={{ fontFamily: "var(--font-display)" }}
-                >
-                  {action.label}
-                </p>
-                <p className="text-text-muted text-xs mt-0.5">{action.desc}</p>
-              </Card>
-            </Link>
-          ))}
+          {(
+            [
+              {
+                label: "Réserve",
+                desc: "Financement instantané",
+                to: "/flash-credit",
+                icon: <Zap size={20} />,
+                color: "text-primary",
+                roles: ["ROLE_USER", "ROLE_BUSINESS"] as string[],
+              },
+              {
+                label: "Analyses",
+                desc: "Répartition dépenses",
+                to: "/spending",
+                icon: <PieChart size={20} />,
+                color: "text-purple",
+                roles: null,
+              },
+              {
+                label: "Scénarios",
+                desc: "Simuler un impact",
+                to: "/scenarios",
+                icon: <Activity size={20} />,
+                color: "text-warning",
+                roles: ["ROLE_BUSINESS"] as string[],
+              },
+              {
+                label: "Transactions",
+                desc: "Historique complet",
+                to: "/transactions",
+                icon: <ArrowRightLeft size={20} />,
+                color: "text-success",
+                roles: null,
+              },
+              {
+                label: "Ma banque",
+                desc: "Gérer la connexion",
+                to: "/bank-connect",
+                icon: <Building2 size={20} />,
+                color: "text-cyan-400",
+                roles: null,
+              },
+            ] as const
+          )
+            .filter(
+              (action) =>
+                !action.roles ||
+                (user?.role != null &&
+                  (action.roles as string[]).includes(user.role)),
+            )
+            .map((action) => (
+              <Link key={action.to} to={action.to}>
+                <Card hover padding="md" className="h-full">
+                  <div className={`mb-3 ${action.color}`}>{action.icon}</div>
+                  <p
+                    className="text-white font-medium text-sm"
+                    style={{ fontFamily: "var(--font-display)" }}
+                  >
+                    {action.label}
+                  </p>
+                  <p className="text-text-muted text-xs mt-0.5">
+                    {action.desc}
+                  </p>
+                </Card>
+              </Link>
+            ))}
         </div>
       </div>
     </Layout>
