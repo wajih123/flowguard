@@ -151,7 +151,7 @@ const SubscriptionsPage: React.FC = () => {
             <CardHeader
               title="À analyser — inutilisés depuis plus de 3 mois"
               helpTooltip={
-                <HelpTooltip content="Ces abonnements n'ont pas généré de transaction depuis plus de 3 mois. Vérifiez s'ils sont toujours nécessaires." />
+                <HelpTooltip text="Ces abonnements n'ont pas généré de transaction depuis plus de 3 mois. Vérifiez s'ils sont toujours nécessaires." />
               }
             />
             <div className="px-4 pb-4 space-y-2">
@@ -171,7 +171,7 @@ const SubscriptionsPage: React.FC = () => {
           <CardHeader
             title="Abonnements actifs"
             helpTooltip={
-              <HelpTooltip content="Charges récurrentes actives détectées dans vos transactions au cours des 12 derniers mois." />
+              <HelpTooltip text="Charges récurrentes actives détectées dans vos transactions au cours des 12 derniers mois." />
             }
           />
           <div className="px-4 pb-4 space-y-2">
