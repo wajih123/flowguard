@@ -8,8 +8,14 @@ services:
       - "8080:8080"
     environment:
       - QUARKUS_PROFILE=prod
-      - POSTGRES_URL=jdbc:postgresql://db:5432/flowguard
-      - REDIS_URL=redis://redis:6379
+      # Quarkus datasource — must match application.properties env var names
+      - QUARKUS_DATASOURCE_JDBC_URL=jdbc:postgresql://db:5432/flowguard
+      - QUARKUS_DATASOURCE_USERNAME=flowguard
+      - QUARKUS_DATASOURCE_PASSWORD=flowguard
+      # Redis — no password on the infra Redis service
+      - QUARKUS_REDIS_HOSTS=redis://redis:6379
+      - QUARKUS_REDIS_PASSWORD=
+      # ML Service
       - ML_SERVICE_URL=http://ml-service:8000
     depends_on:
       - db
@@ -23,7 +29,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql://db:5432/flowguard
+      - DATABASE_URL=postgresql+psycopg2://flowguard:flowguard@db:5432/flowguard
       - REDIS_URL=redis://redis:6379
     depends_on:
       - db
