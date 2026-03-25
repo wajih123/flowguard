@@ -173,20 +173,69 @@ public class DashboardResource {
                 ? primary.getLastSyncAt().toString() : null);
         account.put("syncStatus", primary.getSyncStatus().name());
 
+        // Calculate last month's income, spending, and savings
+        Instant lastMonthStart = Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);
+        BigDecimal lastMonthIncome = BigDecimal.ZERO;
+        BigDecimal lastMonthSpend = BigDecimal.ZERO;
+        
+        for (AccountEntity acc : activeAccounts) {
+            List<com.flowguard.domain.TransactionEntity> txs = transactionRepository.findByAccountId(acc.getId());
+            for (com.flowguard.domain.TransactionEntity tx : txs) {
+                if (tx.getCreatedAt() != null && tx.getCreatedAt().isAfter(lastMonthStart)) {
+                    if (tx.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                        lastMonthIncome = lastMonthIncome.add(tx.getAmount());
+                    } else {
+                        lastMonthSpend = lastMonthSpend.add(tx.getAmount().abs());
+                    }
+                }
+            }
+        }
+        
+        BigDecimal lastMonthSavings = lastMonthIncome.subtract(lastMonthSpend);
+        BigDecimal monthlySubscriptionsCost = BigDecimal.ZERO; // Will be calculated from SubscriptionEntity if available
+
+        // Build accounts list breakdown
+        List<Map<String, Object>> accountsList = new ArrayList<>();
+        for (AccountEntity acc : activeAccounts) {
+            Map<String, Object> accBreakdown = new LinkedHashMap<>();
+            accBreakdown.put("id", acc.getId().toString());
+            accBreakdown.put("bankName", acc.getBankName() != null ? acc.getBankName() : "");
+            accBreakdown.put("ibanMasked", maskIban(acc.getIban()));
+            accBreakdown.put("balance", acc.getBalance() != null ? acc.getBalance() : BigDecimal.ZERO);
+            accBreakdown.put("syncStatus", acc.getSyncStatus().name());
+            accountsList.add(accBreakdown);
+        }
+
+        // Build upcoming debits list (empty for now, can be enhanced)
+        List<Map<String, Object>> upcomingDebits = new ArrayList<>();
+
+        // Build overdraft risk summary
+        Map<String, Object> overdraftRisk = new LinkedHashMap<>();
+        overdraftRisk.put("level", currentBalance.compareTo(BigDecimal.valueOf(500)) < 0 ? "HIGH" : 
+                         currentBalance.compareTo(BigDecimal.valueOf(2000)) < 0 ? "MEDIUM" : "NONE");
+        overdraftRisk.put("projectedBalance", predictedBalance30d);
+        overdraftRisk.put("horizonDate", java.time.LocalDate.now().plusDays(30).toString());
+
+        // Count unread alerts
+        int unreadAlerts = 0;
+        try {
+            unreadAlerts = (int) alertService.getUnreadAlerts(userId).size();
+        } catch (Exception e) {
+            unreadAlerts = 0;
+        }
+
+        // Build the enriched summary response
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("account", account);
-        body.put("currentBalance", currentBalance);
-        body.put("predictedBalance30d", predictedBalance30d);
-        body.put("balanceTrend", balanceTrend);
+        body.put("totalBalance", currentBalance);
+        body.put("accounts", accountsList);
         body.put("healthScore", healthScore);
-        body.put("healthLabel", healthLabel);
-        body.put("reserveAvailable", reserveAvailable);
-        body.put("reserveMaxAmount", reserveMaxAmount);
-        body.put("hasHighAlert", hasHighAlert);
-        body.put("highAlertMessage", highAlertMessage);
-        body.put("highAlertAmount", highAlertAmount);
-        body.put("highAlertDate", highAlertDate);
-        body.put("accountCount", accountCount);
+        body.put("unreadAlerts", unreadAlerts);
+        body.put("lastMonthIncome", lastMonthIncome);
+        body.put("lastMonthSpend", lastMonthSpend);
+        body.put("lastMonthSavings", lastMonthSavings);
+        body.put("monthlySubscriptionsCost", monthlySubscriptionsCost);
+        body.put("upcomingDebits", upcomingDebits);
+        body.put("overdraftRisk", overdraftRisk);
 
         return Response.ok(body).build();
     }
