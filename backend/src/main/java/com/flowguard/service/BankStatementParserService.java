@@ -54,8 +54,13 @@ public class BankStatementParserService {
             DateTimeFormatter.ofPattern("MM/dd/yyyy"),
             DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-    /** Common output record. */
-    public record ParsedRow(LocalDate date, String label, BigDecimal amount, String type) {
+    /**
+     * Common output record.
+     * {@code balanceAfter} is the bank-certified running balance immediately after
+     * this transaction, as printed on the statement (PDF col 2 / OFX AVAILBAL).
+     * It is {@code null} for formats that do not include a running balance column.
+     */
+    public record ParsedRow(LocalDate date, String label, BigDecimal amount, String type, BigDecimal balanceAfter) {
     }
 
     // ──────────────────────────────────────────────────────────────────
@@ -252,7 +257,7 @@ public class BankStatementParserService {
                 } else
                     continue;
 
-                rows.add(new ParsedRow(date, label, amount, type));
+                rows.add(new ParsedRow(date, label, amount, type, null));
             } catch (Exception e) {
                 LOG.debugf("CSV skip line %d: %s", i, e.getMessage());
             }
@@ -318,7 +323,7 @@ public class BankStatementParserService {
                 } else {
                     txType = "DEBIT";
                 }
-                rows.add(new ParsedRow(date, label, amount, txType));
+                rows.add(new ParsedRow(date, label, amount, txType, null));
             } catch (Exception e) {
                 LOG.debugf("OFX skip transaction: %s", e.getMessage());
             }
@@ -364,7 +369,7 @@ public class BankStatementParserService {
                 case '^' -> { // end of transaction record
                     if (date != null && amount != null) {
                         String type = amount.signum() >= 0 ? "CREDIT" : "DEBIT";
-                        rows.add(new ParsedRow(date, label != null ? label : "Opération", amount.abs(), type));
+                        rows.add(new ParsedRow(date, label != null ? label : "Opération", amount.abs(), type, null));
                     }
                     date = null;
                     amount = null;
@@ -430,7 +435,7 @@ public class BankStatementParserService {
                     label = "Virement";
 
                 String type = (dc.startsWith("C")) ? "CREDIT" : "DEBIT";
-                rows.add(new ParsedRow(date, label.substring(0, Math.min(label.length(), 200)), amount, type));
+                rows.add(new ParsedRow(date, label.substring(0, Math.min(label.length(), 200)), amount, type, null));
             }
         }
         return rows;
@@ -475,7 +480,7 @@ public class BankStatementParserService {
                 if (label.isBlank())
                     label = "Opération";
 
-                rows.add(new ParsedRow(date, label, amount, type));
+                rows.add(new ParsedRow(date, label, amount, type, null));
             } catch (Exception e) {
                 LOG.debugf("CFONB skip line: %s", e.getMessage());
             }
@@ -629,7 +634,7 @@ public class BankStatementParserService {
                     }
                 }
 
-                rows.add(new ParsedRow(date, label, amount, type));
+                rows.add(new ParsedRow(date, label, amount, type, null));
             } catch (Exception e) {
                 LOG.debugf("XLSX skip row %d: %s", r, e.getMessage());
             }
@@ -777,7 +782,10 @@ public class BankStatementParserService {
             if (keywordType != null)
                 type = keywordType;
 
-            rows.add(new ParsedRow(date, label, amount, type));
+            // Gap 2: capture the second (running-balance) amount printed on PDF lines.
+            // BoursoBank and most French banks print: [tx_amount] … [label] … [balance]
+            BigDecimal balanceAfter = amounts.size() > 1 ? amounts.get(amounts.size() - 1) : null;
+            rows.add(new ParsedRow(date, label, amount, type, balanceAfter));
         }
         return rows;
     }

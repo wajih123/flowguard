@@ -53,6 +53,37 @@ public class TransactionEntity extends PanacheEntityBase {
     @Builder.Default
     private Instant createdAt = Instant.now();
 
+    // ── Gap 3: import provenance fields ───────────────────────────────────
+    // Tracks where the transaction came from so the ML model can apply
+    // source-quality weights (BRIDGE_API = gold, CSV = silver, PDF = bronze).
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "import_source", nullable = false)
+    @Builder.Default
+    private ImportSource importSource = ImportSource.BRIDGE_API;
+
+    /**
+     * Groups all transactions from one file upload; used for rollback — see
+     * import_batches table.
+     */
+    @Column(name = "import_batch_id")
+    private UUID importBatchId;
+
+    /**
+     * True when the transaction date is more than 90 days before the import date.
+     * Drives quality-weight reduction in the ML training pipeline.
+     */
+    @Column(name = "is_historical", nullable = false)
+    @Builder.Default
+    private boolean isHistorical = false;
+
+    // ── Gap 2: bank-verified running balance from PDF/OFX ──────────────────
+    // When parsed from a PDF (column: Solde) or OFX AVAILBAL, this is the
+    // bank-certified balance after the transaction, with no reconstruction.
+    // NULL for Bridge API transactions (balance reconstructed at query time).
+    @Column(name = "balance_after", precision = 15, scale = 2)
+    private BigDecimal balanceAfter;
+
     public enum TransactionType {
         DEBIT, CREDIT
     }
@@ -61,5 +92,16 @@ public class TransactionEntity extends PanacheEntityBase {
         LOYER, SALAIRE, ALIMENTATION, TRANSPORT, ABONNEMENT,
         ENERGIE, TELECOM, ASSURANCE, CHARGES_FISCALES, FOURNISSEUR,
         CLIENT_PAYMENT, VIREMENT, AUTRE
+    }
+
+    public enum ImportSource {
+        BRIDGE_API, // Live Open Banking — highest quality
+        OFX, // OFX / QFX file export
+        MT940, // SWIFT MT940 / STA
+        CFONB, // French CFONB 120
+        XLSX, // Excel spreadsheet
+        PDF, // PDF bank statement (heuristic parser)
+        CSV, // Manual CSV export
+        MANUAL // User-entered manually
     }
 }

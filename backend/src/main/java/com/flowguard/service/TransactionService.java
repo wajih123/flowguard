@@ -6,12 +6,20 @@ import com.flowguard.dto.TransactionDto;
 import com.flowguard.repository.TransactionRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 @ApplicationScoped
 public class TransactionService {
@@ -21,6 +29,19 @@ public class TransactionService {
 
     @Inject
     BankStatementParserService parserService;
+
+    /** Injected for batch flush/clear during large imports (Gap 7). */
+    @Inject
+    EntityManager em;
+
+    @ConfigProperty(name = "flowguard.ml-service.url")
+    String mlServiceUrl;
+
+    private static final int BATCH_SIZE = 100;
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .build();
 
     public List<TransactionDto> getByAccountId(UUID accountId) {
         return transactionRepository.findByAccountId(accountId).stream()
@@ -137,6 +158,16 @@ public class TransactionService {
      * <p>
      * Format is auto-detected from the original filename. Duplicate rows are
      * suppressed using the same date+label+amount deduplication as CSV import.
+     * <p>
+     * Gaps implemented here:
+     * <ul>
+     * <li>Gap 3 — import provenance (importSource, importBatchId, isHistorical,
+     * balanceAfter)</li>
+     * <li>Gap 6 — daily_balances view refreshed after persist (best-effort,
+     * non-blocking)</li>
+     * <li>Gap 7 — batch EntityManager flush every {@value #BATCH_SIZE} rows</li>
+     * <li>Gap 8 — async POST /retrain to ML service when new data arrives</li>
+     * </ul>
      */
     @Transactional
     public Map<String, Object> importFromStatement(UUID accountId, InputStream stream, String originalFilename) {
@@ -153,10 +184,17 @@ public class TransactionService {
             throw new IllegalArgumentException("Erreur lors de l'analyse du fichier : " + e.getMessage());
         }
 
+        // Gap 3: derive import provenance before the loop
+        TransactionEntity.ImportSource importSource = detectImportSource(originalFilename);
+        UUID batchId = UUID.randomUUID();
+        LocalDate historicalCutoff = LocalDate.now().minusDays(90);
+
         int imported = 0;
         int skipped = 0;
+        int total = 0;
 
         for (BankStatementParserService.ParsedRow row : rows) {
+            total++;
             try {
                 if (row.date() == null || row.amount() == null || row.label() == null) {
                     skipped++;
@@ -186,18 +224,91 @@ public class TransactionService {
                         .type(type)
                         .category(category)
                         .isRecurring(false)
+                        // Gap 3: provenance
+                        .importSource(importSource)
+                        .importBatchId(batchId)
+                        .isHistorical(row.date().isBefore(historicalCutoff))
+                        // Gap 2: bank-verified running balance from PDF/OFX
+                        .balanceAfter(row.balanceAfter())
                         .build();
                 transactionRepository.persist(tx);
                 imported++;
+
+                // Gap 7: batch flush to avoid JPA first-level cache overflow on large imports
+                if (total % BATCH_SIZE == 0) {
+                    em.flush();
+                    em.clear();
+                }
             } catch (Exception e) {
                 skipped++;
             }
+        }
+
+        // Gap 6: refresh the materialised view so the ML service sees fresh data.
+        // Uses non-CONCURRENT refresh (takes a brief exclusive lock — acceptable for
+        // statement imports which are infrequent user-initiated operations).
+        if (imported > 0) {
+            try {
+                em.createNativeQuery("REFRESH MATERIALIZED VIEW daily_balances").executeUpdate();
+            } catch (Exception e) {
+                // Non-fatal: the view will be refreshed on the next import or nightly job.
+            }
+
+            // Gap 8: notify the ML service to re-evaluate whether retraining is warranted.
+            // Fire-and-forget — we do not block the HTTP response waiting for ML.
+            final String url = mlServiceUrl;
+            final int finalImported = imported;
+            CompletableFuture.runAsync(() -> {
+                try {
+                    String body = String.format(
+                            "{\"account_id\":\"%s\",\"new_transactions\":%d,\"batch_id\":\"%s\"}",
+                            accountId, finalImported, batchId);
+                    HttpRequest req = HttpRequest.newBuilder()
+                            .uri(URI.create(url + "/retrain"))
+                            .header("Content-Type", "application/json")
+                            .POST(HttpRequest.BodyPublishers.ofString(body))
+                            .timeout(Duration.ofSeconds(30))
+                            .build();
+                    httpClient.send(req, HttpResponse.BodyHandlers.discarding());
+                } catch (Exception ignored) {
+                    // ML service unavailable — import still succeeded, retrain deferred.
+                }
+            });
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("imported", imported);
         result.put("skipped", skipped);
         result.put("format", parserService.detectFormat(originalFilename, new byte[0]));
+        result.put("batchId", batchId.toString());
         return result;
+    }
+
+    /**
+     * Maps a filename extension to an {@link TransactionEntity.ImportSource} enum
+     * value.
+     * Falls back to {@code BRIDGE_API} (which should never trigger from a file
+     * upload —
+     * callers can override if needed).
+     */
+    private static TransactionEntity.ImportSource detectImportSource(String filename) {
+        if (filename == null)
+            return TransactionEntity.ImportSource.MANUAL;
+        String lower = filename.toLowerCase();
+        if (lower.endsWith(".pdf"))
+            return TransactionEntity.ImportSource.PDF;
+        if (lower.endsWith(".ofx") || lower.endsWith(".qfx"))
+            return TransactionEntity.ImportSource.OFX;
+        if (lower.endsWith(".qif"))
+            return TransactionEntity.ImportSource.OFX; // QIF handled by OFX source bucket
+        if (lower.endsWith(".sta") || lower.endsWith(".mt940"))
+            return TransactionEntity.ImportSource.MT940;
+        if (lower.endsWith(".txt") && filename.toLowerCase().contains("cfonb"))
+            return TransactionEntity.ImportSource.CFONB;
+        if (lower.endsWith(".xlsx") || lower.endsWith(".xls"))
+            return TransactionEntity.ImportSource.XLSX;
+        if (lower.endsWith(".csv"))
+            return TransactionEntity.ImportSource.CSV;
+        return TransactionEntity.ImportSource.MANUAL;
     }
 }

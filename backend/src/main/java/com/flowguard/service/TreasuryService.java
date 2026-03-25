@@ -28,9 +28,11 @@ import java.util.UUID;
  * Calls the FlowGuard ML Service v2 endpoint (Model Race — always returns
  * the most accurate model based on rolling 30-day MAE).
  *
- * Request:  POST {mlServiceUrl}/v2/predict
- * Payload:  { account_id, transactions: [{date, amount, balance, ...}], horizon }
- * Response: { daily_balance, critical_points, confidence_score, model_used, ... }
+ * Request: POST {mlServiceUrl}/v2/predict
+ * Payload: { account_id, transactions: [{date, amount, balance, ...}], horizon
+ * }
+ * Response: { daily_balance, critical_points, confidence_score, model_used, ...
+ * }
  */
 @ApplicationScoped
 public class TreasuryService {
@@ -56,7 +58,8 @@ public class TreasuryService {
     /**
      * Fetches a cash-flow forecast for the user by aggregating ALL active accounts:
      * 1. Loading the last 6 months of transactions from ALL active accounts
-     * 2. POSTing them to ML /v2/predict (Model Race) with aggregated starting balance
+     * 2. POSTing them to ML /v2/predict (Model Race) with aggregated starting
+     * balance
      * 3. Mapping the response to TreasuryForecastDto
      *
      * Using the aggregated balance ensures the forecast baseline matches what
@@ -77,8 +80,10 @@ public class TreasuryService {
                 .findFirst()
                 .orElse(accounts.get(0));
 
-        // ── 2. Load last 6 months of transactions from ALL active accounts ────
-        LocalDate since = LocalDate.now().minusMonths(6);
+        // ── 2. Load last 24 months of transactions from ALL active accounts ─────
+        // Gap 1 fix: extended from 6 months — historical PDF imports would be invisible
+        // to the forecast if we kept the hard-coded 6-month window.
+        LocalDate since = LocalDate.now().minusMonths(24);
         List<TransactionEntity> txs = new ArrayList<>();
         for (var account : accounts) {
             txs.addAll(transactionRepository
@@ -95,16 +100,50 @@ public class TreasuryService {
             // Sort ascending by date before computing running balance
             txs.sort(java.util.Comparator.comparing(TransactionEntity::getDate));
 
-            // Compute running balance per transaction (no balance column in DB).
-            // Strategy: walk backwards from aggregated current balance across all accounts.
+            // Compute running balance per transaction.
+            // Gap 2 fix: if a transaction has a bank-verified balanceAfter (stored from
+            // the PDF import), prefer that; otherwise fall back to backward reconstruction
+            // from today's account balance. The hybrid walk below:
+            // 1. Identifies the last tx that has a stored balanceAfter as an anchor.
+            // 2. Walks forward from that anchor; walks backward from today's balance
+            // for everything after the last anchor.
             double currentBal = accounts.stream()
                     .mapToDouble(a -> a.getBalance() != null ? a.getBalance().doubleValue() : 0.0)
                     .sum();
             double[] runningBalances = new double[txs.size()];
-            runningBalances[txs.size() - 1] = currentBal;
-            for (int i = txs.size() - 2; i >= 0; i--) {
-                runningBalances[i] = runningBalances[i + 1]
-                        - txs.get(i + 1).getAmount().doubleValue();
+
+            // Find last anchor (tx with a stored balanceAfter)
+            int lastAnchorIdx = -1;
+            for (int i = txs.size() - 1; i >= 0; i--) {
+                if (txs.get(i).getBalanceAfter() != null) {
+                    lastAnchorIdx = i;
+                    break;
+                }
+            }
+
+            if (lastAnchorIdx >= 0) {
+                // Forward fill from first anchor
+                runningBalances[lastAnchorIdx] = txs.get(lastAnchorIdx).getBalanceAfter().doubleValue();
+                // Walk backward from anchor to start
+                for (int i = lastAnchorIdx - 1; i >= 0; i--) {
+                    runningBalances[i] = runningBalances[i + 1]
+                            - txs.get(i + 1).getAmount().doubleValue();
+                }
+                // Walk forward from anchor to end
+                for (int i = lastAnchorIdx + 1; i < txs.size(); i++) {
+                    runningBalances[i] = txs.get(i).getBalanceAfter() != null
+                            ? txs.get(i).getBalanceAfter().doubleValue()
+                            : runningBalances[i - 1] + (txs.get(i).getType() == TransactionEntity.TransactionType.CREDIT
+                                    ? txs.get(i).getAmount().doubleValue()
+                                    : -txs.get(i).getAmount().doubleValue());
+                }
+            } else {
+                // No stored balances at all — pure backward reconstruction from today
+                runningBalances[txs.size() - 1] = currentBal;
+                for (int i = txs.size() - 2; i >= 0; i--) {
+                    runningBalances[i] = runningBalances[i + 1]
+                            - txs.get(i + 1).getAmount().doubleValue();
+                }
             }
 
             ObjectNode payload = objectMapper.createObjectNode();
@@ -120,7 +159,8 @@ public class TreasuryService {
                 item.put("balance", runningBalances[i]);
                 item.put("description", tx.getLabel());
                 item.put("category", tx.getCategory() != null
-                        ? tx.getCategory().name() : null);
+                        ? tx.getCategory().name()
+                        : null);
             }
 
             String body = objectMapper.writeValueAsString(payload);
@@ -171,8 +211,7 @@ public class TreasuryService {
                         LocalDate.parse(d.path("date").asText()),
                         BigDecimal.valueOf(d.path("balance").asDouble()),
                         BigDecimal.valueOf(d.path("balance_p25").asDouble()),
-                        BigDecimal.valueOf(d.path("balance_p75").asDouble())
-                ));
+                        BigDecimal.valueOf(d.path("balance_p75").asDouble())));
             }
         }
 
@@ -183,8 +222,7 @@ public class TreasuryService {
                 criticals.add(new TreasuryForecastDto.CriticalPoint(
                         LocalDate.parse(cp.path("date").asText()),
                         BigDecimal.valueOf(cp.path("predicted_balance").asDouble()),
-                        cp.path("cause").asText()
-                ));
+                        cp.path("cause").asText()));
             }
         }
 
@@ -192,7 +230,8 @@ public class TreasuryService {
         double healthScore = root.path("data_quality_score").asDouble(0.5);
         String modelUsed = root.path("model_used").asText("unknown");
         String raceWinner = root.path("model_race_winner").asText(null);
-        if (raceWinner != null && raceWinner.equals("null")) raceWinner = null;
+        if (raceWinner != null && raceWinner.equals("null"))
+            raceWinner = null;
 
         return new TreasuryForecastDto(
                 points,
@@ -201,8 +240,7 @@ public class TreasuryService {
                 healthScore,
                 LocalDate.now(),
                 modelUsed,
-                raceWinner
-        );
+                raceWinner);
     }
 
     private TreasuryForecastDto emptyForecast() {

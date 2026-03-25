@@ -198,7 +198,7 @@ public class AiBankNormalizerService {
                     if (!type.equals("CREDIT")) type = "DEBIT";
 
                     results.add(new BankStatementParserService.ParsedRow(
-                            date, label, amount.abs(), type));
+                            date, label, amount.abs(), type, null));
                 } catch (Exception ignored) {}
             }
             LOG.infof("AI PDF extraction: %d transactions found", results.size());
