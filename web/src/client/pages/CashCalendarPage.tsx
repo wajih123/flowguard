@@ -59,6 +59,12 @@ const EVENT_META: Record<
     icon: <TrendingUp size={13} />,
     label: "Revenu récurrent",
   },
+  INVOICE_SCHEDULED: {
+    color: "text-text-secondary",
+    bg: "bg-white/[0.02] border-white/[0.06] border-dashed",
+    icon: <TrendingUp size={13} className="opacity-50" />,
+    label: "Facture planifiée",
+  },
 };
 
 const EventRow: React.FC<{ event: CashCalendarEvent }> = ({ event }) => {

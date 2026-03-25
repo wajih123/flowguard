@@ -5,6 +5,7 @@ export interface CashCalendarEvent {
   type:
     | "INVOICE_DUE"
     | "INVOICE_OVERDUE"
+    | "INVOICE_SCHEDULED"
     | "RECURRING_CHARGE"
     | "RECURRING_INCOME";
   label: string;

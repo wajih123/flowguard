@@ -39,24 +39,33 @@ public class CashCalendarResource {
 
         List<CashCalendarEventDto> events = new ArrayList<>();
 
-        // ── 1. Invoices: SENT + OVERDUE with due dates in ±90 days window ──
+        // ── 1. Invoices: DRAFT (scheduled), SENT + OVERDUE ──
         List<InvoiceEntity> invoices = invoiceRepository.findByUserId(userId);
         for (InvoiceEntity inv : invoices) {
-            if (inv.getStatus() == InvoiceEntity.InvoiceStatus.SENT
-                    || inv.getStatus() == InvoiceEntity.InvoiceStatus.OVERDUE) {
-                LocalDate due = inv.getDueDate();
-                // Include overdue (past) and upcoming (up to 60 days)
-                if (!due.isBefore(today.minusDays(90)) && !due.isAfter(future)) {
-                    boolean isOverdue = due.isBefore(today);
-                    events.add(new CashCalendarEventDto(
-                            due,
-                            isOverdue ? "INVOICE_OVERDUE" : "INVOICE_DUE",
-                            "Facture — " + inv.getNumber(),
-                            inv.getTotalTtc(),   // positive = expected inflow
-                            isOverdue ? "OVERDUE" : "PENDING",
-                            inv.getClientName()
-                    ));
-                }
+            LocalDate due = inv.getDueDate();
+            boolean inWindow = !due.isBefore(today.minusDays(90)) && !due.isAfter(future);
+
+            if (inv.getStatus() == InvoiceEntity.InvoiceStatus.DRAFT && !due.isBefore(today) && !due.isAfter(future)) {
+                // Planned but not yet sent — show as upcoming expected inflow
+                events.add(new CashCalendarEventDto(
+                        due,
+                        "INVOICE_SCHEDULED",
+                        "Facture prévue — " + inv.getNumber(),
+                        inv.getTotalTtc(),
+                        "PENDING",
+                        inv.getClientName()
+                ));
+            } else if ((inv.getStatus() == InvoiceEntity.InvoiceStatus.SENT
+                    || inv.getStatus() == InvoiceEntity.InvoiceStatus.OVERDUE) && inWindow) {
+                boolean isOverdue = due.isBefore(today);
+                events.add(new CashCalendarEventDto(
+                        due,
+                        isOverdue ? "INVOICE_OVERDUE" : "INVOICE_DUE",
+                        "Facture — " + inv.getNumber(),
+                        inv.getTotalTtc(),
+                        isOverdue ? "OVERDUE" : "PENDING",
+                        inv.getClientName()
+                ));
             }
         }
 

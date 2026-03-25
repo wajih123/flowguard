@@ -30,6 +30,8 @@ export const Routes = {
   Invoices: 'Invoices',
   Budget: 'Budget',
   Tax: 'Tax',
+  // Referral & extras
+  Referral: 'Referral',
   // Legacy
   Forecast: 'Forecast',
   Spending: 'Spending',

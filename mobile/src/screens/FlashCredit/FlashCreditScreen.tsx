@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Keyboard } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Slider from '@react-native-community/slider';
+import React, { useState, useCallback } from 'react'
+import { View, Text, ScrollView, StyleSheet, Keyboard } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import Slider from '@react-native-community/slider'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,13 +9,13 @@ import Animated, {
   withSequence,
   withTiming,
   runOnJS,
-} from 'react-native-reanimated';
-import { useFlashCredit } from '../../hooks/useFlashCredit';
-import { useAccountStore } from '../../store/accountStore';
-import { FlowGuardButton } from '../../components/FlowGuardButton';
-import { FlowGuardCard } from '../../components/FlowGuardCard';
-import { FlowGuardLoader } from '../../components/FlowGuardLoader';
-import { colors, typography, spacing } from '../../theme';
+} from 'react-native-reanimated'
+import { useFlashCredit } from '../../hooks/useFlashCredit'
+import { useAccountStore } from '../../store/accountStore'
+import { FlowGuardButton } from '../../components/FlowGuardButton'
+import { FlowGuardCard } from '../../components/FlowGuardCard'
+import { FlowGuardLoader } from '../../components/FlowGuardLoader'
+import { colors, typography, spacing } from '../../theme'
 
 const PURPOSE_OPTIONS = [
   { key: 'SALARY', label: '💼 Salaires' },
@@ -24,61 +24,120 @@ const PURPOSE_OPTIONS = [
   { key: 'RENT', label: '🏢 Loyer' },
   { key: 'EMERGENCY', label: '🚨 Urgence' },
   { key: 'OTHER', label: '📋 Autre' },
-];
+]
 
-const MIN_AMOUNT = 500;
-const MAX_AMOUNT = 10000;
-const STEP = 100;
+const MIN_AMOUNT = 500
+const MAX_AMOUNT = 10000
+const STEP = 100
+
+// ── Pre-qualification explainer shown before the credit form ─────────────────
+const FlashCreditExplainer: React.FC<{ onContinue: () => void }> = ({ onContinue }) => (
+  <SafeAreaView style={styles.container} edges={['top']}>
+    <ScrollView showsVerticalScrollIndicator={false}>
+      <Text style={styles.title}>Crédit Flash</Text>
+      <Text style={styles.subtitle}>Quelques infos avant de commencer</Text>
+
+      {[
+        {
+          icon: '⚡',
+          title: 'Décision en 2 minutes',
+          body: 'Notre algorithme analyse vos flux en temps réel. Aucun dossier papier, aucune attente.',
+        },
+        {
+          icon: '🔒',
+          title: "Pas d'impact sur votre score bancaire",
+          body: "Nous n'effectuons pas de consultation en bureau de crédit. Votre historique bancaire externe n'est pas touché.",
+        },
+        {
+          icon: '💰',
+          title: 'Frais transparents : 1,5 % flat',
+          body: 'Un seul frais fixe par opération, aucun frais caché, aucun intérêt composé. Ex : 3 000 € → 45 € de frais.',
+        },
+        {
+          icon: '📅',
+          title: 'Remboursement sous 30 jours',
+          body: 'Le montant + frais est prélevé en une seule fois à J+30 sur votre compte connecté.',
+        },
+        {
+          icon: '✅',
+          title: "Critères d'éligibilité",
+          body: '• Compte connecté depuis ≥ 30 jours\n• ≥ 5 transactions bancaires\n• Pas de crédit flash ouvert en cours\n• Solde prévu positif à J+7',
+        },
+      ].map((item) => (
+        <FlowGuardCard key={item.icon} style={styles.explainerCard}>
+          <View style={styles.explainerRow}>
+            <Text style={styles.explainerIcon}>{item.icon}</Text>
+            <View style={styles.explainerContent}>
+              <Text style={styles.explainerTitle}>{item.title}</Text>
+              <Text style={styles.explainerBody}>{item.body}</Text>
+            </View>
+          </View>
+        </FlowGuardCard>
+      ))}
+
+      <View style={styles.buttonWrapper}>
+        <FlowGuardButton title="Faire une demande" onPress={onContinue} variant="primary" />
+      </View>
+      <View style={styles.bottomSpacer} />
+    </ScrollView>
+  </SafeAreaView>
+)
 
 export const FlashCreditScreen: React.FC = () => {
-  const [amount, setAmount] = useState(2000);
-  const [purpose, setPurpose] = useState('SALARY');
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [step, setStep] = useState<'EXPLAINER' | 'FORM'>('EXPLAINER')
+  const [amount, setAmount] = useState(2000)
+  const [purpose, setPurpose] = useState('SALARY')
+  const [showSuccess, setShowSuccess] = useState(false)
 
-  const account = useAccountStore((s) => s.account);
-  const { requestCredit, isLoading: isPending } = useFlashCredit();
+  // All hooks must be called unconditionally, before any early return
+  const account = useAccountStore((s) => s.account)
+  const { requestCredit, isLoading: isPending } = useFlashCredit()
 
-  const successScale = useSharedValue(0);
-  const successOpacity = useSharedValue(0);
+  const successScale = useSharedValue(0)
+  const successOpacity = useSharedValue(0)
 
   const successAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: successScale.value }],
     opacity: successOpacity.value,
-  }));
+  }))
 
   const playSuccessAnimation = useCallback(() => {
-    setShowSuccess(true);
-    successOpacity.value = withTiming(1, { duration: 200 });
+    setShowSuccess(true)
+    successOpacity.value = withTiming(1, { duration: 200 })
     successScale.value = withSequence(
       withSpring(1.2, { damping: 8 }),
       withSpring(1, { damping: 12 }),
-    );
-  }, [successOpacity, successScale]);
+    )
+  }, [successOpacity, successScale])
 
   const handleRequest = useCallback(() => {
-    Keyboard.dismiss();
+    Keyboard.dismiss()
     requestCredit(
       { amount, purpose, accountId: account?.id ?? '' },
       {
         onSuccess: () => {
-          runOnJS(playSuccessAnimation)();
+          runOnJS(playSuccessAnimation)()
         },
       },
-    );
-  }, [amount, purpose, requestCredit, playSuccessAnimation]);
+    )
+  }, [amount, purpose, account, requestCredit, playSuccessAnimation])
+
+  if (step === 'EXPLAINER') {
+    return <FlashCreditExplainer onContinue={() => setStep('FORM')} />
+  }
 
   const formattedAmount = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-  }).format(amount);
+  }).format(amount)
 
-  const estimatedFee = amount * 0.015;
+  const estimatedFee = amount * 0.015
   const formattedFee = new Intl.NumberFormat('fr-FR', {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 2,
-  }).format(estimatedFee);
+  }).format(estimatedFee)
 
   if (showSuccess) {
     return (
@@ -99,7 +158,7 @@ export const FlashCreditScreen: React.FC = () => {
           </View>
         </View>
       </SafeAreaView>
-    );
+    )
   }
 
   return (
@@ -147,7 +206,7 @@ export const FlashCreditScreen: React.FC = () => {
         <Text style={styles.sectionTitle}>Motif du crédit</Text>
         <View style={styles.purposeGrid}>
           {PURPOSE_OPTIONS.map((opt) => {
-            const isActive = purpose === opt.key;
+            const isActive = purpose === opt.key
             return (
               <Text
                 key={opt.key}
@@ -156,7 +215,7 @@ export const FlashCreditScreen: React.FC = () => {
               >
                 {opt.label}
               </Text>
-            );
+            )
           })}
         </View>
 
@@ -207,8 +266,8 @@ export const FlashCreditScreen: React.FC = () => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -385,4 +444,27 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: spacing.xxl,
   },
-});
+  // Explainer step styles
+  explainerCard: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  explainerRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    alignItems: 'flex-start',
+  },
+  explainerIcon: { fontSize: 28, flexShrink: 0, marginTop: 2 },
+  explainerContent: { flex: 1 },
+  explainerTitle: {
+    color: colors.textPrimary,
+    fontWeight: '700',
+    fontSize: typography.body.fontSize,
+    marginBottom: 4,
+  },
+  explainerBody: {
+    color: colors.textSecondary,
+    fontSize: typography.caption.fontSize,
+    lineHeight: 20,
+  },
+})

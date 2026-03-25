@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, Keyboard } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Slider from '@react-native-community/slider';
-import { useScenario } from '../../hooks/useScenario';
-import { ImpactChart } from './components/ImpactChart';
-import { FlowGuardButton } from '../../components/FlowGuardButton';
-import { FlowGuardLoader } from '../../components/FlowGuardLoader';
-import { FlowGuardInput } from '../../components/FlowGuardInput';
-import { colors, typography, spacing } from '../../theme';
-import type { ScenarioType } from '../../domain/Scenario';
+import React, { useState, useCallback } from 'react'
+import { View, Text, ScrollView, StyleSheet, Keyboard } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
+import Slider from '@react-native-community/slider'
+import { useScenario } from '../../hooks/useScenario'
+import { ImpactChart } from './components/ImpactChart'
+import { FlowGuardButton } from '../../components/FlowGuardButton'
+import { FlowGuardLoader } from '../../components/FlowGuardLoader'
+import { FlowGuardInput } from '../../components/FlowGuardInput'
+import { colors, typography, spacing } from '../../theme'
+import type { ScenarioType } from '../../domain/Scenario'
 
 const SCENARIO_TYPES: { key: ScenarioType; label: string; icon: string }[] = [
   { key: 'NEW_EXPENSE', label: 'Nouvelle dépense', icon: '💸' },
@@ -16,7 +16,51 @@ const SCENARIO_TYPES: { key: ScenarioType; label: string; icon: string }[] = [
   { key: 'LOST_CLIENT', label: 'Perte de client', icon: '👋' },
   { key: 'NEW_HIRE', label: 'Nouvel employé', icon: '👤' },
   { key: 'INVESTMENT', label: 'Investissement', icon: '📊' },
-];
+]
+
+interface ScenarioTemplate {
+  label: string
+  icon: string
+  type: ScenarioType
+  amount: string
+  delayDays: number
+  description: string
+}
+
+const FREELANCE_TEMPLATES: ScenarioTemplate[] = [
+  {
+    label: 'Je perds mon client principal',
+    icon: '👋',
+    type: 'LOST_CLIENT',
+    amount: '3000',
+    delayDays: 30,
+    description: 'Perte du client principal (~3 000 €/mois)',
+  },
+  {
+    label: 'Congé / sabbatique 2 mois',
+    icon: '🏖️',
+    type: 'NEW_EXPENSE',
+    amount: '4000',
+    delayDays: 60,
+    description: "Impact d'une pause de 2 mois sur mes revenus",
+  },
+  {
+    label: 'Je recrute un collaborateur',
+    icon: '👥',
+    type: 'NEW_HIRE',
+    amount: '2500',
+    delayDays: 30,
+    description: "Coût mensuel d'un salarié ou sous-traitant",
+  },
+  {
+    label: 'Une facture arrive en retard',
+    icon: '⏱️',
+    type: 'DELAYED_INCOME',
+    amount: '5000',
+    delayDays: 45,
+    description: 'Retard de 45 jours sur une grosse facture',
+  },
+]
 
 const DELAY_OPTIONS = [
   { days: 7, label: '7 jours' },
@@ -24,33 +68,42 @@ const DELAY_OPTIONS = [
   { days: 30, label: '30 jours' },
   { days: 60, label: '60 jours' },
   { days: 90, label: '90 jours' },
-];
+]
 
 export const ScenarioScreen: React.FC = () => {
-  const [scenarioType, setScenarioType] = useState<ScenarioType>('NEW_EXPENSE');
-  const [amount, setAmount] = useState('');
-  const [delayDays, setDelayDays] = useState(30);
-  const [description, setDescription] = useState('');
+  const [scenarioType, setScenarioType] = useState<ScenarioType>('NEW_EXPENSE')
+  const [amount, setAmount] = useState('')
+  const [delayDays, setDelayDays] = useState(30)
+  const [description, setDescription] = useState('')
 
-  const { runScenario, result, isLoading: isPending } = useScenario();
+  const { runScenario, result, isLoading: isPending } = useScenario()
+
+  const applyTemplate = useCallback((tpl: ScenarioTemplate) => {
+    setScenarioType(tpl.type)
+    setAmount(tpl.amount)
+    setDelayDays(tpl.delayDays)
+    setDescription(tpl.description)
+  }, [])
 
   const handleSimulate = useCallback(() => {
-    Keyboard.dismiss();
-    const parsedAmount = parseFloat(amount.replace(/\s/g, '').replace(',', '.'));
-    if (isNaN(parsedAmount) || parsedAmount <= 0) {return;}
+    Keyboard.dismiss()
+    const parsedAmount = parseFloat(amount.replace(/\s/g, '').replace(',', '.'))
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return
+    }
 
     runScenario({
       type: scenarioType,
       amount: parsedAmount,
       delayDays,
       description: description || undefined,
-    });
-  }, [scenarioType, amount, delayDays, description, runScenario]);
+    })
+  }, [scenarioType, amount, delayDays, description, runScenario])
 
   const isValidAmount = () => {
-    const parsed = parseFloat(amount.replace(/\s/g, '').replace(',', '.'));
-    return !isNaN(parsed) && parsed > 0;
-  };
+    const parsed = parseFloat(amount.replace(/\s/g, '').replace(',', '.'))
+    return !isNaN(parsed) && parsed > 0
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -58,11 +111,21 @@ export const ScenarioScreen: React.FC = () => {
         <Text style={styles.title}>Simulateur What-If</Text>
         <Text style={styles.subtitle}>Simulez l'impact d'un événement sur votre trésorerie</Text>
 
+        {/* Quick templates */}
+        <Text style={styles.sectionTitle}>🚀 Templates rapides</Text>
+        <View style={styles.templatesGrid}>
+          {FREELANCE_TEMPLATES.map((tpl) => (
+            <Text key={tpl.label} onPress={() => applyTemplate(tpl)} style={styles.templateChip}>
+              {tpl.icon} {tpl.label}
+            </Text>
+          ))}
+        </View>
+
         {/* Scenario Type Picker */}
         <Text style={styles.sectionTitle}>Type de scénario</Text>
         <View style={styles.typeGrid}>
           {SCENARIO_TYPES.map((st) => {
-            const isActive = scenarioType === st.key;
+            const isActive = scenarioType === st.key
             return (
               <Text
                 key={st.key}
@@ -71,7 +134,7 @@ export const ScenarioScreen: React.FC = () => {
               >
                 {st.icon} {st.label}
               </Text>
-            );
+            )
           })}
         </View>
 
@@ -189,8 +252,8 @@ export const ScenarioScreen: React.FC = () => {
         <View style={styles.bottomSpacer} />
       </ScrollView>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -236,6 +299,25 @@ const styles = StyleSheet.create({
   typeChipActive: {
     backgroundColor: colors.primary + '30',
     color: colors.primary,
+  },
+  templatesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  templateChip: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 20,
+    backgroundColor: colors.primary + '15',
+    color: colors.primary,
+    fontSize: typography.caption.fontSize,
+    fontWeight: '600',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
   },
   delayRow: {
     flexDirection: 'row',
@@ -314,4 +396,4 @@ const styles = StyleSheet.create({
   bottomSpacer: {
     height: spacing.xxl,
   },
-});
+})

@@ -1,19 +1,16 @@
-import React, { useState } from "react";
-import {
-  ArrowUpCircle,
-  ArrowDownCircle,
-  RefreshCw,
-  Search,
-  Filter,
-} from "lucide-react";
+import React, { useRef, useState } from "react";
+import { RefreshCw, Search, Upload, CheckCircle2 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input, Select } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Loader } from "@/components/ui/Loader";
+import { Button } from "@/components/ui/Button";
 import { useTransactions } from "@/hooks/useTransactions";
 import { useAccounts } from "@/hooks/useAccounts";
+import { transactionsApi } from "@/api/transactions";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { TransactionCategory } from "@/domain/Transaction";
@@ -44,6 +41,15 @@ const TransactionsPage: React.FC = () => {
   const { data: accounts } = useAccounts();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [csvStatus, setCsvStatus] = useState<{
+    importing: boolean;
+    result: string | null;
+  }>({
+    importing: false,
+    result: null,
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
 
   const accountId = accounts?.[0]?.id ?? "";
   const { data: transactions, isLoading } = useTransactions(accountId, {
@@ -54,6 +60,28 @@ const TransactionsPage: React.FC = () => {
     (t) => !search || t.label.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !accountId) return;
+    setCsvStatus({ importing: true, result: null });
+    try {
+      const result = await transactionsApi.importCsv(accountId, file);
+      setCsvStatus({
+        importing: false,
+        result: `${result.imported} importées, ${result.skipped} ignorées`,
+      });
+      qc.invalidateQueries({ queryKey: ["transactions", accountId] });
+    } catch {
+      setCsvStatus({
+        importing: false,
+        result: "Erreur lors de l'import. Vérifiez le format CSV.",
+      });
+    } finally {
+      // Reset file input so the same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   return (
     <Layout title="Transactions">
       <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -62,6 +90,37 @@ const TransactionsPage: React.FC = () => {
           <p className="page-subtitle">
             Historique de vos opérations bancaires
           </p>
+        </div>
+
+        {/* CSV import */}
+        <div className="flex items-center gap-3">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            onChange={handleCsvUpload}
+            className="hidden"
+            id="csv-upload"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            leftIcon={<Upload size={14} />}
+            isLoading={csvStatus.importing}
+            disabled={!accountId || csvStatus.importing}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            Importer CSV
+          </Button>
+          {csvStatus.result && (
+            <span className="flex items-center gap-1.5 text-sm text-success">
+              <CheckCircle2 size={14} />
+              {csvStatus.result}
+            </span>
+          )}
+          <span className="text-xs text-text-muted">
+            Format : date, libellé, montant, type (DEBIT|CREDIT)
+          </span>
         </div>
 
         {/* Filters */}

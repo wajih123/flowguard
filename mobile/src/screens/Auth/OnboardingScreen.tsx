@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react'
 import {
   View,
   Text,
@@ -7,21 +7,22 @@ import {
   FlatList,
   type ViewToken,
   type ListRenderItem,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   interpolate,
   Extrapolation,
-} from 'react-native-reanimated';
-import type { StackScreenProps } from '@react-navigation/stack';
-import { FlowGuardButton } from '../../components/FlowGuardButton';
-import { Routes } from '../../navigation/routes';
-import { colors, typography, spacing } from '../../theme';
+} from 'react-native-reanimated'
+import type { StackScreenProps } from '@react-navigation/stack'
+import { FlowGuardButton } from '../../components/FlowGuardButton'
+import { Routes } from '../../navigation/routes'
+import { useAuthStore } from '../../store/authStore'
+import { colors, typography, spacing } from '../../theme'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
 interface OnboardingPage {
   id: string
@@ -52,38 +53,39 @@ const PAGES: OnboardingPage[] = [
     subtitle:
       "Besoin de trésorerie urgente ? Obtenez un micro-crédit en 2 minutes, directement depuis l'app.",
   },
-];
+]
 
 type Props = StackScreenProps<Record<string, undefined>, string>
 
 export const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
-  const progress = useSharedValue(0);
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const flatListRef = useRef<FlatList>(null)
+  const progress = useSharedValue(0)
+  const enterDemoMode = useAuthStore((s) => s.enterDemoMode)
 
   const onViewableItemsChanged = useCallback(
     ({ viewableItems }: { viewableItems: ViewToken[] }) => {
       if (viewableItems.length > 0 && viewableItems[0].index != null) {
-        setCurrentIndex(viewableItems[0].index);
-        progress.value = withSpring(viewableItems[0].index);
+        setCurrentIndex(viewableItems[0].index)
+        progress.value = withSpring(viewableItems[0].index)
       }
     },
     [progress],
-  );
+  )
 
-  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
+  const viewabilityConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current
 
   const handleNext = useCallback(() => {
     if (currentIndex < PAGES.length - 1) {
-      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true });
+      flatListRef.current?.scrollToIndex({ index: currentIndex + 1, animated: true })
     } else {
-      navigation.navigate(Routes.Login as never);
+      navigation.navigate(Routes.Login as never)
     }
-  }, [currentIndex, navigation]);
+  }, [currentIndex, navigation])
 
   const handleSkip = useCallback(() => {
-    navigation.navigate(Routes.Login as never);
-  }, [navigation]);
+    navigation.navigate(Routes.Login as never)
+  }, [navigation])
 
   const renderPage: ListRenderItem<OnboardingPage> = useCallback(
     ({ item }) => (
@@ -94,7 +96,7 @@ export const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
       </View>
     ),
     [],
-  );
+  )
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -127,20 +129,20 @@ export const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
                 [index - 1, index, index + 1],
                 [1, 1.4, 1],
                 Extrapolation.CLAMP,
-              );
+              )
               const opacity = interpolate(
                 progress.value,
                 [index - 1, index, index + 1],
                 [0.3, 1, 0.3],
                 Extrapolation.CLAMP,
-              );
-              return { transform: [{ scale }], opacity };
-            });
+              )
+              return { transform: [{ scale }], opacity }
+            })
 
-            return <Animated.View style={[styles.dot, dotStyle]} />;
-          };
+            return <Animated.View style={[styles.dot, dotStyle]} />
+          }
 
-          return <DotComponent key={index} />;
+          return <DotComponent key={index} />
         })}
       </View>
 
@@ -150,10 +152,13 @@ export const OnboardingScreen: React.FC<Props> = ({ navigation }) => {
           onPress={handleNext}
           variant="primary"
         />
+        <Text onPress={() => enterDemoMode()} style={styles.demoLink}>
+          Voir la démo sans compte →
+        </Text>
       </View>
     </SafeAreaView>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -209,5 +214,13 @@ const styles = StyleSheet.create({
   bottomActions: {
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.lg,
+    gap: spacing.sm,
   },
-});
+  demoLink: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+    paddingVertical: spacing.sm,
+    textDecorationLine: 'underline',
+  },
+})

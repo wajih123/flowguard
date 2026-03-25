@@ -14,6 +14,7 @@ interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+  isDemoMode: boolean
   // 2FA / MFA state (per-login challenge)
   mfaPending: boolean
   sessionToken: string | null
@@ -33,6 +34,18 @@ interface AuthState {
   hydrate: () => Promise<void>
   refreshTokens: () => Promise<string>
   clearError: () => void
+  enterDemoMode: () => void
+}
+
+const DEMO_USER: User = {
+  id: 'demo-user-0000',
+  email: 'demo@flowguard.fr',
+  firstName: 'Camille',
+  lastName: 'Dupont',
+  role: 'ROLE_USER' as const,
+  kycStatus: 'VERIFIED',
+  plan: 'PRO',
+  emailVerified: true,
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -40,6 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isLoading: false,
   error: null,
+  isDemoMode: false,
   mfaPending: false,
   sessionToken: null,
   maskedEmail: null,
@@ -261,7 +275,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } finally {
       await Keychain.resetGenericPassword()
       mmkv.clearAll()
-      set({ user: null, isAuthenticated: false, error: null })
+      set({ user: null, isAuthenticated: false, isDemoMode: false, error: null })
     }
   },
 
@@ -317,4 +331,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+
+  enterDemoMode: () => {
+    set({
+      user: DEMO_USER,
+      isAuthenticated: true,
+      isDemoMode: true,
+      isLoading: false,
+      error: null,
+    })
+  },
 }))

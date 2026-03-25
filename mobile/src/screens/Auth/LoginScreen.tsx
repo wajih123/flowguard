@@ -140,6 +140,7 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   const { login, loginWithBiometric, mfaPending, isLoading, error: authError } = useAuthStore()
   const { isAvailable: biometricAvailable } = useBiometric()
+  const enterDemoMode = useAuthStore((s) => s.enterDemoMode)
 
   const validate = useCallback((): boolean => {
     const result = loginSchema.safeParse({ email, password })
@@ -236,6 +237,9 @@ export const LoginScreen: React.FC<Props> = ({ navigation }) => {
             Pas encore de compte ? <Text style={styles.registerTextBold}>Créer un compte</Text>
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => enterDemoMode()} style={styles.demoLink}>
+          <Text style={styles.demoText}>🎭 Explorer en mode démo</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   )
@@ -293,6 +297,16 @@ const styles = StyleSheet.create({
   registerTextBold: {
     color: colors.primary,
     fontWeight: '700',
+  },
+  demoLink: {
+    marginTop: spacing.sm,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  demoText: {
+    color: colors.textMuted,
+    fontSize: 13,
+    textDecorationLine: 'underline',
   },
   // OTP styles
   backButton: {

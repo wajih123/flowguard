@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { createStackNavigator } from '@react-navigation/stack'
 import { DashboardScreen } from '../screens/Dashboard/DashboardScreen'
 import { ForecastScreen } from '../screens/Forecast/ForecastScreen'
+import { ScenarioScreen } from '../screens/Scenario/ScenarioScreen'
 import { AlertsScreen } from '../screens/Alerts/AlertsScreen'
 import { AlertDetailScreen } from '../screens/Alerts/AlertDetailScreen'
 import { BankAccountScreen } from '../screens/BankAccount/BankAccountScreen'
@@ -16,6 +17,7 @@ import { KycScreen } from '../screens/Kyc/KycScreen'
 import { InvoicesScreen } from '../screens/Invoices/InvoicesScreen'
 import { BudgetScreen } from '../screens/Budget/BudgetScreen'
 import { TaxScreen } from '../screens/Tax/TaxScreen'
+import { ReferralScreen } from '../screens/Profile/ReferralScreen'
 import { Routes } from './routes'
 import { useAlertStore } from '../store/alertStore'
 import { colors, spacing } from '../theme'
@@ -88,6 +90,10 @@ const ProfileStack: React.FC = () => (
     <Stack.Screen name={Routes.Profile} component={ProfileScreen as React.ComponentType<object>} />
     <Stack.Screen name={Routes.Kyc} component={KycScreen} />
     <Stack.Screen name={Routes.Reserve} component={ReserveScreen as React.ComponentType<object>} />
+    <Stack.Screen
+      name={Routes.Referral}
+      component={ReferralScreen as React.ComponentType<object>}
+    />
   </Stack.Navigator>
 )
 
@@ -144,6 +150,14 @@ export const UserNavigator: React.FC = () => {
         options={{
           tabBarLabel: 'Alertes',
           tabBarIcon: ({ focused }) => <TabIcon emoji="🔔" focused={focused} badge={unreadCount} />,
+        }}
+      />
+      <Tab.Screen
+        name="ScenariosTab"
+        component={ScenarioScreen}
+        options={{
+          tabBarLabel: 'Scénarios',
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🔀" focused={focused} />,
         }}
       />
       <Tab.Screen
