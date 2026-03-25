@@ -41,12 +41,14 @@ const TransactionsPage: React.FC = () => {
   const { data: accounts } = useAccounts();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [csvStatus, setCsvStatus] = useState<{
+  const [importStatus, setImportStatus] = useState<{
     importing: boolean;
     result: string | null;
+    error: string | null;
   }>({
     importing: false,
     result: null,
+    error: null,
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
@@ -60,24 +62,27 @@ const TransactionsPage: React.FC = () => {
     (t) => !search || t.label.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleCsvUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStatementUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (!file || !accountId) return;
-    setCsvStatus({ importing: true, result: null });
+    setImportStatus({ importing: true, result: null, error: null });
     try {
-      const result = await transactionsApi.importCsv(accountId, file);
-      setCsvStatus({
+      const result = await transactionsApi.importStatement(accountId, file);
+      setImportStatus({
         importing: false,
-        result: `${result.imported} importées, ${result.skipped} ignorées`,
+        result: `${result.imported} importées, ${result.skipped} ignorées (${result.format})`,
+        error: null,
       });
       qc.invalidateQueries({ queryKey: ["transactions", accountId] });
     } catch {
-      setCsvStatus({
+      setImportStatus({
         importing: false,
-        result: "Erreur lors de l'import. Vérifiez le format CSV.",
+        result: null,
+        error: "Erreur lors de l'import. Vérifiez le format du fichier.",
       });
     } finally {
-      // Reset file input so the same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -92,34 +97,42 @@ const TransactionsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* CSV import */}
-        <div className="flex items-center gap-3">
+        {/* Bank statement import */}
+        <div className="flex flex-wrap items-center gap-3">
           <input
             ref={fileInputRef}
             type="file"
-            accept=".csv,text/csv"
-            onChange={handleCsvUpload}
+            accept=".pdf,.ofx,.qfx,.qif,.mt940,.sta,.mt9,.c120,.cfonb,.xlsx,.xls,.csv,application/pdf,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            onChange={handleStatementUpload}
             className="hidden"
-            id="csv-upload"
+            id="statement-upload"
           />
           <Button
             variant="outline"
             size="sm"
             leftIcon={<Upload size={14} />}
-            isLoading={csvStatus.importing}
-            disabled={!accountId || csvStatus.importing}
+            isLoading={importStatus.importing}
+            disabled={!accountId || importStatus.importing}
             onClick={() => fileInputRef.current?.click()}
           >
-            Importer CSV
+            Importer un relevé bancaire
           </Button>
-          {csvStatus.result && (
+          {importStatus.result && (
             <span className="flex items-center gap-1.5 text-sm text-success">
               <CheckCircle2 size={14} />
-              {csvStatus.result}
+              {importStatus.result}
+            </span>
+          )}
+          {importStatus.error && (
+            <span className="flex items-center gap-1.5 text-sm text-error">
+              {importStatus.error}
             </span>
           )}
           <span className="text-xs text-text-muted">
-            Format : date, libellé, montant, type (DEBIT|CREDIT)
+            Formats supportés : PDF, OFX, QIF, MT940, CFONB, XLSX, CSV  — 
+            <span className="text-primary font-medium">
+              ✨ Analyse IA automatique
+            </span>
           </span>
         </div>
 

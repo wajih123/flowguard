@@ -19,6 +19,9 @@ public class TransactionService {
     @Inject
     TransactionRepository transactionRepository;
 
+    @Inject
+    BankStatementParserService parserService;
+
     public List<TransactionDto> getByAccountId(UUID accountId) {
         return transactionRepository.findByAccountId(accountId).stream()
                 .map(TransactionDto::from)
@@ -108,5 +111,64 @@ public class TransactionService {
         }
 
         return Map.of("imported", imported, "skipped", skipped);
+    }
+
+    /**
+     * Imports transactions from a bank statement file in any supported format:
+     * PDF, OFX, QIF, MT940, CFONB, XLSX, XLS, CSV.
+     * <p>
+     * Format is auto-detected from the original filename. Duplicate rows are
+     * suppressed using the same date+label+amount deduplication as CSV import.
+     */
+    @Transactional
+    public Map<String, Object> importFromStatement(UUID accountId, InputStream stream, String originalFilename) {
+        AccountEntity account = AccountEntity.findById(accountId);
+        if (account == null) throw new IllegalArgumentException("Compte introuvable");
+
+        List<BankStatementParserService.ParsedRow> rows;
+        try {
+            rows = parserService.parse(originalFilename, stream);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Impossible de lire le relevé bancaire : " + e.getMessage(), e);
+        }
+
+        int imported = 0;
+        int skipped  = 0;
+
+        for (BankStatementParserService.ParsedRow row : rows) {
+            try {
+                if (row.date() == null || row.amount() == null || row.label() == null) {
+                    skipped++; continue;
+                }
+                boolean exists = transactionRepository
+                        .existsByAccountIdDateLabelAmount(accountId, row.date(), row.label(), row.amount());
+                if (exists) { skipped++; continue; }
+
+                TransactionEntity.TransactionType type =
+                        "CREDIT".equalsIgnoreCase(row.type())
+                                ? TransactionEntity.TransactionType.CREDIT
+                                : TransactionEntity.TransactionType.DEBIT;
+
+                TransactionEntity tx = TransactionEntity.builder()
+                        .account(account)
+                        .date(row.date())
+                        .label(row.label())
+                        .amount(row.amount())
+                        .type(type)
+                        .category(TransactionEntity.TransactionCategory.AUTRE)
+                        .isRecurring(false)
+                        .build();
+                transactionRepository.persist(tx);
+                imported++;
+            } catch (Exception e) {
+                skipped++;
+            }
+        }
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("imported", imported);
+        result.put("skipped", skipped);
+        result.put("format", parserService.detectFormat(originalFilename, new byte[0]));
+        return result;
     }
 }

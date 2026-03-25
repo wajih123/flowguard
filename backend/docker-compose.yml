@@ -25,6 +25,7 @@ volumes:
   redis_data:
   letsencrypt_certs: # Let's Encrypt certificates (managed by Certbot)
   certbot_webroot: # ACME challenge webroot
+  ollama_data: # Ollama model cache (persists downloaded LLM weights)
 
 services:
   # ── PostgreSQL 16 ──────────────────────────────────────────────────────────
@@ -140,10 +141,14 @@ services:
       FLOWGUARD_SWAN_API_URL: ${FLOWGUARD_SWAN_API_URL:-https://api.swan.io}
       FLOWGUARD_SWAN_CLIENT_ID: ${FLOWGUARD_SWAN_CLIENT_ID:-}
       FLOWGUARD_SWAN_CLIENT_SECRET: ${FLOWGUARD_SWAN_CLIENT_SECRET:-}
+      FLOWGUARD_AI_ENDPOINT: ${FLOWGUARD_AI_ENDPOINT:-http://ollama:11434/v1/chat/completions}
+      FLOWGUARD_AI_MODEL: ${FLOWGUARD_AI_MODEL:-llama3.2:3b}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
     # SmallRye Health serves at /health (absolute path — quarkus.smallrye-health.root-path=/health)
     healthcheck:

@@ -15,17 +15,28 @@ export const transactionsApi = {
       .get<Transaction[]>(`/api/accounts/${accountId}/transactions/recurring`)
       .then((r) => r.data),
 
-  /** Import transactions from a CSV file (multipart/form-data).
-   *  The CSV must have columns: date, label, amount, type (DEBIT|CREDIT).
-   *  Returns the number of rows successfully imported. */
-  importCsv: (accountId: string, file: File) => {
+  /**
+   * Import a bank statement in any supported format (PDF, OFX, QIF, MT940,
+   * CFONB, XLSX, XLS, CSV).  The format is auto-detected server-side from the
+   * filename extension + file content.
+   * Returns how many rows were imported, skipped (duplicates/errors), and the
+   * detected format name.
+   */
+  importStatement: (accountId: string, file: File) => {
     const formData = new FormData();
     formData.append("file", file);
     return apiClient
       .post<{
         imported: number;
         skipped: number;
-      }>(`/api/accounts/${accountId}/transactions/import-csv`, formData, { headers: { "Content-Type": "multipart/form-data" } })
+        format: string;
+      }>(`/api/accounts/${accountId}/transactions/import`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
       .then((r) => r.data);
   },
+
+  /** @deprecated use importStatement — kept for backward compatibility */
+  importCsv: (accountId: string, file: File) =>
+    transactionsApi.importStatement(accountId, file),
 };

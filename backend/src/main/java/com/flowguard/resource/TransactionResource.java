@@ -92,4 +92,45 @@ public class TransactionResource {
         Map<String, Integer> result = transactionService.importFromCsv(accountId, csvFile.uploadedFile().toFile());
         return Response.ok(result).build();
     }
+
+    /**
+     * Import transactions from a bank statement file in any supported format.
+     * <p>
+     * Accepted formats: PDF, OFX/QFX, QIF, MT940, CFONB, XLSX, XLS, CSV.
+     * The format is auto-detected from the uploaded filename extension and content.
+     * Duplicate transactions (same date + label + amount) are automatically ignored.
+     */
+    @POST
+    @Path("/import")
+    @Consumes(MediaType.MULTIPART_FORM_DATA)
+    @RunOnVirtualThread
+    public Response importStatement(
+            @PathParam("accountId") UUID accountId,
+            @RestForm("file") FileUpload statementFile) {
+        if (statementFile == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "Fichier manquant")).build();
+        }
+        UUID userId = UUID.fromString(jwt.getSubject());
+        transactionService.verifyAccountOwnership(accountId, userId);
+
+        // Validate file size (max 20 MB — PDFs from some banks can be large)
+        java.io.File uploaded = statementFile.uploadedFile().toFile();
+        if (uploaded.length() > 20L * 1024 * 1024) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", "Fichier trop volumineux (max 20 Mo)")).build();
+        }
+
+        String filename = statementFile.fileName() != null
+                ? statementFile.fileName()
+                : statementFile.name();
+
+        try (java.io.InputStream is = new java.io.FileInputStream(uploaded)) {
+            Map<String, Object> result = transactionService.importFromStatement(accountId, is, filename);
+            return Response.ok(result).build();
+        } catch (java.io.IOException e) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of("error", "Erreur lecture fichier : " + e.getMessage())).build();
+        }
+    }
 }

@@ -265,6 +265,30 @@ export const syncTransactions = async (accountId: string): Promise<{ synced: num
   return data
 }
 
+/**
+ * Upload a bank statement file (PDF, OFX, QIF, MT940, CFONB, XLSX, CSV).
+ * Format is auto-detected server-side from the filename extension.
+ */
+export const importStatement = async (
+  accountId: string,
+  file: { uri: string; name: string; mimeType?: string },
+): Promise<{ imported: number; skipped: number; format: string }> => {
+  const formData = new FormData()
+  // React Native FormData accepts { uri, name, type }
+  formData.append('file', {
+    uri: file.uri,
+    name: file.name,
+    type: file.mimeType ?? 'application/octet-stream',
+  } as unknown as Blob)
+
+  const { data } = await api.post<{ imported: number; skipped: number; format: string }>(
+    `/api/accounts/${encodeURIComponent(accountId)}/transactions/import`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  )
+  return data
+}
+
 // â”€â”€ Alerts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export const getAlerts = async (
   accountId: string,

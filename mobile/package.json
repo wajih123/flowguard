@@ -24,6 +24,7 @@
     "date-fns": "^3.6.0",
     "expo": "~53.0.0",
     "expo-clipboard": "~7.1.5",
+    "expo-document-picker": "~13.1.0",
     "expo-splash-screen": "~0.29.0",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",
