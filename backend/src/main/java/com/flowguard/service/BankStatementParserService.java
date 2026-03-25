@@ -683,13 +683,35 @@ public class BankStatementParserService {
     List<ParsedRow> extractTransactionsFromText(String text) {
         List<ParsedRow> rows = new ArrayList<>();
 
-        // French date pattern: dd/MM/yyyy or dd.MM.yyyy or dd-MM-yyyy
+        // === Determine context date from the first full-year date in the text ===
+        // Used to infer the year for Crédit Agricole DD.MM format (no year in table).
+        LocalDate contextDate = LocalDate.now();
+        {
+            Matcher ym = Pattern.compile(
+                    "\\b(\\d{1,2})[/.-](\\d{1,2})[/.-](\\d{4})\\b").matcher(text);
+            if (ym.find()) {
+                try {
+                    contextDate = LocalDate.of(
+                            Integer.parseInt(ym.group(3)),
+                            Integer.parseInt(ym.group(2)),
+                            Integer.parseInt(ym.group(1)));
+                } catch (Exception ignored) {
+                }
+            }
+        }
+        final LocalDate ctxDate = contextDate;
+
+        // Full 3-part date: dd/MM/yyyy or dd.MM.yyyy or dd-MM-yyyy
         Pattern datePat = Pattern.compile("\\b(\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2,4})\\b");
+        // Short 2-part date at line start: DD.MM or DD/MM — Crédit Agricole format
+        Pattern shortDateStartPat = Pattern.compile("^(\\d{1,2}[./]\\d{2})\\s");
         // French amount pattern — decimal separator is COMMA, thousands separator can
         // be space, non-breaking space, or PERIOD (BoursoBank uses period: 1.040,00).
         // Group 1 = sign, group 2 = integer part (with separators), group 3 = 2 decimal
         // digits, group 4 = optional D/C tag.
-        Pattern amtPat = Pattern.compile("(-?)(\\d{1,3}(?:[.\\s\\u00A0]\\d{3})*)[,](\\d{2})\\s*([DCdc])?");
+        // (?<![0-9/]) prevents matching digits inside dates (e.g. '026' from '01/2026
+        // 120,00')
+        Pattern amtPat = Pattern.compile("(-?)(?<![0-9/])(\\d{1,3}(?:[.\\s\\u00A0]\\d{3})*)[,](\\d{2})\\s*([DCdc])?");
 
         String[] lines = text.split("\n");
 
@@ -698,11 +720,42 @@ public class BankStatementParserService {
             if (line.length() < 8)
                 continue;
 
+            // --- Date extraction: 3-part (with year) first, then 2-part (CA DD.MM) ---
             Matcher dm = datePat.matcher(line);
-            if (!dm.find())
-                continue;
+            LocalDate date = null;
+            int dateEnd = 0;
 
-            LocalDate date = parseDate(dm.group(1));
+            if (dm.find()) {
+                date = parseDate(dm.group(1));
+                dateEnd = dm.end();
+            } else {
+                // Crédit Agricole: line starts with DD.MM or DD/MM (no year)
+                Matcher sdm = shortDateStartPat.matcher(line);
+                if (sdm.find()) {
+                    String raw = sdm.group(1);
+                    String[] parts = raw.indexOf('.') >= 0 ? raw.split("\\.") : raw.split("/");
+                    try {
+                        int day = Integer.parseInt(parts[0]);
+                        int month = Integer.parseInt(parts[1]);
+                        // Build candidate with context year, then adjust if the date is
+                        // implausibly distant from the context date:
+                        // > 6 months in the past → probably next year (Jan on Dec statement)
+                        // > 2 months in the future → probably previous year
+                        LocalDate candidate = LocalDate.of(ctxDate.getYear(), month, day);
+                        int candidateAbsMonth = candidate.getYear() * 12 + candidate.getMonthValue();
+                        int contextAbsMonth = ctxDate.getYear() * 12 + ctxDate.getMonthValue();
+                        int diff = contextAbsMonth - candidateAbsMonth;
+                        if (diff > 6)
+                            candidate = candidate.plusYears(1);
+                        else if (diff < -2)
+                            candidate = candidate.minusYears(1);
+                        date = candidate;
+                    } catch (Exception ignored) {
+                    }
+                    dateEnd = sdm.end() - 1; // sdm.end() includes trailing space
+                }
+            }
+
             if (date == null)
                 continue;
 
@@ -737,53 +790,58 @@ public class BankStatementParserService {
             if (amounts.isEmpty())
                 continue;
 
-            // In French bank statement PDFs each line has: [transaction_amount]
-            // [running_balance]
-            // The FIRST amount is always the transaction; the last is the running balance.
-            // Exception: single amount on the line → that IS the transaction.
+            // The FIRST amount is the transaction; the last (if different) is the balance.
             BigDecimal amount = amounts.get(0);
             String type = amtTypes.get(0);
 
-            // Label: everything between the date match end and the first amount.
-            // Guard: amtIdx may be < dm.end() when the amount appears inside/before the
-            // date token.
+            // --- Label extraction ---
             Matcher firstAmt = amtPat.matcher(line);
             int amtIdx = firstAmt.find() ? firstAmt.start() : line.length();
-            int labelStart = dm.end();
+            int labelStart = dateEnd;
             int labelEnd = Math.min(amtIdx, line.length());
             String label = (labelEnd > labelStart)
                     ? line.substring(labelStart, labelEnd).trim()
                     : "";
-            label = label.replaceAll("\\s+", " ").replaceAll("[|#*]", "").trim();
+
+            // Strip leading CA valeur date: "DD.MM " or "DD/MM/YYYY " repeated at start
+            label = label.replaceAll("^\\d{1,2}[./]\\d{2}(/\\d{2,4})?\\s+", "").trim();
+            // Strip trailing valeur / reference date added by BoursoBank column 3
+            // e.g. "VIR INST MME MARIEM SALTI 01/01/2026" → "VIR INST MME MARIEM SALTI"
+            label = label.replaceAll("\\s+\\d{1,2}[/.-]\\d{2}(/\\d{2,4})?\\s*$", "").trim();
+            // Strip CA card embedded transaction-date reference: "Carte X9420 Merchant
+            // 23/11"
+            label = label.replaceAll("\\s+\\d{1,2}/\\d{2}$", "").trim();
+            // Strip CA checkboxes and encoding artefacts (¨ □ ¤)
+            label = label.replaceAll("[¨\u00a4\u00b6\u25a1]", "").trim();
+            // Normalise whitespace and strip special chars
+            label = label.replaceAll("\\s{2,}", " ").replaceAll("[|#*]", "").trim();
+
             if (label.isBlank())
                 label = "Opération PDF";
             if (label.length() > 200)
                 label = label.substring(0, 200);
 
-            // Skip obviously non-transaction lines (balance totals, bank header text).
-            // Check both the extracted label AND the full line: a "Solde precedent" line
-            // has
-            // the keyword before the matched date, so it would be absent from the label
-            // slice.
+            // Skip non-transaction lines (balance totals, bank header text).
             String lineLow = line.toLowerCase();
-            if (label.toLowerCase().matches(".*(solde|balance|total|report|page|iban|bic|intitulé).*")
-                    || lineLow.matches(".*(solde|balance|total|report|page|iban|bic|intitulé).*"))
+            if (label.toLowerCase().matches(
+                    ".*(solde|balance|total|report|page|iban|bic|intitulé|synthèse|synthese|nouveau solde|montant frais).*")
+                    || lineLow.matches(
+                            ".*(solde|balance|total|report|page|iban|bic|intitulé|synthèse|synthese|nouveau solde|montant frais).*"))
                 continue;
-            // Skip currency-exchange rate continuation lines, e.g.:
-            // "136,00 PLN / 1 euro = 4,210526315" — these appear below foreign CARTE rows
+            // Skip FX continuation lines: "136,00 PLN / 1 euro = 4,210526315"
             if (lineLow.matches(".*\\d+[,.]\\d+\\s+[a-z]{2,4}\\s*/\\s*1\\s*euro.*"))
+                continue;
+            // Skip summary total lines that are just numbers (e.g. "5 904,88 5 370,35")
+            if (label.matches("[\\d\\s,.+-]+"))
                 continue;
 
             // Keyword-based type override: French banking labels carry reliable
-            // DEBIT/CREDIT signals.
-            // This corrects cases where amounts are always positive (no sign in the PDF
-            // column).
+            // DEBIT/CREDIT signals — corrects cases where PDF amounts are always positive.
             String keywordType = inferTypeFromLabel(label);
             if (keywordType != null)
                 type = keywordType;
 
-            // Gap 2: capture the second (running-balance) amount printed on PDF lines.
-            // BoursoBank and most French banks print: [tx_amount] … [label] … [balance]
+            // Capture trailing running balance printed on the same PDF line.
             BigDecimal balanceAfter = amounts.size() > 1 ? amounts.get(amounts.size() - 1) : null;
             rows.add(new ParsedRow(date, label, amount, type, balanceAfter));
         }
@@ -809,7 +867,10 @@ public class BankStatementParserService {
                 || l.startsWith("FRAIS ") || l.startsWith("CHQ ")
                 || l.startsWith("CHEQUE") || l.startsWith("CHÈQUE")
                 || l.contains("VIREMENT EMIS") || l.contains("VIR EMIS")
-                || l.contains("PAIEMENT CB") || l.contains("PAIEMENT PAR CARTE")) {
+                || l.contains("PAIEMENT CB") || l.contains("PAIEMENT PAR CARTE")
+                // ── Crédit Agricole outgoing transfer patterns ─────────
+                || l.contains("VIR INST VERS") // "Virement Vir Inst vers Wajih Tarsim"
+                || l.contains("VIREMENT WEB")) { // "Virement Web Monsieur Tarsim Wajih"
             return "DEBIT";
         }
         // ── Strong CREDIT signals ──────────────────────────────────────
@@ -825,7 +886,14 @@ public class BankStatementParserService {
                 || l.contains("VIR INST M ") // abbreviated civility
                 || l.contains("SALAIRE") || l.contains("DEPOT") || l.contains("DÉPÔT")
                 || l.contains("REMUNERATION") || l.contains("RÉMUNÉRATION")
-                || l.startsWith("PRIME ")) { // Prime Parrainage, Prime de remboursement…
+                || l.startsWith("PRIME ") // Prime Parrainage, Prime de remboursement…
+                // ── Crédit Agricole incoming transfer patterns ─────────
+                || l.contains("VIREMENT DE ") // "Virement De Monsieur Tarsim Wajih"
+                || l.contains("VIR INST DE ") // "Virement Vir Inst de Wajih Tarsim"
+                || l.contains("VIR INST WERO DE") // "Virement Vir Inst Wero de Mme Mariem"
+                // ── Rejected debit = money returned ────────────────────
+                || l.startsWith("REJET ") // "Rejet Prlv SFR" (bounced DD returned)
+                || l.startsWith("REMBOURS.")) { // "Rembours. Prel Predica" (insurance refund)
             return "CREDIT";
         }
         return null; // no strong signal (VIR INST without civility = ambiguous)
@@ -852,7 +920,15 @@ public class BankStatementParserService {
                 || l.contains("URSSAF") || l.contains(" RSI ") || l.contains("CIPAV")
                 || l.contains("IMPOT") || l.contains("IMPÔT") || l.contains("DGFIP")
                 || l.contains("TRESOR PUBLIC") || l.contains("TRÉSOR PUBLIC")
-                || l.contains("TAXE") || l.contains("TVA") || l.contains("AMENDE")) {
+                || l.contains("TAXE") || l.contains("TVA") || l.contains("AMENDE")
+                // ── Crédit Agricole banking fees ──────────────────────
+                || l.contains("FRAIS IRREG") // "** Frais Irreg.et Incidents"
+                || l.contains("FRAIS IRRÉG")
+                || l.contains("INTERETS DEBITEURS") // debit interest
+                || l.contains("INTÉRÊTS DÉBITEURS")
+                || l.contains("COMMISSION D'INTERVENTION")
+                || l.contains("DIRECTION GENERALE DES FINANCES") // income tax
+                || l.contains("DIRECTION GÉNÉRALE DES FINANCES")) {
             return TransactionEntity.TransactionCategory.CHARGES_FISCALES;
         }
 
@@ -868,7 +944,8 @@ public class BankStatementParserService {
         if (l.contains("AVANSSUR") || l.contains("DIRECT ASSURANC")
                 || l.contains("LOLIVIER") || l.contains("MAIF") || l.contains("MATMUT")
                 || l.contains("AXA") || l.contains("ALLIANZ") || l.contains("GENERALI")
-                || l.contains("MACIF") || l.contains("ASSURANCE") || l.contains("MUTUELLE")) {
+                || l.contains("MACIF") || l.contains("ASSURANCE") || l.contains("MUTUELLE")
+                || l.contains("PREDICA")) { // Crédit Agricole life-insurance arm
             return TransactionEntity.TransactionCategory.ASSURANCE;
         }
 
@@ -888,7 +965,9 @@ public class BankStatementParserService {
                 || l.contains("WELLPASS") // gym network
                 || l.contains("DAZN") || l.contains("MOLOTOV")
                 || l.contains("GITHUB") || l.contains("HETZNER")
-                || (l.contains("PAYPAL") && (l.contains("GITHUB") || l.contains("HETZNER")))) {
+                || (l.contains("PAYPAL") && (l.contains("GITHUB") || l.contains("HETZNER")))
+                || l.contains("OFFRE ESSENTIEL") // CA bank service subscription
+                || l.contains("SAS CROSSFIT")) {
             return TransactionEntity.TransactionCategory.ABONNEMENT;
         }
 
@@ -904,29 +983,41 @@ public class BankStatementParserService {
                 || l.contains("JUST EAT") || l.contains("MCDONALDS")
                 || l.contains("PYSZNE") // Polish food delivery
                 || l.contains("NABULIO") || l.contains("RESTAURANT") || l.contains("BRASSEUR")
+                || l.contains("3 BRASSEURS") // restaurant chain
                 || l.contains("SUSHI") || l.contains("PIZZA") || l.contains("TRAITEUR")
                 || l.contains("UTILE") // Utile supermarket chain
                 || l.contains("MAXICOFFEE") // coffee machine vending
                 || l.contains("JEAN ROMEO") // local grocery Nice
                 || l.contains("SC LA PETITE") // café/snack
                 || l.contains("DI PIU") || l.contains("LEONIS") || l.contains("BERCO")
-                || l.contains("LDC") || l.contains("MAEL") || l.contains("SOHO")) {
+                || l.contains("LDC") || l.contains("MAEL") || l.contains("SOHO")
+                || l.contains("SUPER U") // CA: Super U supermarket
+                || l.contains("LIOMAR") // CA: Liomar Café Levallois
+                || l.contains("LE REGAL") // CA: restaurant Nice
+                || l.contains("FROMAGERIE") // CA: cheese shop
+                || l.contains("SC FOURNIL") // CA: bakery
+                || l.contains("RELAIS STE MARGUERI") // CA: café/snack
+                || l.contains("MAMA TZIGANE") // restaurant
+                || l.contains("SIND BAD")) { // restaurant Nice
             return TransactionEntity.TransactionCategory.ALIMENTATION;
         }
 
         // ── TRANSPORT — mobility, parking, fuel, travel ──────────────────
         if (l.contains("BOLT.EU") || l.contains("UBER")
                 || l.contains("SERVICE NAVIGO") || l.contains("NAVIGO")
-                || l.contains("SNCF") || l.contains("RATP") || l.contains("TRANSILIEN")
+                || l.contains("SNCF") || l.contains("SNCF-VOYAGEURS") || l.contains("RATP") || l.contains("TRANSILIEN")
                 || l.contains("AIR FRANCE") || l.contains("EASYJET") || l.contains("RYANAIR")
-                || l.contains("SHELL") || l.contains("ESSO")
+                || l.contains("SHELL") || l.contains("ESSO") || l.contains("TOTAL 4") || l.contains("TOTAL CB")
                 || l.contains("PAYBYPHONE") || l.contains("PBP_") // parking
                 || l.contains("INDIGO") // parking operator
                 || l.contains("AUTOROUTES") || l.contains("ASF")
                 || l.contains("GETYOURGUIDE") // travel tours
                 || l.contains("IBIS") || l.contains("NOVOTEL") || l.contains("ACCOR")
                 || l.contains("BOOKING") || l.contains("AIRBNB")
-                || l.contains("BILET.INTERCI")) { // Polish transport ticketing
+                || l.contains("BILET.INTERCI") // Polish transport ticketing
+                || l.contains("WESTERN UNION") // international money transfer
+                || l.contains("RELAIS FORT CARRE") // CA: toll relay
+                || l.contains("LAURIE CARWASH")) { // CA: car wash
             return TransactionEntity.TransactionCategory.TRANSPORT;
         }
 
@@ -936,7 +1027,8 @@ public class BankStatementParserService {
         }
 
         // ── SALAIRE — salary / income ─────────────────────────────────────
-        if (l.contains("SALAIRE") || l.contains("REMUNERATION") || l.contains("RÉMUNÉRATION")) {
+        if (l.contains("SALAIRE") || l.contains("REMUNERATION") || l.contains("RÉMUNÉRATION")
+                || l.contains("INCKA")) { // Incka = expense reimbursement from employer
             return TransactionEntity.TransactionCategory.SALAIRE;
         }
 

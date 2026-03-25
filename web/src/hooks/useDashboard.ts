@@ -1,6 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { addDays, format } from "date-fns";
 import { dashboardApi } from "@/api/dashboard";
+import type { DashboardSummary, SpendingCategory } from "@/api/dashboard";
+import { sweepApi } from "@/api/financial";
+import type { SweepSuggestion } from "@/api/financial";
 import type { DashboardData, Transaction } from "@/types";
 
 const _today = new Date();
@@ -104,3 +107,38 @@ export const useDashboardTransactions = () =>
       : () => dashboardApi.getTransactions(5),
     staleTime: 5 * 60 * 1000,
   });
+
+export const useEnrichedDashboard = () =>
+  useQuery<DashboardSummary>({
+    queryKey: ["dashboard-enriched"],
+    queryFn: dashboardApi.getEnrichedSummary,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+export const useSpendingByCategory = (months = 1) =>
+  useQuery<SpendingCategory[]>({
+    queryKey: ["spending-by-category", months],
+    queryFn: () => dashboardApi.getSpendingByCategory(months),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+export const useSweepSuggestions = () => {
+  const qc = useQueryClient();
+  const query = useQuery<SweepSuggestion[]>({
+    queryKey: ["sweep-suggestions"],
+    queryFn: sweepApi.list,
+    staleTime: 2 * 60 * 1000,
+    retry: false,
+  });
+  const accept = useMutation({
+    mutationFn: sweepApi.accept,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sweep-suggestions"] }),
+  });
+  const dismiss = useMutation({
+    mutationFn: sweepApi.dismiss,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sweep-suggestions"] }),
+  });
+  return { ...query, accept, dismiss };
+};

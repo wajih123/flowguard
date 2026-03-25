@@ -5,6 +5,7 @@ import {
   Clock,
   AlertTriangle,
   RefreshCw,
+  TrendingUp,
 } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -13,7 +14,7 @@ import { HelpTooltip } from "@/components/ui/HelpTooltip";
 import { Loader } from "@/components/ui/Loader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taxApi } from "@/api/tax";
-import type { TaxEstimate } from "@/api/tax";
+import type { TaxEstimate, TaxProvision } from "@/api/tax";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -135,6 +136,12 @@ const TaxPage: React.FC = () => {
     queryFn: taxApi.getUpcoming,
   });
 
+  const { data: provision } = useQuery({
+    queryKey: ["tax-provision"],
+    queryFn: taxApi.getProvision,
+    retry: false,
+  });
+
   const regenMut = useMutation({
     mutationFn: taxApi.regenerate,
     onSuccess: () =>
@@ -224,6 +231,106 @@ const TaxPage: React.FC = () => {
             </p>
           </Card>
         </div>
+
+        {/* Tax Provision Widget */}
+        {provision && (
+          <Card padding="md" className="border border-primary/30 bg-primary/5">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-white font-semibold text-lg flex items-center gap-2">
+                  <TrendingUp size={18} className="text-primary" />
+                  Provisions fiscales recommandées
+                </h2>
+                <p className="text-text-muted text-sm mt-1">
+                  Pour freelancers / auto-entrepreneurs — À mettre de côté
+                  chaque mois
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div className="p-3 bg-white/[0.03] rounded border border-white/[0.06]">
+                  <p className="text-text-muted text-xs mb-1">
+                    Revenu mensuel moyen
+                  </p>
+                  <p className="text-2xl font-bold font-numeric text-white">
+                    {fmt(provision.avgMonthlyIncome)}
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">
+                    {provision.incomeType}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-warning/5 rounded border border-warning/20">
+                  <p className="text-text-muted text-xs mb-1">
+                    Cotisations sociales (URSSAF / CIPAV)
+                  </p>
+                  <p className="text-2xl font-bold font-numeric text-warning">
+                    {fmt(provision.cotisationMonthly)}
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">
+                    {(provision.cotisationRate * 100).toFixed(1)}% du revenu
+                  </p>
+                </div>
+
+                <div className="p-3 bg-yellow-400/5 rounded border border-yellow-400/20">
+                  <p className="text-text-muted text-xs mb-1">
+                    Impôt sur le revenu
+                  </p>
+                  <p className="text-2xl font-bold font-numeric text-yellow-400">
+                    {fmt(provision.incomeTaxMonthly)}
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">
+                    {(provision.incomeTaxRate * 100).toFixed(1)}% du revenu
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-4 bg-cyan-400/10 rounded border border-cyan-400/30 col-span-full md:col-span-1">
+                  <p className="text-text-muted text-xs font-semibold mb-2">
+                    À METTRE DE CÔTÉ CHAQUE MOIS
+                  </p>
+                  <p className="text-4xl font-bold font-numeric text-cyan-400">
+                    {fmt(provision.totalMonthlyProvision)}
+                  </p>
+                  <p className="text-sm text-text-muted mt-2">
+                    Prochain versement URSSAF :{" "}
+                    <span className="text-white font-semibold">
+                      {format(
+                        parseISO(provision.nextUrssafDate),
+                        "d MMMM yyyy",
+                        { locale: fr },
+                      )}
+                    </span>
+                  </p>
+                </div>
+
+                {provision.tip && (
+                  <div className="p-3 bg-primary/5 rounded border border-primary/20">
+                    <p className="text-xs text-primary font-semibold mb-1">
+                      💡 Conseil
+                    </p>
+                    <p className="text-xs text-text-muted">{provision.tip}</p>
+                  </div>
+                )}
+
+                <div className="p-3 bg-white/[0.02] rounded border border-white/[0.06]">
+                  <p className="text-text-muted text-xs mb-1">
+                    Estimation annuelle
+                  </p>
+                  <p className="text-xl font-bold font-numeric text-white">
+                    {fmt(provision.urssafEstimate)}
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">
+                    À budgéter pour l'année
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
 
         {isLoading ? (
           <Loader text="Chargement…" />

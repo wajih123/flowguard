@@ -8,9 +8,22 @@ import {
   Building2,
   FileDown,
   AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  CreditCard,
+  ArrowRightLeft as Transfer,
+  CheckCircle,
+  X,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
+import {
+  PieChart as RechartsPie,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -22,7 +35,13 @@ import { ForecastChart } from "@/components/dashboard/ForecastChart";
 import { TransactionList } from "@/components/dashboard/TransactionList";
 import { ReserveWidget } from "@/components/dashboard/ReserveWidget";
 import { AlertsList } from "@/components/dashboard/AlertsList";
-import { useDashboard, useDashboardTransactions } from "@/hooks/useDashboard";
+import {
+  useDashboard,
+  useDashboardTransactions,
+  useEnrichedDashboard,
+  useSpendingByCategory,
+  useSweepSuggestions,
+} from "@/hooks/useDashboard";
 import { usePredictions } from "@/hooks/usePredictions";
 import { useAuthStore } from "@/store/authStore";
 import { useQuery } from "@tanstack/react-query";
@@ -37,6 +56,13 @@ const DashboardPage: React.FC = () => {
   const { data: prediction, isLoading: predLoading } = usePredictions(
     dashboard?.account?.id,
   );
+  const { data: enriched } = useEnrichedDashboard();
+  const { data: spending } = useSpendingByCategory(1);
+  const {
+    data: sweepSuggestions,
+    accept: acceptSweep,
+    dismiss: dismissSweep,
+  } = useSweepSuggestions();
 
   const [alertDismissed, setAlertDismissed] = useState(false);
   const [concentrationDismissed, setConcentrationDismissed] = useState(false);
@@ -183,6 +209,267 @@ const DashboardPage: React.FC = () => {
 
         {/* ── 4. FORECAST CHART — full width ───────────────────────────── */}
         <ForecastChart prediction={prediction} isLoading={predLoading} />
+
+        {/* ── 4B. SMART FEATURES ROW 1 ─────────────────────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Overdraft Risk */}
+          {enriched?.overdraftRisk && (
+            <Card hover padding="md">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white font-semibold text-sm">
+                  Risque de découvert
+                </h3>
+                <div
+                  className={
+                    enriched.overdraftRisk.level === "HIGH"
+                      ? "text-danger"
+                      : enriched.overdraftRisk.level === "MEDIUM"
+                        ? "text-warning"
+                        : enriched.overdraftRisk.level === "NONE"
+                          ? "text-success"
+                          : "text-info"
+                  }
+                >
+                  {enriched.overdraftRisk.level === "HIGH" && (
+                    <AlertTriangle size={16} />
+                  )}
+                  {enriched.overdraftRisk.level === "MEDIUM" && (
+                    <TrendingDown size={16} />
+                  )}
+                  {enriched.overdraftRisk.level === "NONE" && (
+                    <CheckCircle size={16} />
+                  )}
+                </div>
+              </div>
+              <p className="text-2xl font-numeric font-bold text-white">
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(enriched.overdraftRisk.projectedBalance)}
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                Jour{" "}
+                {format(parseISO(enriched.overdraftRisk.horizonDate), "d MMM", {
+                  locale: fr,
+                })}
+              </p>
+            </Card>
+          )}
+
+          {/* Monthly Subscriptions */}
+          {enriched && (
+            <Link to="/subscriptions" className="block">
+              <Card hover padding="md" className="h-full">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-white font-semibold text-sm">
+                    Abonnements
+                  </h3>
+                  <CreditCard size={16} className="text-primary" />
+                </div>
+                <p className="text-2xl font-numeric font-bold text-white">
+                  {new Intl.NumberFormat("fr-FR", {
+                    style: "currency",
+                    currency: "EUR",
+                  }).format(enriched.monthlySubscriptionsCost)}
+                </p>
+                <p className="text-xs text-text-muted mt-1">/mois</p>
+              </Card>
+            </Link>
+          )}
+
+          {/* Last Month Income */}
+          {enriched && (
+            <Card padding="md">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white font-semibold text-sm">
+                  Revenus mois écoulé
+                </h3>
+                <TrendingUp size={16} className="text-success" />
+              </div>
+              <p className="text-2xl font-numeric font-bold text-success">
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(enriched.lastMonthIncome)}
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                Sortie:{" "}
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(-enriched.lastMonthSpend)}
+              </p>
+            </Card>
+          )}
+
+          {/* Savings Rate */}
+          {enriched && (
+            <Card padding="md">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-white font-semibold text-sm">Épargne</h3>
+                <TrendingUp size={16} className="text-cyan-400" />
+              </div>
+              <p className="text-2xl font-numeric font-bold text-cyan-400">
+                {new Intl.NumberFormat("fr-FR", {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(enriched.lastMonthSavings)}
+              </p>
+              <p className="text-xs text-text-muted mt-1">
+                {enriched.lastMonthIncome > 0
+                  ? (
+                      (enriched.lastMonthSavings / enriched.lastMonthIncome) *
+                      100
+                    ).toFixed(1) + "%"
+                  : "N/A"}
+              </p>
+            </Card>
+          )}
+        </div>
+
+        {/* ── 4C. UPCOMING DEBITS & SWEEP SUGGESTIONS ────────────────────── */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Upcoming Debits in 7 days */}
+          {enriched && enriched.upcomingDebits?.length > 0 && (
+            <Card padding="md">
+              <h3 className="text-white font-semibold text-sm mb-3">
+                Débits attendus (7 jours)
+              </h3>
+              <div className="space-y-2">
+                {enriched.upcomingDebits.map((debit, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 bg-white/[0.02] rounded border border-white/[0.04]"
+                  >
+                    <span className="text-text-muted text-xs">
+                      {debit.label}
+                    </span>
+                    <span className="text-white font-numeric font-semibold">
+                      {new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: "EUR",
+                      }).format(debit.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* Sweep Suggestions */}
+          {sweepSuggestions && sweepSuggestions.length > 0 && (
+            <Card padding="md">
+              <h3 className="text-white font-semibold text-sm mb-3">
+                Suggestions de balance
+              </h3>
+              <div className="space-y-2">
+                {sweepSuggestions.slice(0, 3).map((suggestion) => (
+                  <div
+                    key={suggestion.id}
+                    className="flex items-center justify-between p-2 bg-primary/5 rounded border border-primary/20"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-medium truncate">
+                        {suggestion.reason}
+                      </p>
+                      <p className="text-text-muted text-xs">
+                        {new Intl.NumberFormat("fr-FR", {
+                          style: "currency",
+                          currency: "EUR",
+                        }).format(suggestion.suggestedAmount)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                      <button
+                        onClick={() => acceptSweep.mutate(suggestion.id)}
+                        className="p-1 rounded hover:bg-success/20 text-success transition"
+                        title="Accepter"
+                      >
+                        <CheckCircle size={14} />
+                      </button>
+                      <button
+                        onClick={() => dismissSweep.mutate(suggestion.id)}
+                        className="p-1 rounded hover:bg-danger/20 text-danger transition"
+                        title="Rejeter"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* ── 4D. SPENDING BY CATEGORY ──────────────────────────────────────── */}
+        {spending && spending.length > 0 && (
+          <Card padding="md">
+            <h3 className="text-white font-semibold text-sm mb-4">
+              Répartition dépenses (30 jours)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-1 h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPie
+                    data={spending}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={40}
+                    outerRadius={80}
+                    dataKey="amount"
+                  >
+                    {spending.map((_, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          [
+                            "#00D9FF",
+                            "#1E40AF",
+                            "#8B5CF6",
+                            "#EC4899",
+                            "#F59E0B",
+                            "#10B981",
+                          ][index % 6]
+                        }
+                      />
+                    ))}
+                  </RechartsPie>
+                </ResponsiveContainer>
+              </div>
+              <div className="md:col-span-2 space-y-2">
+                {spending.map((cat, i) => (
+                  <div key={i} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          backgroundColor: [
+                            "#00D9FF",
+                            "#1E40AF",
+                            "#8B5CF6",
+                            "#EC4899",
+                            "#F59E0B",
+                            "#10B981",
+                          ][i % 6],
+                        }}
+                      />
+                      <span className="text-text-muted text-sm">
+                        {cat.category}
+                      </span>
+                    </div>
+                    <span className="text-white font-numeric font-semibold text-sm">
+                      {new Intl.NumberFormat("fr-FR", {
+                        style: "currency",
+                        currency: "EUR",
+                      }).format(cat.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Card>
+        )}
 
         {/* ── 5. BOTTOM ROW: Transactions | Reserve ────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

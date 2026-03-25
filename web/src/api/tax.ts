@@ -13,6 +13,19 @@ export interface TaxEstimate {
   isPaid: boolean;
 }
 
+export interface TaxProvision {
+  incomeType: string;
+  avgMonthlyIncome: number;
+  cotisationRate: number;
+  cotisationMonthly: number;
+  incomeTaxRate: number;
+  incomeTaxMonthly: number;
+  totalMonthlyProvision: number;
+  urssafEstimate: number;
+  nextUrssafDate: string;
+  tip: string;
+}
+
 export const taxApi = {
   getAll: () => apiClient.get<TaxEstimate[]>("/api/tax").then((r) => r.data),
 
@@ -23,4 +36,7 @@ export const taxApi = {
 
   markPaid: (id: string) =>
     apiClient.post<TaxEstimate>(`/api/tax/${id}/mark-paid`).then((r) => r.data),
+
+  getProvision: () =>
+    apiClient.get<TaxProvision>("/api/tax/provision").then((r) => r.data),
 };

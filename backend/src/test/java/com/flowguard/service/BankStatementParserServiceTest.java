@@ -761,4 +761,415 @@ class BankStatementParserServiceTest {
             assertThat(rows).anySatisfy(r -> assertThat(r.amount()).isEqualByComparingTo("52.37"));
         }
     }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Crédit Agricole DD.MM short-date format (no year in table rows)
+    // Real data from Crédit Agricole Provence Côte d'Azur statements
+    // Nov 2025, Dec 2025, Jan 2026, Feb 2026, March 2026
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("extractTransactionsFromText — Crédit Agricole DD.MM short-date format")
+    class CreditAgricoleShortDate {
+
+        /**
+         * Simulates PDFBox output from a real CA Nov 2025 statement.
+         * CA format: DD.MM DD.MM Libellé [embedded DD/MM] amount [¨]
+         * The "Ancien solde" line provides the context year (2025).
+         */
+        private static final String CA_NOV_2025 = String.join("\n",
+                "Ancien solde créditeur au 21.10.2025 78,38",
+                "23.10 23.10 Virement De Monsieur Tarsim Wajih 100,00",
+                "27.10 27.10 Prlv Direction Générale Des Finances 253,00",
+                "27.10 27.10 Prlv SFR 29,99",
+                "04.11 04.11 Virement Incka 566,21",
+                "05.11 05.11 Carte X9420 Binance.com Vilnius 05/11 50,00",
+                "07.11 07.11 Virement Incka 3 747,37",
+                "07.11 07.11 Virement Vir Inst vers Wajih Tarsim 1 920,00",
+                "11.11 11.11 Prlv Lolivier Assurance Eui (france) 72,00",
+                "13.11 13.11 Carte X9420 Lidl Nice 12/11 36,33",
+                "21.11 21.11 Carte X9420 SAS Crossfit Ni Nice 20/11 5,85",
+                "Nouveau solde créditeur au 21.11.2025 345,36");
+
+        private List<BankStatementParserService.ParsedRow> rows;
+
+        @BeforeEach
+        void parse() {
+            rows = parser.extractTransactionsFromText(CA_NOV_2025);
+        }
+
+        @Test
+        @DisplayName("All CA transactions parsed (not zero)")
+        void transactionsParsed() {
+            assertThat(rows).isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("SOLDE header and footer lines are skipped")
+        void soldeSkipped() {
+            rows.forEach(r -> assertThat(r.label())
+                    .as("No SOLDE line should appear as transaction")
+                    .doesNotContainIgnoringCase("solde"));
+        }
+
+        @Test
+        @DisplayName("Dates inferred with year 2025 from context")
+        void datesHaveYear2025() {
+            rows.forEach(r -> assertThat(r.date().getYear())
+                    .as("Year should be 2025 for %s", r.label())
+                    .isEqualTo(2025));
+        }
+
+        @Test
+        @DisplayName("Carte X9420 Lidl Nice → DEBIT, amount 36,33, category ALIMENTATION")
+        void carteCarteLidl() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().toUpperCase().contains("LIDL"))
+                    .findFirst().orElseThrow();
+            assertThat(r.type()).isEqualTo("DEBIT");
+            assertThat(r.amount()).isEqualByComparingTo("36.33");
+            assertThat(BankStatementParserService.inferCategoryFromLabel(r.label()))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        @DisplayName("Virement Incka 3 747,37 → space-thousands parsed correctly as 3747.37")
+        void inckaSpaceThousands() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().contains("Incka") && t.amount().compareTo(new BigDecimal("3000")) > 0)
+                    .findFirst().orElseThrow();
+            assertThat(r.amount()).isEqualByComparingTo("3747.37");
+        }
+
+        @Test
+        @DisplayName("Prlv Lolivier Assurance → DEBIT, category ASSURANCE")
+        void prelvLolivier() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().toUpperCase().contains("LOLIVIER"))
+                    .findFirst().orElseThrow();
+            assertThat(r.type()).isEqualTo("DEBIT");
+            assertThat(BankStatementParserService.inferCategoryFromLabel(r.label()))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ASSURANCE);
+        }
+
+        @Test
+        @DisplayName("CA card labels have embedded DD/MM date stripped at end")
+        void embeddedDateStripped() {
+            rows.stream()
+                    .filter(r -> r.label().startsWith("Carte"))
+                    .forEach(r -> assertThat(r.label())
+                            .as("Trailing DD/MM reference date should be stripped from '%s'", r.label())
+                            .doesNotMatch(".*\\s\\d{2}/\\d{2}$"));
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Crédit Agricole Jan 2026: cross-year short dates (Dec 2025 entries
+    // appear in a Jan 2026 statement — year must flip correctly)
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("extractTransactionsFromText — CA cross-year short dates (Jan 2026 stmt)")
+    class CreditAgricoleCrossYear {
+
+        /**
+         * Jan 2026 statement includes Dec 2025 transactions — context is 2025-12-22.
+         */
+        private static final String CA_JAN_2026 = String.join("\n",
+                "Ancien solde débiteur au 22.12.2025 189,17",
+                "24.12 24.12 Virement Vir Inst vers Wajih Tarsim 50,00",
+                "02.01 02.01 Virement Incka 399,63",
+                "05.01 05.01 Carte X9420 Lidl Nice 03/01 7,41",
+                "08.01 08.01 Virement Incka 2 921,17",
+                "08.01 08.01 Virement Vir Inst vers Wajih Tarsim 1 500,00",
+                "Nouveau solde créditeur au 21.01.2026 23,93");
+
+        @Test
+        @DisplayName("24.12 resolved to 2025-12-24 (Dec in prev year)")
+        void decemberInPreviousYear() {
+            List<BankStatementParserService.ParsedRow> rows = parser.extractTransactionsFromText(CA_JAN_2026);
+            BankStatementParserService.ParsedRow dec = rows.stream()
+                    .filter(r -> r.label().contains("Vir Inst vers") && r.amount().compareTo(new BigDecimal("50")) == 0)
+                    .findFirst().orElseThrow();
+            assertThat(dec.date().getYear()).isEqualTo(2025);
+            assertThat(dec.date().getMonthValue()).isEqualTo(12);
+            assertThat(dec.date().getDayOfMonth()).isEqualTo(24);
+        }
+
+        @Test
+        @DisplayName("02.01 resolved to 2026-01-02 (Jan in new year)")
+        void januaryInNewYear() {
+            List<BankStatementParserService.ParsedRow> rows = parser.extractTransactionsFromText(CA_JAN_2026);
+            // The 399,63 Incka entry (< 500) is on 02.01 which should resolve to 2026-01-02
+            BankStatementParserService.ParsedRow jan = rows.stream()
+                    .filter(r -> r.label().contains("Incka") && r.amount().compareTo(new BigDecimal("500")) < 0)
+                    .findFirst().orElseThrow();
+            assertThat(jan.date().getYear()).isEqualTo(2026);
+            assertThat(jan.date().getMonthValue()).isEqualTo(1);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // BoursoBank label cleaning: trailing "Valeur" date removed
+    // Real data: each BoursoBank row has an extra date column (Valeur)
+    // that PDFBox appends to the label when extracting text left-to-right
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("extractTransactionsFromText — BoursoBank trailing Valeur date stripped")
+    class BoursoTrailingDateStrip {
+
+        private static final String BOURSO_JAN_2026 = String.join("\n",
+                "SOLDE AU : 31/12/2025 84,75",
+                "02/01/2026 VIR INST MME MARIEM SALTI 01/01/2026 120,00",
+                "02/01/2026 CARTE 01/01/26 RIVIERA GLACONS CB*5134 02/01/2026 7,25",
+                "05/01/2026 CARTE 01/01/26 AIR FRANCE YX266 CB*5134 05/01/2026 118,72",
+                "06/01/2026 VIR INST MONSIEUR TARSIM WAJIH 06/01/2026 71,00",
+                "07/01/2026 VIR Virement depuis ORD (DE) TARSIM 07/01/2026 281,00",
+                "07/01/2026 PRLV SEPA ECHEANCE PRET 07/01/2026 234,27",
+                "08/01/2026 VIR INST ALAIN BALTEAU 08/01/2026 1.040,00",
+                "08/01/2026 VIR INST MONSIEUR TARSIM WAJIH 08/01/2026 1.500,00");
+
+        private List<BankStatementParserService.ParsedRow> rows;
+
+        @BeforeEach
+        void parse() {
+            rows = parser.extractTransactionsFromText(BOURSO_JAN_2026);
+        }
+
+        @Test
+        @DisplayName("No label ends with a date token (valeur date stripped)")
+        void noTrailingDate() {
+            rows.forEach(r -> assertThat(r.label())
+                    .as("Label '%s' should not end with a date", r.label())
+                    .doesNotMatch(".*\\d{2}/\\d{2}/\\d{4}$")
+                    .doesNotMatch(".*\\d{2}/\\d{2}/\\d{2}$"));
+        }
+
+        @Test
+        @DisplayName("VIR INST MME MARIEM SALTI: CREDIT, 120,00")
+        void virInstMme() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().contains("MARIEM SALTI"))
+                    .findFirst().orElseThrow();
+            assertThat(r.type()).isEqualTo("CREDIT");
+            assertThat(r.amount()).isEqualByComparingTo("120.00");
+            assertThat(r.label()).isEqualTo("VIR INST MME MARIEM SALTI");
+        }
+
+        @Test
+        @DisplayName("PRLV SEPA ECHEANCE PRET: DEBIT, category CHARGES_FISCALES")
+        void prelvEcheancePret() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().contains("ECHEANCE PRET"))
+                    .findFirst().orElseThrow();
+            assertThat(r.type()).isEqualTo("DEBIT");
+            assertThat(BankStatementParserService.inferCategoryFromLabel(r.label()))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        @Test
+        @DisplayName("VIR INST MONSIEUR TARSIM WAJIH: CREDIT, 1.500,00 = 1500.00")
+        void virInstMonsieur1500() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().contains("VIR INST MONSIEUR")
+                            && t.amount().compareTo(new BigDecimal("1000")) > 0)
+                    .findFirst().orElseThrow();
+            assertThat(r.type()).isEqualTo("CREDIT");
+            assertThat(r.amount()).isEqualByComparingTo("1500.00");
+        }
+
+        @Test
+        @DisplayName("AIR FRANCE: DEBIT, category TRANSPORT")
+        void airFrance() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().contains("AIR FRANCE"))
+                    .findFirst().orElseThrow();
+            assertThat(r.type()).isEqualTo("DEBIT");
+            assertThat(BankStatementParserService.inferCategoryFromLabel(r.label()))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        @DisplayName("VIR depuis ORD (DE) TARSIM: CREDIT (VIREMENT DEPUIS rule)")
+        void virDepuisOrd() {
+            BankStatementParserService.ParsedRow r = rows.stream()
+                    .filter(t -> t.label().toUpperCase().contains("VIREMENT DEPUIS"))
+                    .findFirst().orElseThrow();
+            assertThat(r.type()).isEqualTo("CREDIT");
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Crédit Agricole — new inferTypeFromLabel patterns
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("inferTypeFromLabel — Crédit Agricole specific patterns")
+    class CreditAgricoleTypeInference {
+
+        @Test
+        void virementDe_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Virement De Monsieur Tarsim Wajih"))
+                    .isEqualTo("CREDIT");
+        }
+
+        @Test
+        void virInstVers_isDebit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Virement Vir Inst vers Wajih Tarsim"))
+                    .isEqualTo("DEBIT");
+        }
+
+        @Test
+        void virementWeb_isDebit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Virement Web Monsieur Tarsim Wajih"))
+                    .isEqualTo("DEBIT");
+        }
+
+        @Test
+        void rejietPrlv_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Rejet Prlv SFR"))
+                    .isEqualTo("CREDIT");
+        }
+
+        @Test
+        void remboursPrel_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Rembours. Prel Predica"))
+                    .isEqualTo("CREDIT");
+        }
+
+        @Test
+        void virInstDe_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Virement Vir Inst de Wajih Tarsim"))
+                    .isEqualTo("CREDIT");
+        }
+
+        @Test
+        void virInstWeroDe_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Virement Vir Inst Wero de Mme Mariem Salt"))
+                    .isEqualTo("CREDIT");
+        }
+
+        @Test
+        void prelvCA_isDebit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Prlv SFR SFR Prlvt Sepa"))
+                    .isEqualTo("DEBIT");
+        }
+
+        @Test
+        void carteCA_isDebit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Carte X9420 Lidl Nice"))
+                    .isEqualTo("DEBIT");
+        }
+
+        @Test
+        void retDab_isDebit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Ret DAB X9420 Nice Prefectur"))
+                    .isEqualTo("DEBIT");
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // New category rules from real CA & BoursoBank statements
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("inferCategoryFromLabel — new patterns from real statements")
+    class NewCategoryPatterns {
+
+        private TransactionEntity.TransactionCategory cat(String label) {
+            return BankStatementParserService.inferCategoryFromLabel(label);
+        }
+
+        // SALAIRE — Incka (employer expense reimbursement platform)
+        @Test
+        void incka_isSalaire() {
+            assertThat(cat("Virement Incka Note de frais 2045 Novembre 2025"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.SALAIRE);
+        }
+
+        // CHARGES_FISCALES — CA banking incident fees
+        @Test
+        void fraisIrreg_isCharges() {
+            assertThat(cat("** Frais Irreg.et Incidents 11/2"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        @Test
+        void commissionIntervention_isCharges() {
+            assertThat(cat("Commission d'intervention"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        @Test
+        void directionGeneraleFinances_isCharges() {
+            assertThat(cat("Prlv Direction Générale Des Finances Solde Impôt Revenus 2024"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        // ABONNEMENT — CA bank service subscription
+        @Test
+        void offreEssentiel_isAbonnement() {
+            assertThat(cat("** Offre Essentiel"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        @Test
+        void sassCrossfit_isAbonnement() {
+            assertThat(cat("Carte X9420 SAS Crossfit Ni Nice"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        // ASSURANCE — Predica (Crédit Agricole life insurance)
+        @Test
+        void predica_isAssurance() {
+            assertThat(cat("Prlv Predica Crédit Agricole Garantie Décès Echéance 11/2025"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ASSURANCE);
+        }
+
+        // ALIMENTATION — new merchants from real data
+        @Test
+        void superU_isAlimentation() {
+            assertThat(cat("Carte X9420 Super U 06 Nice Cauc"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void liomar_isAlimentation() {
+            assertThat(cat("Carte X9420 Liomar Cafe Levallois"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void leRegal_isAlimentation() {
+            assertThat(cat("Carte X9420 Le Regal Nice"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void boucherie_isAlimentation() {
+            assertThat(cat("Carte X9420 Boucherie Paul Monte"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void troisBrasseurs_isAlimentation() {
+            assertThat(cat("CARTE 16/12/25 3 BRASSEURS 2 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        // TRANSPORT — Total (CA fuel station label: "TOTAL 4 CB*5134")
+        @Test
+        void total4_isTransport() {
+            assertThat(cat("CARTE 13/02/26 TOTAL 4 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        // ENERGIE — TotalEnergies utility from CA
+        @Test
+        void totalenergiesCA_isEnergie() {
+            assertThat(cat("Prlv Totalenergies Electricite et Gaz Prelevement"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ENERGIE);
+        }
+    }
 }

@@ -29,6 +29,7 @@ const InvoicesPage = React.lazy(() => import("./pages/InvoicesPage"));
 const BudgetPage = React.lazy(() => import("./pages/BudgetPage"));
 const TaxPage = React.lazy(() => import("./pages/TaxPage"));
 const BenchmarksPage = React.lazy(() => import("./pages/BenchmarksPage"));
+const DebtPage = React.lazy(() => import("./pages/DebtPage"));
 const ForecastAccuracyPage = React.lazy(
   () => import("./pages/ForecastAccuracyPage"),
 );
@@ -238,6 +239,14 @@ const ClientApp: React.FC = () => {
           element={
             <PrivateRoute>
               <TaxPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/debt"
+          element={
+            <PrivateRoute>
+              <DebtPage />
             </PrivateRoute>
           }
         />

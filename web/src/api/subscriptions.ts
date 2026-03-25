@@ -1,6 +1,7 @@
 import apiClient from "./client";
 
 export interface SubscriptionSummary {
+  id: string;
   label: string;
   category: string;
   monthlyAmount: number;
@@ -15,4 +16,11 @@ export const subscriptionsApi = {
     apiClient
       .get<SubscriptionSummary[]>("/api/subscriptions")
       .then((r) => r.data),
+
+  detect: () =>
+    apiClient
+      .post<SubscriptionSummary[]>("/api/subscriptions/detect")
+      .then((r) => r.data),
+
+  remove: (id: string) => apiClient.delete(`/api/subscriptions/${id}`),
 };
