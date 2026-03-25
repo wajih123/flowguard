@@ -624,11 +624,15 @@ public class BankStatementParserService {
             BigDecimal amount = amounts.get(amounts.size() - 1);
             String type       = amtTypes.get(amounts.size() - 1);
 
-            // Label: everything between the date match end and the first amount
-            int amtStart = line.indexOf(amtPat.pattern().charAt(0)); // rough
+            // Label: everything between the date match end and the first amount.
+            // Guard: amtIdx may be < dm.end() when the amount appears inside/before the date token.
             Matcher firstAmt = amtPat.matcher(line);
             int amtIdx = firstAmt.find() ? firstAmt.start() : line.length();
-            String label = line.substring(dm.end(), Math.min(amtIdx, line.length())).trim();
+            int labelStart = dm.end();
+            int labelEnd   = Math.min(amtIdx, line.length());
+            String label = (labelEnd > labelStart)
+                    ? line.substring(labelStart, labelEnd).trim()
+                    : "";
             label = label.replaceAll("\\s+", " ").replaceAll("[|#*]", "").trim();
             if (label.isBlank()) label = "Opération PDF";
             if (label.length() > 200) label = label.substring(0, 200);
