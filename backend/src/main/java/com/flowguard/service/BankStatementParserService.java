@@ -1,5 +1,6 @@
 package com.flowguard.service;
 
+import com.flowguard.domain.TransactionEntity;
 import jakarta.enterprise.context.ApplicationScoped;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -679,9 +680,11 @@ public class BankStatementParserService {
 
         // French date pattern: dd/MM/yyyy or dd.MM.yyyy or dd-MM-yyyy
         Pattern datePat = Pattern.compile("\\b(\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2,4})\\b");
-        // Amount pattern: handles 1 234,56 / 1234.56 / -1 234,56 / 1 234,56 D / 1
-        // 234,56 C
-        Pattern amtPat = Pattern.compile("(-?)(\\d{1,3}(?:[\\s\\u00A0]\\d{3})*)[,.]((\\d{2}))\\s*([DCdc])?");
+        // French amount pattern — decimal separator is COMMA, thousands separator can
+        // be space, non-breaking space, or PERIOD (BoursoBank uses period: 1.040,00).
+        // Group 1 = sign, group 2 = integer part (with separators), group 3 = 2 decimal
+        // digits, group 4 = optional D/C tag.
+        Pattern amtPat = Pattern.compile("(-?)(\\d{1,3}(?:[.\\s\\u00A0]\\d{3})*)[,](\\d{2})\\s*([DCdc])?");
 
         String[] lines = text.split("\n");
 
@@ -704,10 +707,11 @@ public class BankStatementParserService {
             Matcher am = amtPat.matcher(line);
             while (am.find()) {
                 try {
-                    String whole = am.group(2).replaceAll("[\\s\\u00A0]", "");
+                    // Strip all thousands separators (space, NBSP, period) from integer part
+                    String whole = am.group(2).replaceAll("[.\\s\\u00A0]", "");
                     String frac = am.group(3);
                     String sign = am.group(1);
-                    String dcTag = am.group(5);
+                    String dcTag = am.group(4);
 
                     BigDecimal v = new BigDecimal(whole + "." + frac);
                     if (!sign.isEmpty())
@@ -760,6 +764,10 @@ public class BankStatementParserService {
             if (label.toLowerCase().matches(".*(solde|balance|total|report|page|iban|bic|intitulé).*")
                     || lineLow.matches(".*(solde|balance|total|report|page|iban|bic|intitulé).*"))
                 continue;
+            // Skip currency-exchange rate continuation lines, e.g.:
+            // "136,00 PLN / 1 euro = 4,210526315" — these appear below foreign CARTE rows
+            if (lineLow.matches(".*\\d+[,.]\\d+\\s+[a-z]{2,4}\\s*/\\s*1\\s*euro.*"))
+                continue;
 
             // Keyword-based type override: French banking labels carry reliable
             // DEBIT/CREDIT signals.
@@ -797,14 +805,141 @@ public class BankStatementParserService {
             return "DEBIT";
         }
         // ── Strong CREDIT signals ──────────────────────────────────────
+        // NOTE: "VIR IN" / "VIR INST" alone is NOT a reliable CREDIT signal —
+        // BoursoBank uses "VIR INST ALAIN BALTEAU" for outgoing transfers (DEBIT)
+        // and "VIR INST MONSIEUR TARSIM WAJIH" for self incoming transfers (CREDIT).
+        // Rule: BoursoBank adds civility prefix (MONSIEUR/MME/M ) to the SENDER,
+        // so VIR INST + civility = CREDIT; VIR INST + bare name = ambiguous.
         if (l.contains("AVOIR") || l.contains("REMBOURSEMENT") || l.contains("REMISE")
                 || l.contains("VIR RECU") || l.contains("VIR REÇU")
-                || l.contains("VIR IN") || l.contains("VIREMENT IN")
+                || l.contains("VIREMENT DEPUIS") || l.contains("VIR DEPUIS")
+                || l.contains("VIR INST MONSIEUR") || l.contains("VIR INST MME")
+                || l.contains("VIR INST M ") // abbreviated civility
                 || l.contains("SALAIRE") || l.contains("DEPOT") || l.contains("DÉPÔT")
-                || l.contains("REMUNERATION") || l.contains("RÉMUNÉRATION")) {
+                || l.contains("REMUNERATION") || l.contains("RÉMUNÉRATION")
+                || l.startsWith("PRIME ")) { // Prime Parrainage, Prime de remboursement…
             return "CREDIT";
         }
-        return null; // no strong signal
+        return null; // no strong signal (VIR INST without civility = ambiguous)
+    }
+
+    /**
+     * Infers a FlowGuard transaction category from French banking label keywords.
+     * Calibrated against real BoursoBank statements (Dec 2025 – Feb 2026).
+     * Returns {@code null} when no category can be reliably inferred (callers use
+     * AUTRE).
+     * Package-private for testing.
+     */
+    static TransactionEntity.TransactionCategory inferCategoryFromLabel(String label) {
+        if (label == null || label.isBlank())
+            return null;
+        String l = label.toUpperCase();
+
+        // ── CHARGES_FISCALES — loan repayments, taxes, overdue fees ─────
+        // Check first: "ECHEANCE PRET" would otherwise partially match other rules.
+        if (l.contains("ECHEANCE PRET") || l.contains("ECHEANCE CREDIT")
+                || l.contains("MENSUALITE PRET") || l.contains("REMBOURSEMENT PRET")
+                || l.contains("IMPAYE CB") // ONEY overdue payment
+                || (l.contains("ONEY") && (l.contains("3X") || l.contains("4X") || l.contains("FINANCEMT")))
+                || l.contains("URSSAF") || l.contains(" RSI ") || l.contains("CIPAV")
+                || l.contains("IMPOT") || l.contains("IMPÔT") || l.contains("DGFIP")
+                || l.contains("TRESOR PUBLIC") || l.contains("TRÉSOR PUBLIC")
+                || l.contains("TAXE") || l.contains("TVA") || l.contains("AMENDE")) {
+            return TransactionEntity.TransactionCategory.CHARGES_FISCALES;
+        }
+
+        // ── ENERGIE — utility bills ──────────────────────────────────────
+        if (l.contains("TOTALENERGIES") || l.contains("TOTAL ENERGIE")
+                || l.contains("EDF") || l.contains("ENGIE")
+                || l.contains("DIRECT ENERGIE") || l.contains("ELECTRICITE")
+                || (l.contains("GAZ") && l.contains("FRANCE"))) {
+            return TransactionEntity.TransactionCategory.ENERGIE;
+        }
+
+        // ── ASSURANCE — insurance policies ──────────────────────────────
+        if (l.contains("AVANSSUR") || l.contains("DIRECT ASSURANC")
+                || l.contains("LOLIVIER") || l.contains("MAIF") || l.contains("MATMUT")
+                || l.contains("AXA") || l.contains("ALLIANZ") || l.contains("GENERALI")
+                || l.contains("MACIF") || l.contains("ASSURANCE") || l.contains("MUTUELLE")) {
+            return TransactionEntity.TransactionCategory.ASSURANCE;
+        }
+
+        // ── TELECOM — phone, internet, hosting ──────────────────────────
+        if (l.contains("SFR") || l.contains("ORANGE") || l.contains("BOUYGUES TELECOM")
+                || l.contains("FREE MOBILE") || l.contains("FREE SAS") || l.contains("ILIAD")
+                || l.contains("SOSH") || l.contains("MAPBOX") || l.contains("GODADDY")
+                || l.contains("GANDI") || l.contains("OVH")) {
+            return TransactionEntity.TransactionCategory.TELECOM;
+        }
+
+        // ── ABONNEMENT — subscriptions ───────────────────────────────────
+        if (l.contains("SPOTIFY") || l.contains("NETFLIX") || l.contains("AMAZON PRIME")
+                || l.contains("APPLE.COM/") || l.contains("APPLE.COM/BILL")
+                || l.contains("DELIVEROO PLUS")
+                || l.contains("WODIFY") || l.contains("CROSSF") // CrossFit
+                || l.contains("WELLPASS") // gym network
+                || l.contains("DAZN") || l.contains("MOLOTOV")
+                || l.contains("GITHUB") || l.contains("HETZNER")
+                || (l.contains("PAYPAL") && (l.contains("GITHUB") || l.contains("HETZNER")))) {
+            return TransactionEntity.TransactionCategory.ABONNEMENT;
+        }
+
+        // ── ALIMENTATION — food, groceries, restaurants, food delivery ───
+        if (l.contains("LIDL") || l.contains("CARREFOUR") || l.contains("LECLERC")
+                || l.contains("MONOPRIX") || l.contains("MONOP") || l.contains("VIVAL")
+                || l.contains("INTERMARCHE") || l.contains("AUCHAN") || l.contains("CASINO")
+                || l.contains("FRANPRIX") || l.contains("HALLES") || l.contains("BOUCHERIE")
+                || l.contains("FOURNIL") || l.contains("BOULANGERIE") || l.contains("EPICERIE")
+                || l.contains("PRIMEUR") || l.contains("ALIMENTATION") || l.contains("SUPERMARCHE")
+                || l.contains("DELIVEROO") // kept here (not Deliveroo Plus — checked above)
+                || l.contains("UBER * EATS") || l.contains("UBER EATS")
+                || l.contains("JUST EAT") || l.contains("MCDONALDS")
+                || l.contains("PYSZNE") // Polish food delivery
+                || l.contains("NABULIO") || l.contains("RESTAURANT") || l.contains("BRASSEUR")
+                || l.contains("SUSHI") || l.contains("PIZZA") || l.contains("TRAITEUR")
+                || l.contains("UTILE") // Utile supermarket chain
+                || l.contains("MAXICOFFEE") // coffee machine vending
+                || l.contains("JEAN ROMEO") // local grocery Nice
+                || l.contains("SC LA PETITE") // café/snack
+                || l.contains("DI PIU") || l.contains("LEONIS") || l.contains("BERCO")
+                || l.contains("LDC") || l.contains("MAEL") || l.contains("SOHO")) {
+            return TransactionEntity.TransactionCategory.ALIMENTATION;
+        }
+
+        // ── TRANSPORT — mobility, parking, fuel, travel ──────────────────
+        if (l.contains("BOLT.EU") || l.contains("UBER")
+                || l.contains("SERVICE NAVIGO") || l.contains("NAVIGO")
+                || l.contains("SNCF") || l.contains("RATP") || l.contains("TRANSILIEN")
+                || l.contains("AIR FRANCE") || l.contains("EASYJET") || l.contains("RYANAIR")
+                || l.contains("SHELL") || l.contains("ESSO")
+                || l.contains("PAYBYPHONE") || l.contains("PBP_") // parking
+                || l.contains("INDIGO") // parking operator
+                || l.contains("AUTOROUTES") || l.contains("ASF")
+                || l.contains("GETYOURGUIDE") // travel tours
+                || l.contains("IBIS") || l.contains("NOVOTEL") || l.contains("ACCOR")
+                || l.contains("BOOKING") || l.contains("AIRBNB")
+                || l.contains("BILET.INTERCI")) { // Polish transport ticketing
+            return TransactionEntity.TransactionCategory.TRANSPORT;
+        }
+
+        // ── LOYER — rent ─────────────────────────────────────────────────
+        if (l.startsWith("LOYER") || l.contains("QUITTANCE") || l.contains("FONCIERE")) {
+            return TransactionEntity.TransactionCategory.LOYER;
+        }
+
+        // ── SALAIRE — salary / income ─────────────────────────────────────
+        if (l.contains("SALAIRE") || l.contains("REMUNERATION") || l.contains("RÉMUNÉRATION")) {
+            return TransactionEntity.TransactionCategory.SALAIRE;
+        }
+
+        // ── VIREMENT — transfers, ATM withdrawals, refunds ───────────────
+        if (l.startsWith("VIR ") || l.startsWith("VIR INST") || l.startsWith("VIREMENT")
+                || l.contains("RETRAIT DAB") || l.contains("RETRAIT CB")
+                || l.startsWith("AVOIR ")) {
+            return TransactionEntity.TransactionCategory.VIREMENT;
+        }
+
+        return null; // no reliable match → caller uses AUTRE
     }
 
     /**

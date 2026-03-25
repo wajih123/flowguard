@@ -1,5 +1,6 @@
 package com.flowguard.service;
 
+import com.flowguard.domain.TransactionEntity;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -107,10 +108,33 @@ class BankStatementParserServiceTest {
             assertThat(BankStatementParserService.inferTypeFromLabel("SALAIRE DECEMBRE 2025")).isEqualTo("CREDIT");
         }
 
+        // BoursoBank-specific VIR INST direction rules (from real Dec 2025 – Feb 2026
+        // statements)
         @Test
-        void virIn_isCredit() {
+        void virInstMonsieur_isCredit() {
             assertThat(BankStatementParserService.inferTypeFromLabel("VIR INST MONSIEUR TARSIM WAJIH"))
                     .isEqualTo("CREDIT");
+        }
+
+        @Test
+        void virInstMme_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("VIR INST MME MARIEM SALTI")).isEqualTo("CREDIT");
+        }
+
+        @Test
+        void virVirementDepuis_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("VIR Virement depuis BoursoBank MOALLA OMAR"))
+                    .isEqualTo("CREDIT");
+        }
+
+        @Test
+        void virInstBareNameIsAmbiguous() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("VIR INST ALAIN BALTEAU")).isNull();
+        }
+
+        @Test
+        void primeParrainage_isCredit() {
+            assertThat(BankStatementParserService.inferTypeFromLabel("Prime Parrainage")).isEqualTo("CREDIT");
         }
 
         @Test
@@ -397,6 +421,344 @@ class BankStatementParserServiceTest {
                     .forEach(r -> assertThat(r.type())
                             .as("'%s' should be CREDIT", r.label())
                             .isEqualTo("CREDIT"));
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // inferCategoryFromLabel — calibrated against real BoursoBank data
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("inferCategoryFromLabel — real merchant patterns from Dec 2025–Feb 2026")
+    class InferCategoryFromLabel {
+
+        private TransactionEntity.TransactionCategory cat(String label) {
+            return BankStatementParserService.inferCategoryFromLabel(label);
+        }
+
+        // CHARGES_FISCALES
+        @Test
+        void echeancePret_isCharges() {
+            assertThat(cat("PRLV SEPA ECHEANCE PRET 00005849074"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        @Test
+        void impayCbOney_isCharges() {
+            assertThat(cat("CARTE 08/01/26 IMPAYE CB ONEY CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        @Test
+        void oney3x_isCharges() {
+            assertThat(cat("CARTE 09/12/25 3X 4X ONEY CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        @Test
+        void financemtOney_isCharges() {
+            assertThat(cat("CARTE 05/12/25 FINANCEMT ONEY CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.CHARGES_FISCALES);
+        }
+
+        // ENERGIE
+        @Test
+        void totalEnergies_isEnergie() {
+            assertThat(cat("PRLV SEPA TotalEnergies Electricite et G France"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ENERGIE);
+        }
+
+        @Test
+        void edf_isEnergie() {
+            assertThat(cat("PRLV SEPA EDF FACTURE")).isEqualTo(TransactionEntity.TransactionCategory.ENERGIE);
+        }
+
+        // ASSURANCE
+        @Test
+        void avanssur_isAssurance() {
+            assertThat(cat("PRLV SEPA AVANSSUR Direct Assurance 754860516"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ASSURANCE);
+        }
+
+        @Test
+        void lolivier_isAssurance() {
+            assertThat(cat("PRLV SEPA LOLIVIER ASSURANCE EUI France"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ASSURANCE);
+        }
+
+        @Test
+        void directAssuranc_isAssurance() {
+            assertThat(cat("CARTE 10/02/26 DIRECT ASSURANC 4 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ASSURANCE);
+        }
+
+        // TELECOM
+        @Test
+        void sfr_isTelecom() {
+            assertThat(cat("PRLV SEPA SFR SFR Prlvt SEPA")).isEqualTo(TransactionEntity.TransactionCategory.TELECOM);
+        }
+
+        @Test
+        void sfrPaiementCarte_isTelecom() {
+            assertThat(cat("CARTE 03/02/26 SFR PAIEMENT CB 2 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TELECOM);
+        }
+
+        // ABONNEMENT
+        @Test
+        void spotify_isAbonnement() {
+            assertThat(cat("CARTE 08/12/25 SpotifyFR CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        @Test
+        void appleBill_isAbonnement() {
+            assertThat(cat("CARTE 05/12/25 APPLE.COM/BILL CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        @Test
+        void deliverooPlus_isAbonnement() {
+            assertThat(cat("CARTE 06/12/25 Deliveroo Plus Su CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        @Test
+        void wodify_isAbonnement() {
+            assertThat(cat("CARTE 04/12/25 WODIFY* WP CROSSF CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        @Test
+        void wellpass_isAbonnement() {
+            assertThat(cat("CARTE 25/02/26 WELLPASS FR (GYML CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        @Test
+        void github_isAbonnement() {
+            assertThat(cat("CARTE 19/12/25 PAYPAL *GITHUB IN CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        @Test
+        void hetzner_isAbonnement() {
+            assertThat(cat("CARTE 22/12/25 PAYPAL *HETZNER CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ABONNEMENT);
+        }
+
+        // ALIMENTATION
+        @Test
+        void lidl_isAlimentation() {
+            assertThat(cat("CARTE 06/12/25 LIDL NICE CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void carrefour_isAlimentation() {
+            assertThat(cat("CARTE 09/01/26 CARREFOUR CITY CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void monoprix_isAlimentation() {
+            assertThat(cat("CARTE 16/02/26 MONOPRIX 4 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void deliverooFood_isAlimentation() {
+            assertThat(cat("CARTE 05/12/25 DELIVEROO CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void pyszne_isAlimentation() {
+            assertThat(cat("CARTE 26/12/25 Pyszne.pl CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        @Test
+        void nabulio_isAlimentation() {
+            assertThat(cat("CARTE 29/11/25 NABULIO CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.ALIMENTATION);
+        }
+
+        // TRANSPORT
+        @Test
+        void bolt_isTransport() {
+            assertThat(cat("CARTE 28/12/25 BOLT.EU/O/2512281 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        void navigo_isTransport() {
+            assertThat(cat("CARTE 08/01/26 SERVICE NAVIGO 4 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        void sncf_isTransport() {
+            assertThat(cat("CARTE 27/01/26 SNCF-VOYAGEURS CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        void paybyphone_isTransport() {
+            assertThat(cat("CARTE 05/12/25 PAYBYPHONE NICE22 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        void pbpNice_isTransport() {
+            assertThat(cat("CARTE 13/02/26 PBP_NICE 4 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        void autoroutes_isTransport() {
+            assertThat(cat("PRLV SEPA AUTOROUTES DU SUD DE LA FRANCE"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        void getyourguide_isTransport() {
+            assertThat(cat("CARTE 26/12/25 GetYourGuide CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        @Test
+        void airFrance_isTransport() {
+            assertThat(cat("CARTE 01/01/26 AIR FRANCE YX266 CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.TRANSPORT);
+        }
+
+        // VIREMENT — transfers, ATM, self-transfers
+        @Test
+        void virInst_isVirement() {
+            assertThat(cat("VIR INST MONSIEUR TARSIM WAJIH")).isEqualTo(TransactionEntity.TransactionCategory.VIREMENT);
+        }
+
+        @Test
+        void virVirementDepuis_isVirement() {
+            assertThat(cat("VIR Virement depuis BoursoBank MOALLA OMAR"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.VIREMENT);
+        }
+
+        @Test
+        void retraitDab_isVirement() {
+            assertThat(cat("RETRAIT DAB 15/12/25 NICE CB*5134"))
+                    .isEqualTo(TransactionEntity.TransactionCategory.VIREMENT);
+        }
+
+        // Unknown → null (caller uses AUTRE)
+        @Test
+        void binance_isNull() {
+            assertThat(cat("CARTE 08/02/26 BINANCE CB*5134")).isNull();
+        }
+
+        @Test
+        void unknown_isNull() {
+            assertThat(cat("CARTE 20/12/25 YOLO CB*5134")).isNull();
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Period-as-thousands-separator — BoursoBank 1.040,00 format
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("extractTransactionsFromText — period-as-thousands BoursoBank amounts")
+    class PeriodThousandsSeparator {
+
+        /**
+         * BoursoBank uses 1.040,00 and 1.500,00 — confirmed in Dec 2025 and Jan 2026
+         * PDFs.
+         */
+        private static final String BOURSOBANK_TEXT = String.join("\n",
+                "SOLDE AU : 28/11/2025 583,77",
+                "08/12/2025 VIR INST ALAIN BALTEAU 08/12/2025 1.040,00",
+                "08/12/2025 VIR INST MONSIEUR TARSIM WAJIH 08/12/2025 1.500,00",
+                "01/12/2025 RETRAIT DAB 29/11/25 NICE CB*5134 01/12/2025 50,00",
+                "02/12/2025 CARTE 30/11/25 PAYPAL *RAKUTENFR CB*5134 02/12/2025 549,69");
+
+        private List<BankStatementParserService.ParsedRow> rows;
+
+        @BeforeEach
+        void parse() {
+            rows = parser.extractTransactionsFromText(BOURSOBANK_TEXT);
+        }
+
+        @Test
+        @DisplayName("4 transactions parsed (SOLDE header line skipped)")
+        void transactionCount() {
+            assertThat(rows).hasSize(4);
+        }
+
+        @Test
+        @DisplayName("1.040,00 parsed as 1040.00, not 1.04")
+        void periodThousandsAlainBalteau() {
+            BankStatementParserService.ParsedRow alain = rows.stream()
+                    .filter(r -> r.label().contains("ALAIN BALTEAU"))
+                    .findFirst().orElseThrow();
+            assertThat(alain.amount()).isEqualByComparingTo("1040.00");
+        }
+
+        @Test
+        @DisplayName("1.500,00 parsed as 1500.00, not 1.50")
+        void periodThousandsTarsimWajih() {
+            BankStatementParserService.ParsedRow tarsim = rows.stream()
+                    .filter(r -> r.label().contains("MONSIEUR TARSIM WAJIH"))
+                    .findFirst().orElseThrow();
+            assertThat(tarsim.amount()).isEqualByComparingTo("1500.00");
+        }
+
+        @Test
+        @DisplayName("VIR INST MONSIEUR → CREDIT; VIR INST ALAIN (no civility) → ambiguous type")
+        void virInstDirections() {
+            BankStatementParserService.ParsedRow tarsim = rows.stream()
+                    .filter(r -> r.label().contains("MONSIEUR TARSIM WAJIH"))
+                    .findFirst().orElseThrow();
+            assertThat(tarsim.type()).isEqualTo("CREDIT");
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────
+    // Exchange-rate continuation lines must be filtered out
+    // ──────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("extractTransactionsFromText — exchange-rate lines are ignored")
+    class ExchangeRateLineFilter {
+
+        /** From real Dec 2025 BoursoBank statement — Polish trip transactions. */
+        private static final String TEXT_WITH_FX = String.join("\n",
+                "29/12/2025 CARTE 24/12/25 www.bilet.interci CB*5134 29/12/2025 32,30",
+                "136,00 PLN / 1 euro = 4,210526315",
+                "29/12/2025 CARTE 25/12/25 MOLLY MALONES IRI CB*5134 29/12/2025 5,94",
+                "25,00 PLN / 1 euro = 4,208754208",
+                "29/12/2025 CARTE 27/12/25 IBIS MURANOWSKA CB*5134 29/12/2025 52,37",
+                "220,00 PLN / 1 euro = 4,200878365");
+
+        @Test
+        @DisplayName("Exchange-rate lines are skipped — exactly 3 transactions extracted")
+        void fxLinesAreSkipped() {
+            List<BankStatementParserService.ParsedRow> rows = parser.extractTransactionsFromText(TEXT_WITH_FX);
+            assertThat(rows).hasSize(3);
+            rows.forEach(r -> assertThat(r.amount())
+                    .as("FX line should not be a transaction")
+                    .isNotEqualByComparingTo("136.00")
+                    .isNotEqualByComparingTo("25.00")
+                    .isNotEqualByComparingTo("220.00"));
+        }
+
+        @Test
+        @DisplayName("Correct amounts extracted for foreign-currency card payments")
+        void correctAmounts() {
+            List<BankStatementParserService.ParsedRow> rows = parser.extractTransactionsFromText(TEXT_WITH_FX);
+            assertThat(rows).anySatisfy(r -> assertThat(r.amount()).isEqualByComparingTo("32.30"));
+            assertThat(rows).anySatisfy(r -> assertThat(r.amount()).isEqualByComparingTo("5.94"));
+            assertThat(rows).anySatisfy(r -> assertThat(r.amount()).isEqualByComparingTo("52.37"));
         }
     }
 }

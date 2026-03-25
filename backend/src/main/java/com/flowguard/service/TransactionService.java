@@ -34,7 +34,8 @@ public class TransactionService {
                 .toList();
     }
 
-    public List<TransactionDto> getByAccountIdAndCategory(UUID accountId, TransactionEntity.TransactionCategory category) {
+    public List<TransactionDto> getByAccountIdAndCategory(UUID accountId,
+            TransactionEntity.TransactionCategory category) {
         return transactionRepository.findByAccountIdAndCategory(accountId, category).stream()
                 .map(TransactionDto::from)
                 .toList();
@@ -76,23 +77,37 @@ public class TransactionService {
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(csvFile), "UTF-8"))) {
             String headerLine = reader.readLine(); // skip header
-            if (headerLine == null) return Map.of("imported", 0, "skipped", 0);
+            if (headerLine == null)
+                return Map.of("imported", 0, "skipped", 0);
 
             String line;
             while ((line = reader.readLine()) != null) {
-                if (line.isBlank()) continue;
+                if (line.isBlank())
+                    continue;
                 String[] cols = line.split(",", -1);
-                if (cols.length < 4) { skipped++; continue; }
+                if (cols.length < 4) {
+                    skipped++;
+                    continue;
+                }
                 try {
                     LocalDate date = LocalDate.parse(cols[0].trim());
                     String label = cols[1].trim();
                     BigDecimal amount = new BigDecimal(cols[2].trim().replace(" ", "").replace("€", "")).abs();
-                    TransactionEntity.TransactionType type =
-                            TransactionEntity.TransactionType.valueOf(cols[3].trim().toUpperCase());
+                    TransactionEntity.TransactionType type = TransactionEntity.TransactionType
+                            .valueOf(cols[3].trim().toUpperCase());
 
                     // Deduplicate by date + label + amount to avoid re-importing
-                    boolean exists = transactionRepository.existsByAccountIdDateLabelAmount(accountId, date, label, amount);
-                    if (exists) { skipped++; continue; }
+                    boolean exists = transactionRepository.existsByAccountIdDateLabelAmount(accountId, date, label,
+                            amount);
+                    if (exists) {
+                        skipped++;
+                        continue;
+                    }
+
+                    TransactionEntity.TransactionCategory category = BankStatementParserService
+                            .inferCategoryFromLabel(label);
+                    if (category == null)
+                        category = TransactionEntity.TransactionCategory.AUTRE;
 
                     TransactionEntity tx = TransactionEntity.builder()
                             .account(account)
@@ -100,7 +115,7 @@ public class TransactionService {
                             .label(label)
                             .amount(amount)
                             .type(type)
-                            .category(TransactionEntity.TransactionCategory.AUTRE)
+                            .category(category)
                             .isRecurring(false)
                             .build();
                     transactionRepository.persist(tx);
@@ -126,7 +141,8 @@ public class TransactionService {
     @Transactional
     public Map<String, Object> importFromStatement(UUID accountId, InputStream stream, String originalFilename) {
         AccountEntity account = AccountEntity.findById(accountId);
-        if (account == null) throw new IllegalArgumentException("Compte introuvable");
+        if (account == null)
+            throw new IllegalArgumentException("Compte introuvable");
 
         List<BankStatementParserService.ParsedRow> rows;
         try {
@@ -138,21 +154,29 @@ public class TransactionService {
         }
 
         int imported = 0;
-        int skipped  = 0;
+        int skipped = 0;
 
         for (BankStatementParserService.ParsedRow row : rows) {
             try {
                 if (row.date() == null || row.amount() == null || row.label() == null) {
-                    skipped++; continue;
+                    skipped++;
+                    continue;
                 }
                 boolean exists = transactionRepository
                         .existsByAccountIdDateLabelAmount(accountId, row.date(), row.label(), row.amount());
-                if (exists) { skipped++; continue; }
+                if (exists) {
+                    skipped++;
+                    continue;
+                }
 
-                TransactionEntity.TransactionType type =
-                        "CREDIT".equalsIgnoreCase(row.type())
-                                ? TransactionEntity.TransactionType.CREDIT
-                                : TransactionEntity.TransactionType.DEBIT;
+                TransactionEntity.TransactionType type = "CREDIT".equalsIgnoreCase(row.type())
+                        ? TransactionEntity.TransactionType.CREDIT
+                        : TransactionEntity.TransactionType.DEBIT;
+
+                TransactionEntity.TransactionCategory category = BankStatementParserService
+                        .inferCategoryFromLabel(row.label());
+                if (category == null)
+                    category = TransactionEntity.TransactionCategory.AUTRE;
 
                 TransactionEntity tx = TransactionEntity.builder()
                         .account(account)
@@ -160,7 +184,7 @@ public class TransactionService {
                         .label(row.label())
                         .amount(row.amount())
                         .type(type)
-                        .category(TransactionEntity.TransactionCategory.AUTRE)
+                        .category(category)
                         .isRecurring(false)
                         .build();
                 transactionRepository.persist(tx);
