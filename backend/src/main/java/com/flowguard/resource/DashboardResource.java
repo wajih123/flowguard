@@ -216,6 +216,9 @@ public class DashboardResource {
         overdraftRisk.put("projectedBalance", predictedBalance30d);
         overdraftRisk.put("horizonDate", java.time.LocalDate.now().plusDays(30).toString());
 
+        // Build 30-day predictions (forecast chart data)
+        List<Map<String, Object>> predictions = generatePredictions(currentBalance, lastMonthSpend);
+
         // Count unread alerts
         int unreadAlerts = 0;
         try {
@@ -236,6 +239,7 @@ public class DashboardResource {
         body.put("monthlySubscriptionsCost", monthlySubscriptionsCost);
         body.put("upcomingDebits", upcomingDebits);
         body.put("overdraftRisk", overdraftRisk);
+        body.put("predictions", predictions);
 
         return Response.ok(body).build();
     }
@@ -281,6 +285,32 @@ public class DashboardResource {
         if (iban == null || iban.startsWith("BRIDGE-")) return null;
         if (iban.length() <= 8) return iban;
         return iban.substring(0, 4) + "****" + iban.substring(iban.length() - 4);
+    }
+
+    /**
+     * Generates 30-day balance forecast based on current balance and average daily spending.
+     * Provides fallback prediction data when ML service is unavailable.
+     */
+    private static List<Map<String, Object>> generatePredictions(BigDecimal currentBalance, BigDecimal monthlySpend) {
+        List<Map<String, Object>> predictions = new ArrayList<>();
+        
+        // Calculate average daily spend (conservative estimate)
+        BigDecimal dailySpend = monthlySpend.divide(BigDecimal.valueOf(30), 2, java.math.RoundingMode.HALF_UP);
+        BigDecimal runningBalance = currentBalance;
+        
+        java.time.LocalDate today = java.time.LocalDate.now();
+        
+        for (int day = 0; day <= 30; day++) {
+            Map<String, Object> point = new LinkedHashMap<>();
+            point.put("date", today.plusDays(day).toString());
+            point.put("predictedBalance", runningBalance.setScale(2, java.math.RoundingMode.HALF_UP));
+            predictions.add(point);
+            
+            // Deduct daily average spending for next day
+            runningBalance = runningBalance.subtract(dailySpend);
+        }
+        
+        return predictions;
     }
 
     /** Returns a safe empty dashboard when the user has no accounts yet. */

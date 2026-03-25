@@ -21,6 +21,11 @@ export interface OverdraftRiskSummary {
   horizonDate: string;
 }
 
+export interface Prediction {
+  date: string;
+  predictedBalance: number;
+}
+
 export interface DashboardSummary {
   totalBalance: number;
   accounts: AccountBreakdown[];
@@ -32,6 +37,7 @@ export interface DashboardSummary {
   monthlySubscriptionsCost: number;
   upcomingDebits: UpcomingDebit[];
   overdraftRisk: OverdraftRiskSummary;
+  predictions: Prediction[];
 }
 
 export interface SpendingCategory {
