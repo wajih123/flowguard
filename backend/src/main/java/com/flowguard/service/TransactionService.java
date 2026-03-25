@@ -48,7 +48,10 @@ public class TransactionService {
 
     /**
      * Vérifie que le compte appartient bien à l'utilisateur.
+     * Must run inside a transaction so that the LAZY {@code user} association
+     * can be navigated without triggering a LazyInitializationException.
      */
+    @Transactional
     public void verifyAccountOwnership(UUID accountId, UUID userId) {
         AccountEntity account = AccountEntity.findById(accountId);
         if (account == null) {
@@ -129,7 +132,9 @@ public class TransactionService {
         try {
             rows = parserService.parse(originalFilename, stream);
         } catch (IOException e) {
-            throw new UncheckedIOException("Impossible de lire le relevé bancaire : " + e.getMessage(), e);
+            throw new IllegalArgumentException("Impossible de lire le relevé bancaire : " + e.getMessage());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Erreur lors de l'analyse du fichier : " + e.getMessage());
         }
 
         int imported = 0;

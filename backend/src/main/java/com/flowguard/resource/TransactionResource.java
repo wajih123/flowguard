@@ -128,9 +128,12 @@ public class TransactionResource {
         try (java.io.InputStream is = new java.io.FileInputStream(uploaded)) {
             Map<String, Object> result = transactionService.importFromStatement(accountId, is, filename);
             return Response.ok(result).build();
-        } catch (java.io.IOException e) {
+        } catch (IllegalArgumentException e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage())).build();
+        } catch (Exception e) {
             return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                    .entity(Map.of("error", "Erreur lecture fichier : " + e.getMessage())).build();
+                    .entity(Map.of("error", "Erreur lors de l'import : " + e.getMessage())).build();
         }
     }
 }
