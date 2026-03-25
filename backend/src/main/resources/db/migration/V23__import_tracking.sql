@@ -29,26 +29,34 @@ CREATE TABLE IF NOT EXISTS import_batches (
 
 -- ─── Gap 6: daily_balances materialised view ────────────────────────────────
 -- Queried by ml-service/database.py for LSTM training.
--- Uses the bank-certified balance_after where available; otherwise reconstructs
--- a running total from ordered debits/credits.
+-- Uses a CTE to collapse all transactions for a given (account_id, date) into
+-- one row FIRST, which guarantees the uniqueness required for CONCURRENTLY
+-- refresh and avoids duplicate-key errors on accounts with multiple same-day txns.
 CREATE MATERIALIZED VIEW IF NOT EXISTS daily_balances AS
+WITH daily_net AS (
+    SELECT
+        account_id,
+        date,
+        SUM(CASE WHEN type = 'CREDIT' THEN amount ELSE -amount END) AS daily_net,
+        -- Last bank-certified balance recorded for this day (may be NULL)
+        MAX(balance_after) FILTER (WHERE balance_after IS NOT NULL) AS certified_balance,
+        COUNT(*) AS tx_count
+    FROM transactions
+    GROUP BY account_id, date
+)
 SELECT
-    t.account_id,
-    t.date,
-    -- last bank-certified balance on each day (when we have it)
-    MAX(t.balance_after) FILTER (WHERE t.balance_after IS NOT NULL) AS certified_balance,
-    -- otherwise sum of signed amounts up to and including that day
-    SUM(
-        CASE WHEN t.type = 'CREDIT' THEN t.amount ELSE -t.amount END
-    ) OVER (
-        PARTITION BY t.account_id
-        ORDER BY t.date
+    account_id,
+    date,
+    certified_balance,
+    -- Running sum across days: cumulative reconstructed balance
+    SUM(daily_net) OVER (
+        PARTITION BY account_id
+        ORDER BY date
         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
     ) AS reconstructed_balance,
-    COUNT(*) AS tx_count
-FROM transactions t
-GROUP BY t.account_id, t.date, t.type, t.amount, t.balance_after
-ORDER BY t.account_id, t.date;
+    tx_count
+FROM daily_net
+ORDER BY account_id, date;
 
 -- Unique index — required for REFRESH MATERIALIZED VIEW CONCURRENTLY
 CREATE UNIQUE INDEX IF NOT EXISTS idx_daily_balances_account_date
