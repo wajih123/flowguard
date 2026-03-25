@@ -45,9 +45,71 @@ export interface SpendingCategory {
   amount: number;
 }
 
+// Transform backend DashboardSummary to frontend DashboardData
+const transformSummaryToData = (summary: DashboardSummary): DashboardData => {
+  const totalAccounts = summary.accounts.length;
+  const primaryAccount =
+    summary.accounts.length > 0
+      ? summary.accounts[0]
+      : {
+          id: "",
+          bankName: "Comptes actifs",
+          ibanMasked: "",
+          balance: summary.totalBalance,
+          syncStatus: "OK",
+        };
+
+  const predictedBalance30d =
+    summary.predictions.length > 0
+      ? summary.predictions[summary.predictions.length - 1].predictedBalance
+      : summary.totalBalance;
+
+  return {
+    account: {
+      id: primaryAccount.id,
+      bankName:
+        totalAccounts > 1 ? "Tous comptes actifs" : primaryAccount.bankName,
+      ibanMasked:
+        totalAccounts > 1
+          ? `${totalAccounts} comptes`
+          : primaryAccount.ibanMasked,
+      currentBalance: summary.totalBalance,
+      currency: "EUR",
+      lastSyncAt: new Date().toISOString(),
+      syncStatus:
+        (primaryAccount.syncStatus as "PENDING" | "SYNCING" | "OK" | "ERROR") ||
+        "OK",
+    },
+    currentBalance: summary.totalBalance,
+    predictedBalance30d,
+    balanceTrend:
+      summary.predictions.length > 1
+        ? summary.predictions[summary.predictions.length - 1].predictedBalance -
+          summary.predictions[0].predictedBalance
+        : 0,
+    healthScore: summary.healthScore,
+    healthLabel:
+      summary.healthScore >= 70 ? "Bonne santé" : "Attention requise",
+    reserveAvailable: summary.overdraftRisk.level === "NONE",
+    reserveMaxAmount: Math.max(...summary.accounts.map((a) => a.balance)),
+    hasHighAlert: summary.overdraftRisk.level === "HIGH",
+    highAlertMessage:
+      summary.overdraftRisk.level === "HIGH"
+        ? `Alerte : solde prévu à ${summary.overdraftRisk.projectedBalance} € le ${summary.overdraftRisk.horizonDate}`
+        : undefined,
+    highAlertAmount: summary.overdraftRisk.projectedBalance,
+    highAlertDate: summary.overdraftRisk.horizonDate,
+    accountCount: totalAccounts,
+  };
+};
+
 export const dashboardApi = {
-  getSummary: () =>
-    apiClient.get<DashboardData>("/api/dashboard/summary").then((r) => r.data),
+  getSummary: async (): Promise<DashboardData> => {
+    const summary = await apiClient
+      .get<DashboardSummary>("/api/dashboard/summary")
+      .then((r) => r.data);
+    return transformSummaryToData(summary);
+  },
 
   getEnrichedSummary: () =>
     apiClient
