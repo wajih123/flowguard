@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import {
   Zap,
   Activity,
-  ArrowRightLeft,
   PieChart,
   Building2,
   FileDown,
@@ -11,19 +10,13 @@ import {
   TrendingUp,
   TrendingDown,
   CreditCard,
-  ArrowRightLeft as Transfer,
   CheckCircle,
   X,
+  ArrowRightLeft,
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
-import {
-  PieChart as RechartsPie,
-  Pie,
-  Cell,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
+import { ResponsiveContainer, PieChart as RechartsPie, Cell } from "recharts";
 import { Layout } from "@/components/layout/Layout";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -85,12 +78,12 @@ const DashboardPage: React.FC = () => {
       const response = await apiClient.get("/api/reports/financial", {
         responseType: "blob",
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = globalThis.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
       link.download = `rapport-financier-${new Date().toISOString().split("T")[0]}.pdf`;
       link.click();
-      window.URL.revokeObjectURL(url);
+      globalThis.URL.revokeObjectURL(url);
     } finally {
       setPdfLoading(false);
     }
@@ -216,9 +209,7 @@ const DashboardPage: React.FC = () => {
           {enriched?.overdraftRisk && (
             <Card hover padding="md">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white font-semibold text-sm">
-                  Risque de découvert
-                </h3>
+                <h3 className="text-white font-semibold text-sm">Solde J+30</h3>
                 <div
                   className={
                     enriched.overdraftRisk.level === "HIGH"
@@ -419,9 +410,9 @@ const DashboardPage: React.FC = () => {
                     outerRadius={80}
                     dataKey="amount"
                   >
-                    {spending.map((_, index) => (
+                    {spending.map((item, index) => (
                       <Cell
-                        key={`cell-${index}`}
+                        key={`status-cell-${item.category || index}`}
                         fill={
                           [
                             "#00D9FF",
@@ -439,7 +430,10 @@ const DashboardPage: React.FC = () => {
               </div>
               <div className="md:col-span-2 space-y-2">
                 {spending.map((cat, i) => (
-                  <div key={i} className="flex items-center justify-between">
+                  <div
+                    key={`action-${i}`}
+                    className="flex items-center justify-between"
+                  >
                     <div className="flex items-center gap-2">
                       <div
                         className="w-2 h-2 rounded-full"

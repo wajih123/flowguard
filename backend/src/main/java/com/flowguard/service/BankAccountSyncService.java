@@ -41,9 +41,26 @@ public class BankAccountSyncService {
         String extId = String.valueOf(ba.id());
 
         // ── 1. Upsert account ────────────────────────────────────────
+        // Look up by (user_id, externalAccountId) so accounts are always scoped
+        // to the authenticated user and one Bridge item cannot pollute another user.
         AccountEntity account = AccountEntity
-                .<AccountEntity>find("externalAccountId", extId)
+                .<AccountEntity>find("user.id = ?1 AND externalAccountId = ?2", userId, extId)
                 .firstResult();
+
+        // Fallback: same user already has this IBAN from a different Bridge item
+        // (e.g. the user re-connected the same bank). Reuse the existing record
+        // rather than creating a duplicate.
+        if (account == null) {
+            String iban = ba.iban() != null && !ba.iban().isBlank()
+                    ? ba.iban() : "BRIDGE-" + extId;
+            account = AccountEntity
+                    .<AccountEntity>find("user.id = ?1 AND iban = ?2", userId, iban)
+                    .firstResult();
+            if (account != null) {
+                // Update the external ID to the latest Bridge ID for this item
+                account.setExternalAccountId(extId);
+            }
+        }
 
         if (account == null) {
             UserEntity user = UserEntity.findById(userId);

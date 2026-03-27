@@ -57,10 +57,12 @@ public class CreditScoringService {
         score += scoreRepaymentHistory(userId);
         score += scoreAccountAge(userId);
         score += scoreFlowStability(userId);
-        // Cap score if the current balance is negative — a negative balance is
-        // a direct signal of financial stress regardless of income history.
+        // Cap score if the current balance is negative — a direct signal of financial stress regardless of income history.
         int balanceCap = computeBalanceCap(userId);
-        return Math.min(Math.min(score, 100), balanceCap);
+        // Critical: also cap score based on J+30 projection. A user headed for severe deficit in 30 days
+        // should not score high regardless of current balance or income.
+        int projectionCap = computeProjectionCap(userId);
+        return Math.min(Math.min(Math.min(score, 100), balanceCap), projectionCap);
     }
 
     /**
@@ -109,12 +111,15 @@ public class CreditScoringService {
         BigDecimal monthlyIncome = computeMonthlyIncome(userId, 90);
         if (monthlyIncome.compareTo(BigDecimal.ZERO) <= 0) return 0;
 
+        // Compute monthly expenses excluding internal transfers
+        BigDecimal monthlyExpenses = computeMonthlyExpenses(userId, 90); // ← NEW
+        // Total debt ratio = (active credit repayments + monthly expenses) / income
         BigDecimal activeDebt = BigDecimal.ZERO;
         for (FlashCreditEntity c : flashCreditRepository.findActiveByUserId(userId)) {
             activeDebt = activeDebt.add(c.getTotalRepayment());
         }
-
-        BigDecimal ratio = activeDebt.divide(monthlyIncome, 4, RoundingMode.HALF_UP);
+        BigDecimal totalDebt = activeDebt.add(monthlyExpenses); // ← NEW
+        BigDecimal ratio = totalDebt.divide(monthlyIncome, 4, RoundingMode.HALF_UP); // ← CHANGED
         if (ratio.compareTo(new BigDecimal("0.10")) < 0) return 25;
         if (ratio.compareTo(new BigDecimal("0.20")) < 0) return 20;
         if (ratio.compareTo(new BigDecimal("0.33")) < 0) return 12;
@@ -241,6 +246,31 @@ public class CreditScoringService {
     // ---- Helper ----
 
     /**
+     * Compute monthly expenses excluding internal transfers.
+     */
+    private BigDecimal computeMonthlyExpenses(UUID userId, int lookbackDays) {
+        List<AccountEntity> accounts = accountRepository.findByUserId(userId);
+        if (accounts.isEmpty()) return BigDecimal.ZERO;
+
+        LocalDate from = LocalDate.now().minusDays(lookbackDays);
+        BigDecimal totalExpenses = BigDecimal.ZERO;
+        for (AccountEntity account : accounts) {
+            List<TransactionEntity> debits = transactionRepository
+                    .findByAccountIdAndDateBetween(account.getId(), from, LocalDate.now())
+                    .stream()
+                    .filter(t -> t.getType() == TransactionEntity.TransactionType.DEBIT)
+                    .filter(t -> !isInternalTransfer(t.getLabel()))  // ← Filter internal transfers
+                    .toList();
+            for (TransactionEntity t : debits) {
+                totalExpenses = totalExpenses.add(t.getAmount());
+            }
+        }
+        // Return monthly average
+        long days = Math.max(1, ChronoUnit.DAYS.between(from, LocalDate.now()));
+        return totalExpenses.divide(new BigDecimal(days), 2, RoundingMode.HALF_UP).multiply(new BigDecimal("30"));
+    }
+
+    /**
      * Returns the maximum score allowed based on the total current balance.
      * A negative balance caps the score regardless of other components:
      *   >= 0       → 100 (no cap)
@@ -263,6 +293,76 @@ public class CreditScoringService {
         return 45;
     }
 
+    /**
+     * Cap score based on J+30 cash flow projection.
+     * If the user is headed for a large deficit in 30 days, they should not score high.
+     *   J+30 balance >= 0   → 100 (no cap)
+     *   J+30 balance < 0    →  45
+     *   J+30 balance < -500 →  35 (significant deficit)
+     *   J+30 balance < -2000→  25 (critical trajectory)
+     */
+    private int computeProjectionCap(UUID userId) {
+        List<AccountEntity> accounts = accountRepository.findActiveByUserId(userId);
+        if (accounts.isEmpty()) return 100;
+
+        // Compute projected balance = current balance + avg daily net flow × 30
+        BigDecimal currentBalance = accounts.stream()
+                .map(a -> a.getBalance() != null ? a.getBalance() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal avgDailyNet = computeAverageDailyNetFlow(userId, 60); // Last 60 days
+        BigDecimal projectedBalance = currentBalance.add(
+            avgDailyNet.multiply(new BigDecimal("30"))
+        );
+
+        double proj = projectedBalance.doubleValue();
+        if (proj >= 0) return 100;
+        if (proj <= -2000) return 25;
+        if (proj <= -500) return 35;
+        return 45;
+    }
+
+    /**
+     * Compute average daily net flow (income - expenses) over the last N days.
+     * Filters out internal transfers (same user between own accounts).
+     */
+    private BigDecimal computeAverageDailyNetFlow(UUID userId, int lookbackDays) {
+        List<AccountEntity> accounts = accountRepository.findByUserId(userId);
+        if (accounts.isEmpty()) return BigDecimal.ZERO;
+
+        LocalDate from = LocalDate.now().minusDays(lookbackDays);
+        BigDecimal income = BigDecimal.ZERO;
+        BigDecimal expenses = BigDecimal.ZERO;
+
+        for (AccountEntity account : accounts) {
+            List<TransactionEntity> txns = transactionRepository
+                    .findByAccountIdAndDateBetween(account.getId(), from, LocalDate.now());
+            for (TransactionEntity t : txns) {
+                // Skip internal transfers (label contains "Vir Inst vers" or "Virement Web")
+                if (isInternalTransfer(t.getLabel())) continue;
+
+                if (t.getType() == TransactionEntity.TransactionType.CREDIT) {
+                    income = income.add(t.getAmount());
+                } else {
+                    expenses = expenses.add(t.getAmount());
+                }
+            }
+        }
+
+        long days = Math.max(1, ChronoUnit.DAYS.between(from, LocalDate.now()));
+        return income.subtract(expenses).divide(new BigDecimal(days), 2, RoundingMode.HALF_UP);
+    }
+
+    /** Detect if a transaction is an internal transfer (between user's own accounts). */
+    private boolean isInternalTransfer(String label) {
+        if (label == null) return false;
+        return label.toLowerCase().contains("vir inst vers")
+            || label.toLowerCase().contains("virement web")
+            || label.toLowerCase().contains("virement de")
+            || label.toLowerCase().contains("vir de")
+            || label.toLowerCase().contains("ret dab");
+    }
+
     private BigDecimal computeMonthlyIncome(UUID userId, int lookbackDays) {
         List<AccountEntity> accounts = accountRepository.findByUserId(userId);
         if (accounts.isEmpty()) return BigDecimal.ZERO;
@@ -274,6 +374,7 @@ public class CreditScoringService {
                     .findByAccountIdAndDateBetween(account.getId(), from, LocalDate.now())
                     .stream()
                     .filter(t -> t.getType() == TransactionEntity.TransactionType.CREDIT)
+                    .filter(t -> !isInternalTransfer(t.getLabel()))  // ← NEW: Filter internal transfers
                     .toList();
             for (TransactionEntity t : credits) {
                 totalIncome = totalIncome.add(t.getAmount());

@@ -1,17 +1,15 @@
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 
 // Mock React Query
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: vi
-    .fn()
-    .mockReturnValue({
-      data: undefined,
-      isLoading: false,
-      isFetching: false,
-      refetch: vi.fn(),
-    }),
+  useQuery: vi.fn().mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isFetching: false,
+    refetch: vi.fn(),
+  }),
   useMutation: vi.fn().mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useQueryClient: vi.fn().mockReturnValue({ invalidateQueries: vi.fn() }),
 }));
@@ -64,15 +62,13 @@ vi.mock("@/api/tax", () => ({
 
 vi.mock("@/api/benchmarks", () => ({
   benchmarksApi: {
-    get: vi
-      .fn()
-      .mockResolvedValue({
-        sector: "RETAIL",
-        sizeCategory: "MICRO",
-        currentBalance: 0,
-        percentileBand: "P50",
-        insights: [],
-      }),
+    get: vi.fn().mockResolvedValue({
+      sector: "RETAIL",
+      sizeCategory: "MICRO",
+      currentBalance: 0,
+      percentileBand: "P50",
+      insights: [],
+    }),
   },
 }));
 
@@ -80,13 +76,11 @@ vi.mock("@/api/forecastAccuracy", () => ({
   forecastAccuracyApi: {
     list: vi.fn().mockResolvedValue([]),
     byHorizon: vi.fn().mockResolvedValue([]),
-    summary: vi
-      .fn()
-      .mockResolvedValue({
-        averageAccuracyPct: 0,
-        totalEntries: 0,
-        reconciledEntries: 0,
-      }),
+    summary: vi.fn().mockResolvedValue({
+      averageAccuracyPct: 0,
+      totalEntries: 0,
+      reconciledEntries: 0,
+    }),
   },
 }));
 
