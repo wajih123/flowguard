@@ -203,7 +203,7 @@ const ForecastPage: React.FC = () => {
         <Card>
           <CardHeader
             title={`Évolution du solde — ${horizon} jours`}
-            subtitle="Zone bleue = intervalle de confiance · Ligne rouge = seuil critique"
+            subtitle="Zone colorée = fourchette d'estimation · Ligne rouge = seuil d'alerte"
             icon={<TrendingUp size={18} />}
             helpTooltip={
               <HelpTooltip text="Projection de votre solde sur l'horizon choisi. La zone colorée représente la fourchette de confiance du modèle IA." />

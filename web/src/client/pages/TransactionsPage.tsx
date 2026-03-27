@@ -15,18 +15,25 @@ import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { TransactionCategory } from "@/domain/Transaction";
 
+function buildImportMessage(imported: number, skipped: number): string {
+  const txLabel = imported === 1 ? "1 transaction ajoutée" : `${imported} transactions ajoutées`;
+  if (skipped === 0) return txLabel;
+  const dupLabel = skipped === 1 ? "1 doublon ignoré" : `${skipped} doublons ignorés`;
+  return `${txLabel} · ${dupLabel}`;
+}
+
 const CATEGORY_LABELS: Record<TransactionCategory, string> = {
   LOYER: "Loyer",
   SALAIRE: "Salaires",
-  ALIMENTATION: "Alimentation",
+  ALIMENTATION: "Courses & restaurants",
   TRANSPORT: "Transport",
   ABONNEMENT: "Abonnements",
   ENERGIE: "Énergie",
-  TELECOM: "Télécom",
+  TELECOM: "Téléphone & internet",
   ASSURANCE: "Assurance",
-  CHARGES_FISCALES: "Charges fiscales",
+  CHARGES_FISCALES: "Impôts & charges",
   FOURNISSEUR: "Fournisseurs",
-  CLIENT_PAYMENT: "Paiements clients",
+  CLIENT_PAYMENT: "Paiements reçus",
   VIREMENT: "Virements",
   AUTRE: "Autre",
 };
@@ -72,7 +79,7 @@ const TransactionsPage: React.FC = () => {
       const result = await transactionsApi.importStatement(accountId, file);
       setImportStatus({
         importing: false,
-        result: `${result.imported} importées, ${result.skipped} ignorées (${result.format})`,
+        result: buildImportMessage(result.imported, result.skipped),
         error: null,
       });
       qc.invalidateQueries({ queryKey: ["transactions", accountId] });
@@ -129,10 +136,8 @@ const TransactionsPage: React.FC = () => {
             </span>
           )}
           <span className="text-xs text-text-muted">
-            Formats supportés : PDF, OFX, QIF, MT940, CFONB, XLSX, CSV  — 
-            <span className="text-primary font-medium">
-              ✨ Analyse IA automatique
-            </span>
+            Formats acceptés : PDF, Excel, CSV et relevés bancaires (OFX, MT940) —{" "}
+            <span className="text-primary font-medium">✨ Analyse IA automatique</span>
           </span>
         </div>
 

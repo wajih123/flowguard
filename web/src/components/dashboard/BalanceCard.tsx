@@ -73,7 +73,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
             </p>
             <p className="text-text-muted text-2xs font-numeric">
               {isMultiAccount
-                ? `${accountCount} comptes agrégés`
+                ? `${accountCount} comptes connectés`
                 : account.ibanMasked}
             </p>
           </div>
@@ -123,7 +123,7 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
 
       {/* Predicted balance */}
       <div className="mt-3 pt-3 border-t border-white/[0.06] flex items-center justify-between">
-        <span className="text-text-muted text-xs">Solde prévu J+30</span>
+        <span className="text-text-muted text-xs">Solde dans 30 jours</span>
         <AmountDisplay
           amount={predictedBalance30d}
           size="sm"

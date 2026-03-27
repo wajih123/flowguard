@@ -167,11 +167,13 @@ const DashboardPage: React.FC = () => {
             <p className="text-text-secondary text-sm mt-1">
               {format(new Date(), "EEEE d MMMM yyyy", { locale: fr })}
             </p>
-            {user?.role && (
-              <span className="inline-block mt-1 text-2xs text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
-                {user.role.replace("ROLE_", "")}
-              </span>
-            )}
+            {user?.role &&
+              user.role !== "ROLE_ADMIN" &&
+              user.role !== "ROLE_SUPER_ADMIN" && (
+                <span className="inline-block mt-1 text-2xs text-primary bg-primary/10 border border-primary/20 rounded-full px-2 py-0.5">
+                  {user.role === "ROLE_BUSINESS" ? "Pro" : "Particulier"}
+                </span>
+              )}
           </div>
           <Button
             variant="ghost"
@@ -209,7 +211,9 @@ const DashboardPage: React.FC = () => {
           {enriched?.overdraftRisk && (
             <Card hover padding="md">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white font-semibold text-sm">Solde J+30</h3>
+                <h3 className="text-white font-semibold text-sm">
+                  Solde dans 30 jours
+                </h3>
                 <div
                   className={
                     enriched.overdraftRisk.level === "HIGH"
@@ -372,7 +376,7 @@ const DashboardPage: React.FC = () => {
           {sweepSuggestions && sweepSuggestions.length > 0 && (
             <Card padding="md">
               <h3 className="text-white font-semibold text-sm mb-3">
-                Suggestions de balance
+                Suggestions d'optimisation
               </h3>
               <div className="space-y-2">
                 {sweepSuggestions.slice(0, 3).map((suggestion) => (
