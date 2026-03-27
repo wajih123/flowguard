@@ -76,8 +76,6 @@ public class DashboardResource {
         BigDecimal currentBalance = activeAccounts.stream()
                 .map(a -> a.getBalance() != null ? a.getBalance() : BigDecimal.ZERO)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-        int accountCount = activeAccounts.size();
-
         // 2. Forecast (best-effort — ML service may not have enough data yet)
         BigDecimal predictedBalance30d = currentBalance;
         double forecastHealthScore = -1;
@@ -97,10 +95,6 @@ public class DashboardResource {
         } catch (Exception e) {
             LOG.debugf("Forecast unavailable for user %s: %s", userId, e.getMessage());
         }
-
-        // 3. Balance trend — absolute delta (predictedBalance30d − currentBalance)
-        //    The frontend displays this with a € sign via AmountDisplay, not as a %.
-        BigDecimal balanceTrend = predictedBalance30d.subtract(currentBalance);
 
         // 4. Health score — prefer ML forecast, fall back to credit scoring
         int healthScore;
@@ -292,9 +286,21 @@ public class DashboardResource {
 
         // Build the enriched summary response
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("totalBalance", currentBalance);
+        body.put("currentBalance", currentBalance);
+        body.put("totalBalance", currentBalance);       // alias kept for compatibility
+        body.put("account", account);                   // primary account sub-object
+        body.put("accountCount", activeAccounts.size());
         body.put("accounts", accountsList);
+        body.put("predictedBalance30d", predictedBalance30d);
+        body.put("balanceTrend", predictedBalance30d.subtract(currentBalance));
         body.put("healthScore", healthScore);
+        body.put("healthLabel", healthLabel);
+        body.put("reserveAvailable", reserveAvailable);
+        body.put("reserveMaxAmount", reserveMaxAmount);
+        body.put("hasHighAlert", hasHighAlert);
+        body.put("highAlertMessage", highAlertMessage);
+        body.put("highAlertAmount", highAlertAmount);
+        body.put("highAlertDate", highAlertDate);
         body.put("unreadAlerts", unreadAlerts);
         body.put("lastMonthIncome", lastMonthIncome);
         body.put("lastMonthSpend", lastMonthSpend);
