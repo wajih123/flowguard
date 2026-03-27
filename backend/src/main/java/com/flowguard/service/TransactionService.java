@@ -209,16 +209,26 @@ public class TransactionService {
                     skipped++;
                     continue;
                 }
-                boolean exists = transactionRepository
-                        .existsByAccountIdDateLabelAmount(accountId, row.date(), row.label(), row.amount());
-                if (exists) {
-                    skipped++;
-                    continue;
-                }
 
                 TransactionEntity.TransactionType type = "CREDIT".equalsIgnoreCase(row.type())
                         ? TransactionEntity.TransactionType.CREDIT
                         : TransactionEntity.TransactionType.DEBIT;
+
+                // Normalize amount sign: DEBIT → negative, CREDIT → positive.
+                // Parsers (CSV, PDF, MT940, CFONB) return absolute values — we
+                // enforce the same convention used by the Bridge API so that all
+                // downstream code (DashboardResource, CreditScoringService, etc.)
+                // can rely on: amount < 0 ⟺ type == DEBIT.
+                BigDecimal normalizedAmount = (type == TransactionEntity.TransactionType.DEBIT)
+                        ? row.amount().abs().negate()
+                        : row.amount().abs();
+
+                boolean exists = transactionRepository
+                        .existsByAccountIdDateLabelAmount(accountId, row.date(), row.label(), normalizedAmount);
+                if (exists) {
+                    skipped++;
+                    continue;
+                }
 
                 TransactionEntity.TransactionCategory category = BankStatementParserService
                         .inferCategoryFromLabel(row.label());
@@ -229,7 +239,7 @@ public class TransactionService {
                         .account(account)
                         .date(row.date())
                         .label(row.label())
-                        .amount(row.amount())
+                        .amount(normalizedAmount)
                         .type(type)
                         .category(category)
                         .isRecurring(false)
