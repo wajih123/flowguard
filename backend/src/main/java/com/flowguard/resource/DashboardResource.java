@@ -200,6 +200,50 @@ public class DashboardResource {
         BigDecimal lastMonthSavings = lastMonthIncome.subtract(lastMonthSpend);
         BigDecimal monthlySubscriptionsCost = BigDecimal.ZERO; // Will be calculated from SubscriptionEntity if available
 
+        // ── Local J+30 projection ─────────────────────────────────────────────
+        // Computed from actual income/spend data of the last 30 days.
+        // This is the authoritative single source of truth:
+        //   predictedBalance30d  = what the ML model predicted (may be stale/wrong)
+        //   localPredictedBalance30d = simple math: currentBalance + income − spend
+        // Rule: trust ML only when it returned a real balance (predictions list was
+        // non-empty); otherwise fall back to the local calculation.
+        // Extra guard: if the ML prediction deviates by more than 10x the local delta
+        // (e.g. ML says -16k while math says -49), the ML data is likely stale from
+        // before the V26 sign-fix migration and we override it.
+        BigDecimal localPredictedBalance30d = currentBalance
+                .add(lastMonthIncome)
+                .subtract(lastMonthSpend);
+
+        if (predictedBalance30d.compareTo(currentBalance) == 0) {
+            // ML returned no balance predictions → use local calculation
+            predictedBalance30d = localPredictedBalance30d;
+        } else {
+            // Sanity check: ML delta vs local delta
+            BigDecimal localDelta = localPredictedBalance30d.subtract(currentBalance).abs();
+            BigDecimal mlDelta    = predictedBalance30d.subtract(currentBalance).abs();
+            boolean mlSane = localDelta.compareTo(BigDecimal.ZERO) == 0
+                    || mlDelta.divide(localDelta.max(BigDecimal.ONE), 2, java.math.RoundingMode.HALF_UP)
+                              .compareTo(BigDecimal.TEN) <= 0;
+            if (!mlSane) {
+                LOG.warnf("ML balance prediction (%s) deviates >10x from local estimate (%s) — overriding with local",
+                        predictedBalance30d, localPredictedBalance30d);
+                predictedBalance30d = localPredictedBalance30d;
+            }
+        }
+
+        // Health score cap: if J+30 balance is negative the user is heading for
+        // overdraft regardless of historical credit quality → enforce hard ceiling.
+        if (predictedBalance30d.compareTo(BigDecimal.ZERO) < 0) {
+            double proj = predictedBalance30d.doubleValue();
+            int projectionCap = proj <= -5000 ? 25 : proj <= -2000 ? 35 : proj <= -500 ? 45 : 55;
+            healthScore = Math.min(healthScore, projectionCap);
+            // Recalculate label after cap
+            if (healthScore >= 80)      healthLabel = "Excellent";
+            else if (healthScore >= 60) healthLabel = "Bon";
+            else if (healthScore >= 40) healthLabel = "Moyen";
+            else                        healthLabel = "Fragile";
+        }
+
         // Build accounts list breakdown
         List<Map<String, Object>> accountsList = new ArrayList<>();
         for (AccountEntity acc : activeAccounts) {
@@ -215,15 +259,28 @@ public class DashboardResource {
         // Build upcoming debits list (empty for now, can be enhanced)
         List<Map<String, Object>> upcomingDebits = new ArrayList<>();
 
-        // Build overdraft risk summary
+        // Build overdraft risk summary.
+        // The risk level MUST be based on the PROJECTED balance (J+30), not the current
+        // balance. A user with 10k today but -2k in 30 days is HIGH risk, not NONE.
         Map<String, Object> overdraftRisk = new LinkedHashMap<>();
-        overdraftRisk.put("level", currentBalance.compareTo(BigDecimal.valueOf(500)) < 0 ? "HIGH" : 
-                         currentBalance.compareTo(BigDecimal.valueOf(2000)) < 0 ? "MEDIUM" : "NONE");
+        String overdraftLevel;
+        if (predictedBalance30d.compareTo(BigDecimal.ZERO) < 0) {
+            overdraftLevel = "HIGH";
+        } else if (predictedBalance30d.compareTo(BigDecimal.valueOf(500)) < 0) {
+            overdraftLevel = "HIGH";
+        } else if (predictedBalance30d.compareTo(BigDecimal.valueOf(2000)) < 0) {
+            overdraftLevel = "MEDIUM";
+        } else {
+            overdraftLevel = "NONE";
+        }
+        overdraftRisk.put("level", overdraftLevel);
         overdraftRisk.put("projectedBalance", predictedBalance30d);
         overdraftRisk.put("horizonDate", java.time.LocalDate.now().plusDays(30).toString());
 
-        // Build 30-day predictions (forecast chart data)
-        List<Map<String, Object>> predictions = generatePredictions(currentBalance, lastMonthSpend);
+        // Build 30-day predictions (fallback forecast chart data).
+        // Uses net daily flow = (income − spend) / 30 so the projection is realistic.
+        // A user earning 2 000 € and spending 1 800 € will see +200 € at day 30, not -1 800 €.
+        List<Map<String, Object>> predictions = generatePredictions(currentBalance, lastMonthIncome, lastMonthSpend);
 
         // Count unread alerts
         int unreadAlerts = 0;
@@ -294,28 +351,33 @@ public class DashboardResource {
     }
 
     /**
-     * Generates 30-day balance forecast based on current balance and average daily spending.
-     * Provides fallback prediction data when ML service is unavailable.
+     * Generates a 30-day balance projection using the actual net daily cash flow.
+     *
+     * <p>Formula: {@code dailyNet = (monthlyIncome − monthlySpend) / 30}
+     * Each day the running balance is adjusted by this net amount.
+     *
+     * <p>Using spend-only was a critical bug: a user who earns 2 000 € and spends
+     * 1 800 € would show a -1 800 € collapse instead of the real +200 € gain.
      */
-    private static List<Map<String, Object>> generatePredictions(BigDecimal currentBalance, BigDecimal monthlySpend) {
+    private static List<Map<String, Object>> generatePredictions(
+            BigDecimal currentBalance, BigDecimal monthlyIncome, BigDecimal monthlySpend) {
+
+        // Net monthly cash flow: positive = growing balance, negative = shrinking
+        BigDecimal monthlyNet = monthlyIncome.subtract(monthlySpend);
+        BigDecimal dailyNet   = monthlyNet.divide(BigDecimal.valueOf(30), 2, java.math.RoundingMode.HALF_UP);
+
         List<Map<String, Object>> predictions = new ArrayList<>();
-        
-        // Calculate average daily spend (conservative estimate)
-        BigDecimal dailySpend = monthlySpend.divide(BigDecimal.valueOf(30), 2, java.math.RoundingMode.HALF_UP);
         BigDecimal runningBalance = currentBalance;
-        
         java.time.LocalDate today = java.time.LocalDate.now();
-        
+
         for (int day = 0; day <= 30; day++) {
             Map<String, Object> point = new LinkedHashMap<>();
             point.put("date", today.plusDays(day).toString());
             point.put("predictedBalance", runningBalance.setScale(2, java.math.RoundingMode.HALF_UP));
             predictions.add(point);
-            
-            // Deduct daily average spending for next day
-            runningBalance = runningBalance.subtract(dailySpend);
+            runningBalance = runningBalance.add(dailyNet);
         }
-        
+
         return predictions;
     }
 
