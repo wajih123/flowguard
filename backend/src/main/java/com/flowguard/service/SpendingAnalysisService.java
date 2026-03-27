@@ -33,7 +33,7 @@ public class SpendingAnalysisService {
 
         Map<String, BigDecimal> byCategory = debits.stream()
                 .collect(Collectors.groupingBy(
-                        t -> t.getCategory().name(),
+                        t -> t.getCategory() != null ? t.getCategory().name() : "AUTRE",
                         Collectors.reducing(BigDecimal.ZERO, TransactionEntity::getAmount, BigDecimal::add)
                 ));
 
