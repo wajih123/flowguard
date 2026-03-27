@@ -288,34 +288,55 @@ const DashboardPage: React.FC = () => {
                 {new Intl.NumberFormat("fr-FR", {
                   style: "currency",
                   currency: "EUR",
-                }).format(-enriched.lastMonthSpend)}
+                }).format(enriched.lastMonthSpend)}
               </p>
             </Card>
           )}
 
-          {/* Savings Rate */}
-          {enriched && (
-            <Card padding="md">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-white font-semibold text-sm">Épargne</h3>
-                <TrendingUp size={16} className="text-cyan-400" />
-              </div>
-              <p className="text-2xl font-numeric font-bold text-cyan-400">
-                {new Intl.NumberFormat("fr-FR", {
-                  style: "currency",
-                  currency: "EUR",
-                }).format(enriched.lastMonthSavings)}
-              </p>
-              <p className="text-xs text-text-muted mt-1">
-                {enriched.lastMonthIncome > 0
-                  ? (
+          {/* Savings / Deficit */}
+          {enriched &&
+            (() => {
+              const isDeficit = enriched.lastMonthSavings < 0;
+              const savingsRate =
+                enriched.lastMonthIncome > 0
+                  ? Math.max(
+                      0,
                       (enriched.lastMonthSavings / enriched.lastMonthIncome) *
-                      100
-                    ).toFixed(1) + "%"
-                  : "N/A"}
-              </p>
-            </Card>
-          )}
+                        100,
+                    )
+                  : 0;
+              return (
+                <Card padding="md">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-white font-semibold text-sm">
+                      {isDeficit ? "Déficit" : "Épargne"}
+                    </h3>
+                    {isDeficit ? (
+                      <TrendingDown size={16} className="text-red-400" />
+                    ) : (
+                      <TrendingUp size={16} className="text-cyan-400" />
+                    )}
+                  </div>
+                  <p
+                    className={`text-2xl font-numeric font-bold ${
+                      isDeficit ? "text-red-400" : "text-cyan-400"
+                    }`}
+                  >
+                    {new Intl.NumberFormat("fr-FR", {
+                      style: "currency",
+                      currency: "EUR",
+                    }).format(Math.abs(enriched.lastMonthSavings))}
+                  </p>
+                  <p className="text-xs text-text-muted mt-1">
+                    {isDeficit
+                      ? "Dépenses supérieures aux revenus"
+                      : enriched.lastMonthIncome > 0
+                        ? savingsRate.toFixed(1) + "%"
+                        : "N/A"}
+                  </p>
+                </Card>
+              );
+            })()}
         </div>
 
         {/* ── 4C. UPCOMING DEBITS & SWEEP SUGGESTIONS ────────────────────── */}
