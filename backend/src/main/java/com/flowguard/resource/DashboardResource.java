@@ -20,7 +20,6 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.*;
 
 /**
@@ -173,27 +172,31 @@ public class DashboardResource {
                 ? primary.getLastSyncAt().toString() : null);
         account.put("syncStatus", primary.getSyncStatus().name());
 
-        // Calculate last month's income, spending, and savings
-        Instant lastMonthStart = Instant.now().minus(30, java.time.temporal.ChronoUnit.DAYS);
+        // Calculate last month's income, spending, and savings.
+        // IMPORTANT: filter by tx.getDate() (the actual transaction date on the bank statement),
+        // NOT tx.getCreatedAt() (the import timestamp). Using createdAt would count all
+        // historically-imported transactions as "this month" since they were all imported today.
+        java.time.LocalDate thirtyDaysAgo = java.time.LocalDate.now().minusDays(30);
         BigDecimal lastMonthIncome = BigDecimal.ZERO;
         BigDecimal lastMonthSpend = BigDecimal.ZERO;
-        
+
         for (AccountEntity acc : activeAccounts) {
             List<com.flowguard.domain.TransactionEntity> txs = transactionRepository.findByAccountId(acc.getId());
             for (com.flowguard.domain.TransactionEntity tx : txs) {
-                if (tx.getCreatedAt() != null && tx.getCreatedAt().isAfter(lastMonthStart)) {
-                    // Use transaction type (not just sign) and exclude internal transfers
-                    if (tx.getType() == com.flowguard.domain.TransactionEntity.TransactionType.CREDIT 
+                if (tx.getDate() != null && !tx.getDate().isBefore(thirtyDaysAgo)
                         && !creditScoringService.isInternalTransfer(tx.getLabel())) {
-                        lastMonthIncome = lastMonthIncome.add(tx.getAmount());
-                    } else if (tx.getType() == com.flowguard.domain.TransactionEntity.TransactionType.DEBIT
-                        && !creditScoringService.isInternalTransfer(tx.getLabel())) {
-                        lastMonthSpend = lastMonthSpend.add(tx.getAmount());
+                    if (tx.getType() == com.flowguard.domain.TransactionEntity.TransactionType.CREDIT) {
+                        // CREDIT amounts are positive — add directly
+                        lastMonthIncome = lastMonthIncome.add(tx.getAmount().abs());
+                    } else if (tx.getType() == com.flowguard.domain.TransactionEntity.TransactionType.DEBIT) {
+                        // DEBIT amounts are negative since V26 migration — use abs() so that
+                        // lastMonthSpend is a positive total and savings = income - spend is correct.
+                        lastMonthSpend = lastMonthSpend.add(tx.getAmount().abs());
                     }
                 }
             }
         }
-        
+
         BigDecimal lastMonthSavings = lastMonthIncome.subtract(lastMonthSpend);
         BigDecimal monthlySubscriptionsCost = BigDecimal.ZERO; // Will be calculated from SubscriptionEntity if available
 
