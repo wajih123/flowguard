@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import {
   Home,
   TrendingUp,
@@ -110,7 +111,7 @@ export const TransactionList: React.FC<TransactionListProps> = ({
                 <AmountDisplay
                   amount={tx.amount}
                   size="sm"
-                  showSign={tx.amount > 0}
+                  showSign
                   className="flex-shrink-0"
                 />
               </div>
@@ -118,6 +119,18 @@ export const TransactionList: React.FC<TransactionListProps> = ({
           })
         )}
       </div>
+
+      {/* Footer link */}
+      {!isLoading && (transactions?.length ?? 0) > 0 && (
+        <div className="px-5 py-3 border-t border-white/[0.04]">
+          <Link
+            to="/transactions"
+            className="text-primary text-xs font-medium hover:text-white transition-colors"
+          >
+            Voir toutes les transactions →
+          </Link>
+        </div>
+      )}
     </Card>
   );
 };

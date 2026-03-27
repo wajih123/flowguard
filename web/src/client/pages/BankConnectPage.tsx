@@ -43,7 +43,7 @@ const BankConnectPage: React.FC = () => {
         <div>
           <h1 className="page-title">Connexion bancaire</h1>
           <p className="page-subtitle">
-            Open Banking européen DSP2 · Bridge API
+            Connexion sécurisée · Aucun mot de passe partagé
           </p>
         </div>
 
@@ -67,7 +67,7 @@ const BankConnectPage: React.FC = () => {
               Connexion 100 % sécurisée
             </p>
             <p className="text-text-secondary text-xs mt-0.5 leading-relaxed">
-              Open Banking DSP2 · FlowGuard n'accède jamais à vos identifiants ·
+              Connexion bancaire certifiée · FlowGuard n'accède jamais à vos identifiants ·
               Chiffrement bout en bout
             </p>
           </div>

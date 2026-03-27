@@ -47,28 +47,28 @@ public class InvoiceResource {
     @POST
     @Path("/{id}/send")
     @RunOnVirtualThread
-    public InvoiceDto send(@PathParam("id") UUID id) {
-        return invoiceService.send(UUID.fromString(jwt.getSubject()), id);
+    public Response send(@PathParam("id") UUID id) {
+        return Response.ok(invoiceService.send(UUID.fromString(jwt.getSubject()), id)).build();
     }
 
     @POST
     @Path("/{id}/mark-paid")
     @RunOnVirtualThread
-    public InvoiceDto markPaid(@PathParam("id") UUID id) {
-        return invoiceService.markPaid(UUID.fromString(jwt.getSubject()), id);
+    public Response markPaid(@PathParam("id") UUID id) {
+        return Response.ok(invoiceService.markPaid(UUID.fromString(jwt.getSubject()), id)).build();
     }
 
     @POST
     @Path("/{id}/cancel")
     @RunOnVirtualThread
-    public InvoiceDto cancel(@PathParam("id") UUID id) {
-        return invoiceService.cancel(UUID.fromString(jwt.getSubject()), id);
+    public Response cancel(@PathParam("id") UUID id) {
+        return Response.ok(invoiceService.cancel(UUID.fromString(jwt.getSubject()), id)).build();
     }
 
     @POST
     @Path("/{id}/toggle-reminder")
     @RunOnVirtualThread
-    public InvoiceDto toggleReminder(@PathParam("id") UUID id) {
-        return invoiceService.toggleReminder(UUID.fromString(jwt.getSubject()), id);
+    public Response toggleReminder(@PathParam("id") UUID id) {
+        return Response.ok(invoiceService.toggleReminder(UUID.fromString(jwt.getSubject()), id)).build();
     }
 }

@@ -16,9 +16,13 @@ import { fr } from "date-fns/locale";
 import type { TransactionCategory } from "@/domain/Transaction";
 
 function buildImportMessage(imported: number, skipped: number): string {
-  const txLabel = imported === 1 ? "1 transaction ajoutée" : `${imported} transactions ajoutées`;
+  const txLabel =
+    imported === 1
+      ? "1 transaction ajoutée"
+      : `${imported} transactions ajoutées`;
   if (skipped === 0) return txLabel;
-  const dupLabel = skipped === 1 ? "1 doublon ignoré" : `${skipped} doublons ignorés`;
+  const dupLabel =
+    skipped === 1 ? "1 doublon ignoré" : `${skipped} doublons ignorés`;
   return `${txLabel} · ${dupLabel}`;
 }
 
@@ -136,8 +140,11 @@ const TransactionsPage: React.FC = () => {
             </span>
           )}
           <span className="text-xs text-text-muted">
-            Formats acceptés : PDF, Excel, CSV et relevés bancaires (OFX, MT940) —{" "}
-            <span className="text-primary font-medium">✨ Analyse IA automatique</span>
+            Formats acceptés : PDF, Excel, CSV et relevés bancaires (OFX, MT940)
+            —{" "}
+            <span className="text-primary font-medium">
+              ✨ Analyse IA automatique
+            </span>
           </span>
         </div>
 

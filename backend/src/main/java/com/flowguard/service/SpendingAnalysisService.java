@@ -28,13 +28,13 @@ public class SpendingAnalysisService {
                 .toList();
 
         BigDecimal totalSpent = debits.stream()
-                .map(TransactionEntity::getAmount)
+                .map(t -> t.getAmount().abs())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Map<String, BigDecimal> byCategory = debits.stream()
                 .collect(Collectors.groupingBy(
                         t -> t.getCategory() != null ? t.getCategory().name() : "AUTRE",
-                        Collectors.reducing(BigDecimal.ZERO, TransactionEntity::getAmount, BigDecimal::add)
+                        Collectors.reducing(BigDecimal.ZERO, t -> t.getAmount().abs(), BigDecimal::add)
                 ));
 
         List<String> insights = generateInsights(byCategory, totalSpent);
@@ -59,7 +59,7 @@ public class SpendingAnalysisService {
                 .filter(t -> t.getType() == TransactionEntity.TransactionType.DEBIT)
                 .collect(Collectors.groupingBy(
                         t -> t.getCategory() != null ? t.getCategory().name() : "AUTRE",
-                        Collectors.reducing(BigDecimal.ZERO, TransactionEntity::getAmount, BigDecimal::add)
+                        Collectors.reducing(BigDecimal.ZERO, t -> t.getAmount().abs(), BigDecimal::add)
                 ));
     }
 

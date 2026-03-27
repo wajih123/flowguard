@@ -40,7 +40,7 @@ public class BudgetResource {
             @PathParam("year") int year,
             @PathParam("month") int month,
             @PathParam("category") String category,
-            BigDecimal amount) {
+            @RequestBody BigDecimal amount) {
         BudgetCategoryDto dto = budgetService.upsert(
                 UUID.fromString(jwt.getSubject()), year, month, category, amount);
         return Response.ok(dto).build();

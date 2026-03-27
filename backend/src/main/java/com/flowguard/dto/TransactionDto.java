@@ -1,5 +1,6 @@
 package com.flowguard.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.flowguard.domain.TransactionEntity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,7 +13,7 @@ public record TransactionDto(
     String type,
     String label,
     String category,
-    LocalDate date,
+    @JsonProperty("transactionDate") LocalDate date,
     boolean isRecurring
 ) {
     public static TransactionDto from(TransactionEntity entity) {

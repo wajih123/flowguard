@@ -96,7 +96,7 @@ const InvoiceRow: React.FC<{
         <p className="font-numeric text-white font-semibold">
           {fmt(inv.totalTtc)}
         </p>
-        <p className="text-text-muted text-xs">TTC · TVA {inv.vatRate}%</p>
+        <p className="text-text-muted text-xs">TTC · TVA {inv.vatRate == null ? "incluse" : `${inv.vatRate}%`}</p>
       </div>
       <div className="flex gap-2 shrink-0">
         {(inv.status === "SENT" || inv.status === "OVERDUE") && (

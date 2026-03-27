@@ -47,7 +47,7 @@ public class PaymentInitiationResource {
     @POST
     @Path("/{id}/cancel")
     @RunOnVirtualThread
-    public PaymentInitiationDto cancel(@PathParam("id") UUID id) {
-        return paymentService.cancel(UUID.fromString(jwt.getSubject()), id);
+    public Response cancel(@PathParam("id") UUID id) {
+        return Response.ok(paymentService.cancel(UUID.fromString(jwt.getSubject()), id)).build();
     }
 }

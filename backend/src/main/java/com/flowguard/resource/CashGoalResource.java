@@ -55,7 +55,7 @@ public class CashGoalResource {
     @PUT
     @Transactional
     @RunOnVirtualThread
-    public CashGoalDto upsert(@Valid UpsertGoalRequest req) {
+    public Response upsert(@Valid UpsertGoalRequest req) {
         UUID userId = UUID.fromString(jwt.getSubject());
         UserEntity user = userRepository.findById(userId);
         if (user == null) throw new NotFoundException("User not found");
@@ -66,7 +66,7 @@ public class CashGoalResource {
         goal.setLabel(req.label() != null && !req.label().isBlank()
                 ? req.label() : "Réserve de trésorerie");
         cashGoalRepository.persistAndFlush(goal);
-        return toDto(goal, userId);
+        return Response.ok(toDto(goal, userId)).build();
     }
 
     @DELETE

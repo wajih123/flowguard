@@ -51,7 +51,7 @@ const ForecastPage: React.FC = () => {
           <div>
             <h1 className="page-title">Prévisions de trésorerie</h1>
             <p className="page-subtitle">
-              Modèle IA mis à jour quotidiennement à 06h00
+              Mise à jour quotidienne · Basée sur vos dernières transactions
             </p>
           </div>
           {forecast && (
