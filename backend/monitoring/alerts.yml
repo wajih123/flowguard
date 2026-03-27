@@ -2,6 +2,15 @@ groups:
   - name: flowguard-critical
     rules:
       # ── Service availability ──────────────────────────────────────────────
+      - alert: PublicServerDown
+        expr: probe_success{job="flowguard-public-server"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "FlowGuard public server is unreachable (157.180.43.233)"
+          description: "Public server at 157.180.43.233 is not responding to health checks for {{ $labels.instance }}. System is DOWN."
+
       - alert: BackendDown
         expr: up{job="flowguard-backend"} == 0
         for: 1m

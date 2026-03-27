@@ -1,40 +1,58 @@
 global:
   resolve_timeout: 5m
+  # Email configuration (optional - use for non-critical alerts)
   smtp_from: alerts@flowguard.fr
   smtp_smarthost: smtp.sendgrid.net:587
   smtp_auth_username: apikey
-  smtp_auth_password: CHANGE_ME_SMTP_API_KEY # set real key when email alerts are needed
+  smtp_auth_password: ${SENDGRID_API_KEY:-CHANGE_ME_SMTP_API_KEY}
 
 route:
   receiver: default
   group_by: [alertname, severity]
-  group_wait: 30s
+  group_wait: 10s       # ← Reduced: faster notifications
   group_interval: 5m
   repeat_interval: 4h
   routes:
+    # Critical alerts → PagerDuty + Slack webhook
     - match:
         severity: critical
-      receiver: critical-pagerduty
-      repeat_interval: 1h
+      receiver: critical-webhooks
+      group_wait: 5s    # ← Immediate for critical issues
+      repeat_interval: 30m
+      continue: true
+    # Warning alerts → Email
     - match:
         severity: warning
       receiver: email-team
+      repeat_interval: 2h
 
 receivers:
   - name: default
     email_configs:
       - to: tech@flowguard.fr
-        send_resolved: true
+        headers:
+          Subject: 'FlowGuard Alert: {{ .GroupLabels.alertname }}'
 
-  - name: critical-pagerduty
+  # Critical alerts go to PagerDuty + Slack (webhook)
+  - name: critical-webhooks
+    pagerduty_configs:
+      - service_key: ${PAGERDUTY_SERVICE_KEY:-CHANGE_ME_PAGERDUTY_KEY}
+        description: '{{ .GroupLabels.alertname }}: {{ .Alerts.Firing | len }} firing'
+    slack_configs:
+      - api_url: ${SLACK_WEBHOOK_URL:-CHANGE_ME_SLACK_WEBHOOK}
+        title: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+        text: '{{ range .Alerts.Firing }}{{ .Annotations.description }}{{ end }}'
+        send_resolved: true
     email_configs:
       - to: tech@flowguard.fr
-        send_resolved: true
+        headers:
+          Subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
 
   - name: email-team
     email_configs:
       - to: tech@flowguard.fr
-        send_resolved: true
+        headers:
+          Subject: '⚠️ WARNING: {{ .GroupLabels.alertname }}'
 
 inhibit_rules:
   - source_match:
