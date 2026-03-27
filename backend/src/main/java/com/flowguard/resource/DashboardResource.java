@@ -182,10 +182,13 @@ public class DashboardResource {
             List<com.flowguard.domain.TransactionEntity> txs = transactionRepository.findByAccountId(acc.getId());
             for (com.flowguard.domain.TransactionEntity tx : txs) {
                 if (tx.getCreatedAt() != null && tx.getCreatedAt().isAfter(lastMonthStart)) {
-                    if (tx.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+                    // Use transaction type (not just sign) and exclude internal transfers
+                    if (tx.getType() == com.flowguard.domain.TransactionEntity.TransactionType.CREDIT 
+                        && !creditScoringService.isInternalTransfer(tx.getLabel())) {
                         lastMonthIncome = lastMonthIncome.add(tx.getAmount());
-                    } else {
-                        lastMonthSpend = lastMonthSpend.add(tx.getAmount().abs());
+                    } else if (tx.getType() == com.flowguard.domain.TransactionEntity.TransactionType.DEBIT
+                        && !creditScoringService.isInternalTransfer(tx.getLabel())) {
+                        lastMonthSpend = lastMonthSpend.add(tx.getAmount());
                     }
                 }
             }

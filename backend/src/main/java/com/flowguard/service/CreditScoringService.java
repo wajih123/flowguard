@@ -247,6 +247,7 @@ public class CreditScoringService {
 
     /**
      * Compute monthly expenses excluding internal transfers.
+     * Uses same averaging methodology as computeMonthlyIncome for consistency.
      */
     private BigDecimal computeMonthlyExpenses(UUID userId, int lookbackDays) {
         List<AccountEntity> accounts = accountRepository.findByUserId(userId);
@@ -265,9 +266,9 @@ public class CreditScoringService {
                 totalExpenses = totalExpenses.add(t.getAmount());
             }
         }
-        // Return monthly average
-        long days = Math.max(1, ChronoUnit.DAYS.between(from, LocalDate.now()));
-        return totalExpenses.divide(new BigDecimal(days), 2, RoundingMode.HALF_UP).multiply(new BigDecimal("30"));
+        // Return monthly average (same method as income)
+        int months = Math.max(lookbackDays / 30, 1);
+        return totalExpenses.divide(BigDecimal.valueOf(months), 2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -354,7 +355,7 @@ public class CreditScoringService {
     }
 
     /** Detect if a transaction is an internal transfer (between user's own accounts). */
-    private boolean isInternalTransfer(String label) {
+    public boolean isInternalTransfer(String label) {
         if (label == null) return false;
         return label.toLowerCase().contains("vir inst vers")
             || label.toLowerCase().contains("virement web")
