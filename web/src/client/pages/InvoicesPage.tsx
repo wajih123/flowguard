@@ -5,9 +5,7 @@ import {
   Send,
   CheckCircle,
   XCircle,
-  Clock,
   AlertTriangle,
-  Euro,
   Bell,
   BellOff,
 } from "lucide-react";
@@ -96,7 +94,9 @@ const InvoiceRow: React.FC<{
         <p className="font-numeric text-white font-semibold">
           {fmt(inv.totalTtc)}
         </p>
-        <p className="text-text-muted text-xs">TTC · TVA {inv.vatRate == null ? "incluse" : `${inv.vatRate}%`}</p>
+        <p className="text-text-muted text-xs">
+          TTC · TVA {inv.vatRate == null ? "incluse" : `${inv.vatRate}%`}
+        </p>
       </div>
       <div className="flex gap-2 shrink-0">
         {(inv.status === "SENT" || inv.status === "OVERDUE") && (
@@ -149,21 +149,22 @@ const InvoiceRow: React.FC<{
 // ── Create Invoice Form ───────────────────────────────────────────────────────
 const CreateForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const qc = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
-  const due30 = new Date(Date.now() + 30 * 86400000)
-    .toISOString()
-    .split("T")[0];
 
-  const [form, setForm] = useState<CreateInvoiceRequest>({
-    clientName: "",
-    clientEmail: "",
-    number: `FAC-${Date.now().toString().slice(-6)}`,
-    amountHt: 0,
-    vatRate: 20,
-    currency: "EUR",
-    issueDate: today,
-    dueDate: due30,
-    notes: "",
+  const [form, setForm] = useState<CreateInvoiceRequest>(() => {
+    const now = Date.now();
+    const today = new Date(now).toISOString().split("T")[0];
+    const due30 = new Date(now + 30 * 86400000).toISOString().split("T")[0];
+    return {
+      clientName: "",
+      clientEmail: "",
+      number: `FAC-${now.toString().slice(-6)}`,
+      amountHt: 0,
+      vatRate: 20,
+      currency: "EUR",
+      issueDate: today,
+      dueDate: due30,
+      notes: "",
+    };
   });
 
   const mutation = useMutation({
@@ -263,7 +264,7 @@ const CreateForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
           <div>
             <label className="block text-xs text-text-secondary mb-1">
-              Date d'émission
+              Date d&apos;émission
             </label>
             <input
               className="fg-input"
@@ -274,7 +275,7 @@ const CreateForm: React.FC<{ onClose: () => void }> = ({ onClose }) => {
           </div>
           <div>
             <label className="block text-xs text-text-secondary mb-1">
-              Date d'échéance
+              Date d&apos;échéance
             </label>
             <input
               className="fg-input"
