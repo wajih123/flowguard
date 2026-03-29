@@ -84,6 +84,15 @@ public class TransactionEntity extends PanacheEntityBase {
     @Column(name = "balance_after", precision = 15, scale = 2)
     private BigDecimal balanceAfter;
 
+    /**
+     * True for internal transfers between the user's own accounts (e.g. sweep,
+     * virement interne). These are excluded from spending analysis to avoid
+     * double-counting. Set by V25 migration and the SweepService.
+     */
+    @Column(name = "is_internal", nullable = false)
+    @Builder.Default
+    private boolean isInternal = false;
+
     public enum TransactionType {
         DEBIT, CREDIT
     }

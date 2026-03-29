@@ -57,6 +57,27 @@ const ALERT_TYPE_LABELS: Record<string, string> = {
   UNUSUAL_SPEND: "Dépense inhabituelle",
   PAYMENT_DUE: "Paiement à venir",
   POSITIVE_TREND: "Tendance positive",
+  EXCESSIVE_SPEND: "Dépense excessive",
+  HIDDEN_SUBSCRIPTION: "Abonnement caché",
+  SAVINGS_OPPORTUNITY: "Opportunité d'épargne",
+  SUBSCRIPTION_PRICE_INCREASE: "Hausse d'abonnement",
+  FREE_TRIAL_ENDING: "Essai gratuit expirant",
+  DUPLICATE_SUBSCRIPTION: "Doublon d'abonnement",
+  BUDGET_RISK: "Risque budgétaire",
+};
+
+const ALERT_TYPE_ICONS: Record<string, string> = {
+  CASH_SHORTAGE: "💸",
+  UNUSUAL_SPEND: "🔍",
+  PAYMENT_DUE: "📅",
+  POSITIVE_TREND: "📈",
+  EXCESSIVE_SPEND: "🚨",
+  HIDDEN_SUBSCRIPTION: "🕵️",
+  SAVINGS_OPPORTUNITY: "💡",
+  SUBSCRIPTION_PRICE_INCREASE: "📈",
+  FREE_TRIAL_ENDING: "⏰",
+  DUPLICATE_SUBSCRIPTION: "♻️",
+  BUDGET_RISK: "⚠️",
 };
 
 const fmtEuro = (n: number) =>
@@ -86,7 +107,7 @@ const AlertRow: React.FC<{
 
       <div className="flex items-start gap-3">
         <span className="text-base leading-none mt-0.5 flex-shrink-0">
-          {cfg.icon}
+          {ALERT_TYPE_ICONS[alert.type] ?? cfg.icon}
         </span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -118,6 +139,24 @@ const AlertRow: React.FC<{
           <Link to="/flash-credit">
             <Button variant="gradient" size="sm" leftIcon={<Zap size={13} />}>
               Activer la Réserve
+            </Button>
+          </Link>
+        )}
+        {(alert.type === "SAVINGS_OPPORTUNITY" ||
+          alert.type === "BUDGET_RISK") && (
+          <Link to="/savings-goals">
+            <Button variant="outline" size="sm">
+              Voir mes objectifs
+            </Button>
+          </Link>
+        )}
+        {(alert.type === "HIDDEN_SUBSCRIPTION" ||
+          alert.type === "SUBSCRIPTION_PRICE_INCREASE" ||
+          alert.type === "DUPLICATE_SUBSCRIPTION" ||
+          alert.type === "FREE_TRIAL_ENDING") && (
+          <Link to="/subscriptions">
+            <Button variant="outline" size="sm">
+              Gérer les abonnements
             </Button>
           </Link>
         )}
