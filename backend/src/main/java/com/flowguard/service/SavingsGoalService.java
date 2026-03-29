@@ -243,12 +243,13 @@ public class SavingsGoalService {
 
         if (topEntry.isEmpty()) return null;
 
-        BigDecimal avgMonthly = topEntry.getValue()
+        Map.Entry<String, BigDecimal> top = topEntry.get();
+        BigDecimal avgMonthly = top.getValue()
                 .divide(BigDecimal.valueOf(3), 2, RoundingMode.HALF_UP);
         BigDecimal suggested = avgMonthly.multiply(new BigDecimal("0.15")).setScale(0, RoundingMode.HALF_UP);
         if (suggested.compareTo(BigDecimal.TEN) < 0) return null;
 
-        String catLabel = categoryLabel(topEntry.getKey());
+        String catLabel = categoryLabel(top.getKey());
         return String.format(
                 "💡 Réduire \"%s\" de %s/mois (-15%%) vous ferait économiser %s de plus vers cet objectif.",
                 catLabel, fmt(suggested), fmt(suggested));
