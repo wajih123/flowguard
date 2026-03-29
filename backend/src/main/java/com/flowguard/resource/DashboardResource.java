@@ -8,6 +8,7 @@ import com.flowguard.repository.AccountRepository;
 import com.flowguard.repository.TransactionRepository;
 import com.flowguard.service.AlertService;
 import com.flowguard.service.CreditScoringService;
+import com.flowguard.service.SpendingAnalysisService;
 import com.flowguard.service.TreasuryService;
 import io.smallrye.common.annotation.RunOnVirtualThread;
 import jakarta.annotation.security.RolesAllowed;
@@ -44,6 +45,7 @@ public class DashboardResource {
     @Inject AlertService alertService;
     @Inject CreditScoringService creditScoringService;
     @Inject TreasuryService treasuryService;
+    @Inject SpendingAnalysisService spendingAnalysisService;
     @Inject JsonWebToken jwt;
 
     // ── GET /api/dashboard/summary ───────────────────────────────────────────
@@ -311,6 +313,44 @@ public class DashboardResource {
         body.put("predictions", predictions);
 
         return Response.ok(body).build();
+    }
+
+    // ── GET /api/dashboard/spending-by-category ──────────────────────────────
+
+    @GET
+    @Path("/spending-by-category")
+    @Transactional
+    public Response getSpendingByCategory(
+            @QueryParam("months") @DefaultValue("1") int months) {
+        UUID userId = UUID.fromString(jwt.getSubject());
+        java.time.LocalDate now = java.time.LocalDate.now();
+        java.time.LocalDate from = now.minusMonths(Math.max(months, 1)).withDayOfMonth(1);
+
+        // Aggregate spending across all active accounts for the requested period
+        java.util.Map<String, java.math.BigDecimal> totals = new java.util.LinkedHashMap<>();
+        List<AccountEntity> accounts = accountRepository.findByUserId(userId);
+        for (AccountEntity acc : accounts) {
+            List<com.flowguard.domain.TransactionEntity> txs =
+                    transactionRepository.findByAccountIdAndDateBetween(acc.getId(), from, now);
+            for (com.flowguard.domain.TransactionEntity tx : txs) {
+                if (tx.getType() != com.flowguard.domain.TransactionEntity.TransactionType.DEBIT) continue;
+                if (tx.isInternal()) continue;
+                String cat = tx.getCategory() != null ? tx.getCategory().name() : "AUTRE";
+                totals.merge(cat, tx.getAmount().abs(), java.math.BigDecimal::add);
+            }
+        }
+
+        List<Map<String, Object>> result = totals.entrySet().stream()
+                .sorted(Map.Entry.<String, java.math.BigDecimal>comparingByValue().reversed())
+                .map(e -> {
+                    Map<String, Object> row = new java.util.LinkedHashMap<>();
+                    row.put("category", e.getKey());
+                    row.put("amount", e.getValue());
+                    return row;
+                })
+                .toList();
+
+        return Response.ok(result).build();
     }
 
     // ── GET /api/dashboard/transactions ─────────────────────────────────────

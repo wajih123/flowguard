@@ -10,7 +10,7 @@ import jakarta.ws.rs.core.*;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import java.util.*;
 
-@Path("/api/sweep")
+@Path("/sweep")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class SweepResource {
