@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 import org.jboss.logging.Logger;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,6 +38,12 @@ public class AlertService {
 
     @Inject
     AlertThresholdRepository alertThresholdRepository;
+
+    @Inject
+    SpendingPatternService spendingPatternService;
+
+    @Inject
+    SpendingCoachService spendingCoachService;
 
     public List<AlertDto> getAlertsByUserId(UUID userId) {
         return alertRepository.findByUserId(userId).stream()
@@ -123,23 +130,38 @@ public class AlertService {
     }
 
     private void generateAlertsForUser(UserEntity user) {
+        // Treasury forecast alerts (cash shortage)
         TreasuryForecastDto forecast = treasuryService.getCachedForecast(user.getId(), 30);
 
-        if (forecast == null || forecast.criticalPoints() == null) {
-            return;
+        if (forecast != null && forecast.criticalPoints() != null) {
+            for (TreasuryForecastDto.CriticalPoint cp : forecast.criticalPoints()) {
+                if (cp.predictedBalance().compareTo(BigDecimal.ZERO) < 0) {
+                    createAlert(
+                            user.getId(),
+                            AlertEntity.AlertType.CASH_SHORTAGE,
+                            determineSeverity(cp.predictedBalance()),
+                            String.format("Déficit de trésorerie prévu le %s : %s €. %s",
+                                    cp.date(), cp.predictedBalance().toPlainString(), cp.reason()),
+                            cp.predictedBalance(),
+                            cp.date()
+                    );
+                }
+            }
         }
 
-        for (TreasuryForecastDto.CriticalPoint cp : forecast.criticalPoints()) {
-            if (cp.predictedBalance().compareTo(BigDecimal.ZERO) < 0) {
-                createAlert(
-                        user.getId(),
-                        AlertEntity.AlertType.CASH_SHORTAGE,
-                        determineSeverity(cp.predictedBalance()),
-                        String.format("Déficit de trésorerie prévu le %s : %s €. %s",
-                                cp.date(), cp.predictedBalance().toPlainString(), cp.reason()),
-                        cp.predictedBalance(),
-                        cp.date()
-                );
+        // Spending pattern alerts (excessive spend, hidden subscriptions, price increases, duplicates)
+        for (SpendingPatternService.AlertCandidate candidate : spendingPatternService.generateAlerts(user)) {
+            if (!alertRepository.existsByUserTypeAndCreatedToday(user.getId(), candidate.type())) {
+                createAlert(user.getId(), candidate.type(), candidate.severity(),
+                        candidate.message(), null, LocalDate.now());
+            }
+        }
+
+        // Coach alerts (budget risk, savings opportunities)
+        for (SpendingPatternService.AlertCandidate candidate : spendingCoachService.generateCoachAlerts(user)) {
+            if (!alertRepository.existsByUserTypeAndCreatedToday(user.getId(), candidate.type())) {
+                createAlert(user.getId(), candidate.type(), candidate.severity(),
+                        candidate.message(), null, LocalDate.now());
             }
         }
     }
