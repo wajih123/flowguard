@@ -2,7 +2,14 @@ export type AlertType =
   | "CASH_SHORTAGE"
   | "UNUSUAL_SPEND"
   | "PAYMENT_DUE"
-  | "POSITIVE_TREND";
+  | "POSITIVE_TREND"
+  | "EXCESSIVE_SPEND"
+  | "HIDDEN_SUBSCRIPTION"
+  | "SAVINGS_OPPORTUNITY"
+  | "SUBSCRIPTION_PRICE_INCREASE"
+  | "FREE_TRIAL_ENDING"
+  | "DUPLICATE_SUBSCRIPTION"
+  | "BUDGET_RISK";
 export type AlertSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
 export interface Alert {
