@@ -45,6 +45,7 @@ const TaxVaultPage = React.lazy(() => import("./pages/TaxVaultPage"));
 const CashCalendarPage = React.lazy(() => import("./pages/CashCalendarPage"));
 const ClientStatsPage = React.lazy(() => import("./pages/ClientStatsPage"));
 const CashGoalPage = React.lazy(() => import("./pages/CashGoalPage"));
+const SavingsGoalsPage = React.lazy(() => import("./pages/SavingsGoalsPage"));
 const TaxDeclarationPage = React.lazy(
   () => import("./pages/TaxDeclarationPage"),
 );
@@ -335,6 +336,14 @@ const ClientApp: React.FC = () => {
           element={
             <PrivateRoute>
               <CashGoalPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/savings-goals"
+          element={
+            <PrivateRoute>
+              <SavingsGoalsPage />
             </PrivateRoute>
           }
         />

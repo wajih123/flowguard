@@ -4,6 +4,9 @@ import com.flowguard.domain.AlertEntity;
 import io.quarkus.hibernate.orm.panache.PanacheRepositoryBase;
 import jakarta.enterprise.context.ApplicationScoped;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,5 +31,16 @@ public class AlertRepository implements PanacheRepositoryBase<AlertEntity, UUID>
 
     public int markAllAsReadByUserId(UUID userId) {
         return update("isRead = true WHERE user.id = ?1 AND isRead = false", userId);
+    }
+
+    /**
+     * Dedup guard: returns true if an alert of the given type was already created
+     * for this user today (UTC), preventing duplicate spending alerts per day.
+     */
+    public boolean existsByUserTypeAndCreatedToday(UUID userId, AlertEntity.AlertType type) {
+        Instant startOfDay = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant();
+        Instant endOfDay = startOfDay.plusSeconds(86400);
+        return count("user.id = ?1 AND type = ?2 AND createdAt >= ?3 AND createdAt < ?4",
+                userId, type, startOfDay, endOfDay) > 0;
     }
 }

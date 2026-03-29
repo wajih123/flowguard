@@ -28,6 +28,7 @@ import { ForecastChart } from "@/components/dashboard/ForecastChart";
 import { TransactionList } from "@/components/dashboard/TransactionList";
 import { ReserveWidget } from "@/components/dashboard/ReserveWidget";
 import { AlertsList } from "@/components/dashboard/AlertsList";
+import { SpendingCoach } from "@/components/dashboard/SpendingCoach";
 import {
   useDashboard,
   useDashboardTransactions,
@@ -489,6 +490,9 @@ const DashboardPage: React.FC = () => {
             </div>
           </Card>
         )}
+
+        {/* ── 4E. SPENDING COACH ────────────────────────────────────────── */}
+        <SpendingCoach />
 
         {/* ── 5. BOTTOM ROW: Transactions | Reserve ────────────────────── */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">

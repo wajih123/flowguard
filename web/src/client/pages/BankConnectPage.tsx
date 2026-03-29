@@ -67,8 +67,8 @@ const BankConnectPage: React.FC = () => {
               Connexion 100 % sécurisée
             </p>
             <p className="text-text-secondary text-xs mt-0.5 leading-relaxed">
-              Connexion bancaire certifiée · FlowGuard n&apos;accède jamais à vos
-              identifiants · Chiffrement bout en bout
+              Connexion bancaire certifiée · FlowGuard n&apos;accède jamais à
+              vos identifiants · Chiffrement bout en bout
             </p>
           </div>
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-success/20 text-success">
