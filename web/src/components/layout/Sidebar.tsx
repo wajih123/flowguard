@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   CalendarDays,
   ClipboardList,
+  Brain,
 } from "lucide-react";
 import { useAuthStore } from "@/store/authStore";
 import { useAlertStore } from "@/store/alertStore";
@@ -37,6 +38,11 @@ const navItems: NavItem[] = [
     label: "Tableau de bord",
     to: "/dashboard",
     icon: <LayoutDashboard size={17} />,
+  },
+  {
+    label: "Conseiller IA",
+    to: "/assistant",
+    icon: <Brain size={17} />,
   },
   {
     label: "Centre de contrôle",
