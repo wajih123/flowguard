@@ -5,6 +5,7 @@ import { Loader } from "@/components/ui/Loader";
 import type { Role } from "@/domain/User";
 
 // ─── Lazy page imports ────────────────────────────────────────────────────────
+const LandingPage = React.lazy(() => import("../pages/LandingPage"));
 const LoginPage = React.lazy(() => import("./pages/auth/LoginPage"));
 const RegisterPage = React.lazy(() => import("./pages/auth/RegisterPage"));
 const RegisterBusinessPage = React.lazy(
@@ -49,6 +50,7 @@ const SavingsGoalsPage = React.lazy(() => import("./pages/SavingsGoalsPage"));
 const TaxDeclarationPage = React.lazy(
   () => import("./pages/TaxDeclarationPage"),
 );
+const AssistantPage = React.lazy(() => import("./pages/AssistantPage"));
 
 // ─── Route guards ─────────────────────────────────────────────────────────────
 const PrivateRoute: React.FC<{
@@ -69,6 +71,14 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   if (isLoading) return <Loader fullScreen text="Chargement…" />;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
+};
+
+/** Shows landing page for guests, redirects authenticated users to dashboard */
+const LandingRoute: React.FC = () => {
+  const { isAuthenticated, isLoading } = useAuthStore();
+  if (isLoading) return <Loader fullScreen text="Chargement…" />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
 };
 
 // ─── ClientApp ────────────────────────────────────────────────────────────────
@@ -355,10 +365,18 @@ const ClientApp: React.FC = () => {
             </PrivateRoute>
           }
         />
+        <Route
+          path="/assistant"
+          element={
+            <PrivateRoute>
+              <AssistantPage />
+            </PrivateRoute>
+          }
+        />
 
         {/* Catch-all */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/" element={<LandingRoute />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </React.Suspense>
   );

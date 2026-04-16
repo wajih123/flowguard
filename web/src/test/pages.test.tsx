@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import React from "react";
 
@@ -12,6 +12,14 @@ vi.mock("@tanstack/react-query", () => ({
   }),
   useMutation: vi.fn().mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useQueryClient: vi.fn().mockReturnValue({ invalidateQueries: vi.fn() }),
+}));
+
+// Mock react-router-dom (Link, Navigate, useNavigate, etc.)
+vi.mock("react-router-dom", () => ({
+  Link: ({ children, to }: any) => <a href={to}>{children}</a>,
+  Navigate: () => null,
+  useNavigate: vi.fn().mockReturnValue(vi.fn()),
+  useLocation: vi.fn().mockReturnValue({ pathname: "/" }),
 }));
 
 // Mock Layout and UI primitives to avoid router/auth context deps
@@ -101,6 +109,22 @@ vi.mock("@/api/accountant", () => ({
   },
 }));
 
+vi.mock("@/hooks/useDashboard", () => ({
+  useDashboard: vi.fn().mockReturnValue({ data: undefined, isLoading: false }),
+}));
+
+vi.mock("@/hooks/useForecast", () => ({
+  useForecast: vi.fn().mockReturnValue({ data: undefined, isLoading: false }),
+}));
+
+vi.mock("@/store/authStore", () => ({
+  useAuthStore: vi.fn().mockReturnValue({
+    user: { firstName: "Test", role: "ROLE_USER" },
+    isAuthenticated: false,
+    isLoading: false,
+  }),
+}));
+
 // ────────────────────────────────────────────────────────────
 // Import pages after mocks are in place
 // ────────────────────────────────────────────────────────────
@@ -111,6 +135,8 @@ import BenchmarksPage from "../client/pages/BenchmarksPage";
 import ForecastAccuracyPage from "../client/pages/ForecastAccuracyPage";
 import PaymentsPage from "../client/pages/PaymentsPage";
 import AccountantPage from "../client/pages/AccountantPage";
+import LandingPage from "../pages/LandingPage";
+import AssistantPage from "../client/pages/AssistantPage";
 
 function renderPage(Page: React.ComponentType) {
   return render(<Page />);
@@ -185,5 +211,47 @@ describe("AccountantPage", () => {
     expect(
       screen.getAllByText(/comptable|expert|portail/i).length,
     ).toBeGreaterThan(0);
+  });
+});
+
+describe("LandingPage", () => {
+  it("renders without crashing", () => {
+    renderPage(LandingPage);
+  });
+  it("shows FlowGuard brand", () => {
+    renderPage(LandingPage);
+    expect(screen.getAllByText(/FlowGuard/i).length).toBeGreaterThan(0);
+  });
+  it("shows hero headline", () => {
+    renderPage(LandingPage);
+    expect(screen.getAllByText(/trésorerie/i).length).toBeGreaterThan(0);
+  });
+  it("shows sign-in link", () => {
+    renderPage(LandingPage);
+    expect(screen.getAllByText(/connexion/i).length).toBeGreaterThan(0);
+  });
+  it("shows pricing section", () => {
+    renderPage(LandingPage);
+    expect(screen.getAllByText(/tarif|prix|free|pro/i).length).toBeGreaterThan(
+      0,
+    );
+  });
+});
+
+describe("AssistantPage", () => {
+  it("renders without crashing", () => {
+    renderPage(AssistantPage);
+  });
+  it("shows AI advisor heading", () => {
+    renderPage(AssistantPage);
+    expect(screen.getAllByText(/conseiller|IA|assistant/i).length).toBeGreaterThan(0);
+  });
+  it("shows quick question chips", () => {
+    renderPage(AssistantPage);
+    expect(screen.getAllByText(/situation|améliorer|risque/i).length).toBeGreaterThan(0);
+  });
+  it("shows welcome message", () => {
+    renderPage(AssistantPage);
+    expect(screen.getAllByText(/bonjour|conseiller/i).length).toBeGreaterThan(0);
   });
 });

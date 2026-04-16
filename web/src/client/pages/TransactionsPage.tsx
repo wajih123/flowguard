@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { RefreshCw, Search, Upload, CheckCircle2 } from "lucide-react";
+import { RefreshCw, Search, Upload, CheckCircle2, Download } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Card, CardHeader } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -47,6 +47,35 @@ const fmt = (n: number, type: string) =>
     style: "currency",
     currency: "EUR",
   }).format(Math.abs(n))}`;
+
+function exportTransactionsCsv(
+  transactions: Array<{
+    date: string;
+    label: string;
+    category: TransactionCategory;
+    type: string;
+    amount: number;
+    isRecurring: boolean;
+  }>,
+): void {
+  const headers = ["Date", "Libellé", "Catégorie", "Type", "Montant (EUR)", "Récurrent"];
+  const rows = transactions.map((t) => [
+    t.date,
+    `"${t.label.replace(/"/g, '""')}"`,
+    CATEGORY_LABELS[t.category] ?? t.category,
+    t.type === "CREDIT" ? "Crédit" : "Débit",
+    t.type === "CREDIT" ? t.amount.toFixed(2) : (-t.amount).toFixed(2),
+    t.isRecurring ? "Oui" : "Non",
+  ]);
+  const csv = [headers.join(";"), ...rows.map((r) => r.join(";"))].join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `transactions-flowguard-${new Date().toISOString().split("T")[0]}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
 
 const TransactionsPage: React.FC = () => {
   const { data: accounts } = useAccounts();
@@ -127,6 +156,15 @@ const TransactionsPage: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
           >
             Importer un relevé bancaire
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={<Download size={14} />}
+            disabled={!filtered.length}
+            onClick={() => exportTransactionsCsv(filtered)}
+          >
+            Exporter CSV
           </Button>
           {importStatus.result && (
             <span className="flex items-center gap-1.5 text-sm text-success">
